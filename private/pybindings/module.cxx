@@ -39,11 +39,14 @@ register_extras()
 	;
 }
 
+void register_RadialDistribution();
+
 I3_PYTHON_MODULE(MuonGun)
 {
 	load_project("libMuonGun", false);
 	
 	register_extras();
 	register_CompactTrack();
+	register_RadialDistribution();
 }
 

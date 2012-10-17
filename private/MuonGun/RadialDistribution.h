@@ -4,7 +4,15 @@
 #include <icetray/I3FrameObject.h>
 #include <phys-services/I3RandomService.h>
 
+class I3Position;
+
 namespace I3MuonGun {
+	
+// These classes are effectively a re-implemenation of MUPAGE:
+// http://arxiv.org/abs/0802.0562v2
+	
+// Get the depth of the given IceCube coordinate in kilometers water-equivalent
+// double GetDepth(const I3Position &);
 
 class Distribution : public I3FrameObject {
 public:
@@ -20,6 +28,8 @@ protected:
 	void serialize(Archive &, unsigned);
 };
 
+I3_POINTER_TYPEDEFS(Distribution);
+
 class RadialDistribution : public Distribution {
 public:
 	virtual ~RadialDistribution() {};
@@ -32,6 +42,8 @@ private:
 	template <typename Archive>
 	void serialize(Archive &, unsigned);
 };
+
+I3_POINTER_TYPEDEFS(RadialDistribution);
 
 class BMSSRadialDistribution : public RadialDistribution {
 public:
@@ -52,6 +64,8 @@ private:
 	template <typename Archive>
 	void serialize(Archive &, unsigned);
 };
+
+I3_POINTER_TYPEDEFS(BMSSRadialDistribution);
 
 }
 
