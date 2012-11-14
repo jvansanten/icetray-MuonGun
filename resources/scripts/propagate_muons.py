@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 
 import numpy
 #import dashi
@@ -37,10 +38,14 @@ def MMCFactory(length=10*I3Units.m, seed=12345, mediadef=expandvars('$I3_BUILD/M
 
 	return mmc_icetray.I3PropagatorServiceMMC(jvm,mmcOpts)
 
-import sys
-infiles = sys.argv[1:-1]
-outfile = sys.argv[-1]
+from optparse import OptionParser
+parser = OptionParser(usage="%prog [OPTIONS] infiles outfile")
+parser.add_option("--nevents", dest="nevents", type=int, default=int(1e6), help="Number of showers per Corsika file")
 
+opts, args = parser.parse_args()
+if len(args) < 2:
+	parser.error("You must supply at least one input and one output file")
+infiles, outfile = args[:-1], args[-1]
 # infile, outfile = '/data/sim/IceCube/2012/generated/corsika/H/DAT000000', 'DAT000000_muons.i3'
 
 tray = I3Tray()
@@ -51,7 +56,7 @@ if infiles[0].endswith('.i3.bz2'):
 	tray.AddModule('I3Reader', 'reader', filenamelist=infiles)
 else:
 	tray.AddModule('I3CORSIKAReader', 'reader', filenamelist=infiles,
-	    NEvents=1000000, CylinderHeight=0, CylinderRadius=0,
+	    NEvents=opts.nevents, CylinderHeight=0, CylinderRadius=0,
 	    ParticlesToWrite=MuonGun.I3ParticleTypeSeries([dataclasses.I3Particle.MuMinus, dataclasses.I3Particle.MuPlus]),
 	)
 

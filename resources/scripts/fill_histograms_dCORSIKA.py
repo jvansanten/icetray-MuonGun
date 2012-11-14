@@ -14,49 +14,6 @@ tray.AddModule('I3Reader', 'reader', filenamelist=infiles)
 import numpy
 from icecube.icetray import I3Units
 
-class HoerandelWeight(object):
-	gamma = numpy.array([2.71, 2.64, 2.54, 2.75, 2.95, 2.66, 2.72, 2.68, 2.69, 2.64, 2.66, 2.64, 2.66, 2.75, 2.69, 2.55, 2.68, 2.64, 2.65, 2.7, 2.64, 2.61, 2.63, 2.67, 2.46, 2.59])
-	flux = numpy.array([0.0873, 0.0571, 0.00208, 0.000474, 0.000895, 0.0106, 0.00235, 0.0157, 0.000328, 0.0046, 0.000754, 0.00801, 0.00115, 0.00796, 0.00027, 0.00229, 0.000294, 0.000836, 0.000536, 0.00147, 0.000304, 0.00113, 0.000631, 0.00136, 0.00135, 0.0204])
-	flux *= (I3Units.TeV/I3Units.GeV)**(gamma-1) # unit conversion
-	def __init__(self, generation_prob, z=1, nevents=1e6*1):
-		self.generation_prob = generation_prob
-		zi = int(z)-1
-		self.z = z
-		self.norm = self.flux[zi]
-		self.gamma = self.gamma[zi]
-	
-	@staticmethod	
-	def fluxdiff(e, z, gamma, delta_gamma=2.1, eps_cutoff=1.9, E_knee=4.49*I3Units.PeV):
-		"""
-		Differential (unnormalized) Hoerandel flux
-		"""
-		return e**(-gamma)*(1+(e/(E_knee*z))**eps_cutoff)**(-delta_gamma/eps_cutoff)
-		
-	def __call__(self, E):
-		return self.norm*self.fluxdiff(E, self.z, self.gamma)/self.generation_prob(E)
-
-class HoerandelWeight5(HoerandelWeight):
-	"""
-	Hoerandel with only 5 components, after Becherini et al. (also the same as Arne Schoenwald's version)
-	"""
-	gamma = numpy.nan*numpy.zeros(26)
-	flux  = numpy.nan*numpy.zeros(26)
-	gamma[0]  = 2.71 # H
-	gamma[1]  = 2.64 # He
-	gamma[6]  = 2.58 # N
-	gamma[12] = 2.67 # Al
-	gamma[25] = 2.58 # Fe
-	flux[0]  = 8.73e-2 # H
-	flux[1]  = 5.71e-2 # He
-	flux[6]  = 3.24e-2 # N
-	flux[12] = 3.16e-2 # Al
-	flux[25] = 2.18e-2 # Fe
-	flux *= (I3Units.TeV/I3Units.GeV)**(gamma-1) # unit conversion
-	def __init__(self, *args, **kwargs):
-		super(HoerandelWeight5, self).__init__(*args, **kwargs)
-		if numpy.isnan(self.norm):
-			raise ValueError("I can't account for nuclei with charge %d" % self.z)
-
 import dashi
 class buffering_histogram(dashi.histogram.histogram):
 	"""
@@ -97,23 +54,75 @@ class buffering_histogram(dashi.histogram.histogram):
 		if self._bh_pos == self.maxbuf:
 			self.flush()
 
-# here we have heterogenous generation spectra, and have to be very
-# careful about the number of files generated for with each setting
-from cubicle.weighting import PowerLaw
-spectra = {
-	dataclasses.I3Particle.PPlus :  (1000 + 64)*PowerLaw(1e6, 5e2, 1e10, -2) + 1000*PowerLaw(1e6, 1e4, 1e10, -2) + 521*PowerLaw(1e3, 1e4, 1e10, -1),
-	dataclasses.I3Particle.He4Nucleus : 64*PowerLaw(1e6, 2e3, 1e10, -2) + 731*PowerLaw(1e6, 4e4, 1e10, -2) + 525*PowerLaw(1e3, 1e4, 1e10, -1),
-	dataclasses.I3Particle.N14Nucleus : 64*PowerLaw(1e6, 7e3, 1e10, -2) + 350*PowerLaw(1e3, 1e4, 1e10, -1),
-	dataclasses.I3Particle.Al27Nucleus : 64*PowerLaw(1e6, 13.5e3, 1e10, -2) + 524*PowerLaw(1e3, 1e4, 1e10, -1),
-	dataclasses.I3Particle.Fe56Nucleus : 64*PowerLaw(1e6, 3e4, 1e10, -2) + 520*PowerLaw(1e3, 1e4, 1e10, -1),
-}
-
-spectra = {
-	dataclasses.I3Particle.PPlus :  64*PowerLaw(1e6, 5e2, 1e10, -2),
-}
-
 import dashi, numpy, tables
-from icecube import sim_services, MuonGun
+from icecube.dataclasses import I3Constants
+from icecube.phys_services import I3Calculator
+from icecube import sim_services, simclasses, MuonGun
+cylinder_intersection = MuonGun.I3MUSICService.cylinder_intersection
+
+class CylinderWeighter(object):
+	"""
+	In VOLUMECORR mode, CORSIKA generates showers with a zenith distribution proportional
+	to the projected area of the cylindrical sampling surface. To convert counts of muons
+	detected at the sampling surface back to fluxes, we have to weight each entry
+	by 1/(dA/dcos(theta)), the differential projected area of the sampling surface
+	into a plane perpendicular to the shower axis.
+	"""
+	def __init__(self, radius, height, timescale, depthbins):
+		from numpy import pi, sqrt
+		chi = 2*height/(pi*radius)
+		# convert depths (in kmwe) to z coordinates
+		z = I3Constants.SurfaceElev - I3Constants.OriginElev - (depthbins*I3Units.km/(0.917*1.005))
+		def diffarea(ct, r, l):
+			"""
+			differential projected area of an upright cylinder: dA_perp d\Omega/(dcos(theta))
+			"""
+			return 2*pi**2*r*(r*ct + (2*l/pi)*sqrt(1-ct**2))
+		def bandarea(ct, r, l):
+			return diffarea(ct, r, l) - diffarea(ct, r, 0)
+		def intarea(r, l):
+			"""
+			projected area of an upright cylinder, integrated over the upper half-sphere
+			"""
+			return (pi**2*r*(r+l))
+		class weighter(object):
+			def __init__(self, f, timescale, r, l):
+				self.f = f
+				self.timescale = timescale
+				self.r = r
+				self.l = l
+			def __call__(self, ct):
+				return self.timescale*self.f(ct, self.r, self.l)
+		self.weights = []
+		for zhi, zlo in zip(z[:-1], z[1:]):
+			print zlo, zhi,
+			if zlo > height/2. or zhi < -height/2.:
+				# outside the cylinder
+				weight = None
+			elif zhi > height/2. and zlo <= height/2.:
+				# this layer includes the top of the cylinder
+				sideheight = (height/2.-zlo)
+				print sideheight,
+				weight = weighter(diffarea, timescale, radius, sideheight)
+			else:
+				# a side layer has no top surface
+				if zlo <= -height/2.:
+					# XXX HACK: ucr's target cylinder is displaced slightly w.r.t 
+					# the IceCube coordinate system. Adjust the effective area of
+					# the bottom-most slice to compensate.
+					sideheight = zhi+height/2. - 5.
+				else:
+					sideheight = zhi-zlo
+				weight = weighter(bandarea, timescale, radius, sideheight)
+				
+			print ''
+			self.weights.append(weight)
+		
+	def __call__(self, depthidx, zenith):
+		wt = 1./self.weights[depthidx](numpy.cos(zenith))
+		#print depthidx, self.weights[depthidx][0]
+		return wt
+
 class Filla(icetray.I3Module):
 	def __init__(self, ctx):
 		icetray.I3Module.__init__(self, ctx)
@@ -122,7 +131,7 @@ class Filla(icetray.I3Module):
 	def Configure(self):
 		from collections import defaultdict
 		
-		depthbins = numpy.linspace(1.0, 5.0, 9)
+		depthbins = numpy.linspace(1.0, 5.0, 15)
 		depthbins -= numpy.diff(depthbins)[0]/2.
 		zenbins = numpy.arccos(numpy.linspace(1, 0, 11))
 		zenbins_fine = numpy.arccos(numpy.linspace(1, 0, 101))
@@ -151,51 +160,62 @@ class Filla(icetray.I3Module):
 		self.nevents = 0
 		
 	def DAQ(self, frame):
-		primary = frame['MCPrimary']
-		#if primary.type != primary.PPlus:
-		#	return
-		# print primary
+		primary = frame['I3MCTree'].primaries[0]
+		
+		# Bail if no muon made it to the sampling surface
+		mmctracks = frame['MMCTrackList']
+		if len(mmctracks) == 0:
+			self.PushFrame(frame)
+			return
+		
 		if self.weighter is None:
-			if 'CorsikaWeightDict' in frame:
-				# generated by I3CORSIKAReader
-				wm = frame['CorsikaWeightDict']
-				if primary.type == primary.PPlus:
-					z = 1
-				else:
-					z = int(primary.type)%100
-				genprob = spectra[primary.type]
-				self.weighter = HoerandelWeight5(genprob, z)
-			elif 'CorsikaWeightMap' in frame:
-				# generated by I3CORSIKAWeightModule
-				wm = frame['CorsikaWeightMap']
-				if wm['Weight'] != 1.0:
-					raise ValueError("Can't deal with weighted DCorsika")
-				timescale = wm['TimeScale']
-				area = wm['AreaSum']
-				self.weighter = lambda energy: 1/(timescale*area)
-		weight = self.weighter(primary.energy)
+			# generated by I3CORSIKAWeightModule
+			wm = frame['CorsikaWeightMap']
+			print dict(wm)
+			if wm['Weight'] != 1.0:
+				raise ValueError("Can't deal with weighted DCorsika")
+			self.timescale = wm['TimeScale']
+			self.cylinder_radius = wm['CylinderRadius']
+			self.cylinder_height = wm['CylinderLength']
+			self.area = wm['AreaSum']
+			self.weighter = CylinderWeighter(self.cylinder_radius, self.cylinder_height, self.timescale, self.depthbins)
 		
 		zenith = primary.dir.zenith
 		zi = max(numpy.searchsorted(self.zenbins, zenith) - 1, 0)
 		zif = max(numpy.searchsorted(self.zenbins_fine, zenith) - 1, 0)
 		
-		self.primary.fill_single((zenith, primary.energy), weight)
-		
 		multiplicity=self.multiplicity_slices[zif]
 		radius=self.radius_slices[zi]
 		energy=self.energy_slices[zi]
 		
-		for di, (depth, tracks) in enumerate(frame['Tracks'].iteritems()):
-			kmwe = depth/I3Units.km
-			mult = len(tracks)
-			values = numpy.asarray([(mult, p.radius, p.energy) for p in tracks])
-			
-			multiplicity[di].fill_single(mult, weight)
-			radius[di].fill(values[:,:2], weight)
-			energy[di].fill(values, weight)
+		# Find the point where the shower axis intersects the sampling surface
+		intersection = cylinder_intersection(primary.pos, primary.dir, self.cylinder_height, self.cylinder_radius)
+		z = primary.pos.z + intersection.first*primary.dir.z
+		kmwe = ((I3Constants.SurfaceElev - I3Constants.OriginElev) - z)*(0.917*1.005)/I3Units.km
+		#print 'z = %.1f = %.3f kmwe (d = %.1f)' % (z, kmwe, intersection.first)
+		di = max(numpy.searchsorted(self.depthbins, kmwe) - 1, 0)
+		
+		# We know which depth bin we hit, and the projected area of the
+		# associated cylinder segment. Calculate a weight that turns counts
+		# back into fluxes.
+		#print di, numpy.cos(zenith), weight
+		
+		self.primary.fill_single((zenith, primary.energy), 1./(self.timescale*self.area))
+		
+
+		
+		weight = self.weighter(di, zenith)
+		
+		mult = max(len(mmctracks), 1)
+		
+		multiplicity[di].fill_single(mult, weight)
+		
+		values = numpy.asarray([(mult, I3Calculator.closest_approach_distance(primary, dataclasses.I3Position(p.GetXi(), p.GetYi(), p.GetZi())), p.GetEi()) for p in mmctracks])
+		radius[di].fill(values[:,:2], weight)
+		energy[di].fill(values, weight)
 		
 		self.nevents += 1
-		if self.nevents % 10000 == 0:
+		if self.nevents % 1000 == 0:
 			print '%d events' % self.nevents
 		
 		self.PushFrame(frame)
