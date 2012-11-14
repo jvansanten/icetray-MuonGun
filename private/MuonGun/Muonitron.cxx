@@ -1,54 +1,20 @@
 
-#include <icetray/I3Module.h>
+#include <MuonGun/Muonitron.h>
+#include <MuonGun/CompactTrack.h>
 #include <dataclasses/physics/I3MCTree.h>
 #include <dataclasses/physics/I3MCTreeUtils.h>
 #include <phys-services/I3Calculator.h>
-#include <dataclasses/I3Constants.h>
-
-#include <mmc-icetray/I3PropagatorServiceMMC.h>
 #include <simclasses/I3MMCTrack.h>
-
-#include <MuonGun/CompactTrack.h>
 
 #include <boost/foreach.hpp>
 #include <boost/make_shared.hpp>
-
-namespace {
-	const double EarthRadius = 637131500*I3Units::cm; // as in CORSIKA
-	const double IceDensity = 0.917*1.005; // as in MMC
-}
-
-class Muonitron : public I3Module {
-public:
-	Muonitron(const I3Context &);
-	void Configure();
-	void DAQ(I3FramePtr);
-		
-	static double GetOverburden(double z, double d=-I3Constants::OriginElev, double r=EarthRadius);
-	static double GetSurfaceZenith(double z, double d=-I3Constants::OriginElev, double r=EarthRadius);
-	static double GetGeocentricZenith(double z, double d=-I3Constants::OriginElev, double r=EarthRadius);
-	static double GetDetectorZenith(double z, double d=-I3Constants::OriginElev, double r=EarthRadius);
-	
-	static I3Direction RotateToZenith(const I3Direction&, const I3Direction&);
-	static I3Position RotateToZenith(const I3Direction&, const I3Position&);
-	static I3Particle RotateToZenith(const I3Particle&, const I3Particle&);
-	static I3Position Impact(const I3Particle &);
-private:
-	bool PropagateTrack(I3Particle &target, double depth);
-		
-	I3PropagatorServiceMMCPtr propagator_;
-	
-	std::vector<double> depths_;
-	double cyl_length_;
-};
-
 
 I3_MODULE(Muonitron);
 
 Muonitron::Muonitron(const I3Context &ctx) : I3Module(ctx)
 {
 	AddParameter("Depths", "Propagate muons to these vertical depths (in meters water-equivalent)", depths_);
-	AddParameter("MMC", "Instance of I3PropagatorServiceMMC", propagator_);
+	AddParameter("MMC", "Instance of I3PropagatorServiceBase", propagator_);
 	AddParameter("CylinderHeight", "Height of the MMC cylinder", 0.);
 	
 	AddOutBox("OutBox");
