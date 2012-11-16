@@ -25,6 +25,42 @@ function print_usage () {
   exit 1
 }
 
+function link_jvm () {
+  # Try to figure out where the heck JAVA_HOME is
+  sdk=jdk1.5.0_21_x86_64
+  for dir in /home/icecube/tools /data2/icecube/tools /usr/java; do
+    if [[ -d $dir/$sdk ]]; then
+      export JAVA_HOME=$dir/$sdk
+      break
+    fi
+  done
+
+  if [[ -z $JAVA_HOME ]]; then
+    echo "Can't find JAVA_HOME!"
+    exit 1
+  fi
+
+  for path in `find $JAVA_HOME -name libjvm.so`; do
+    export JVM=`dirname $path`;
+    break;
+  done
+  if [[ -z "$JVM" ]]; then
+    echo 'could not find a jvm'
+    exit 1
+  fi
+  
+  JAVA_LIB=`dirname $JVM`/lib
+  
+  export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$JVM:$JAVA_LIB
+
+  # ln -s $localjvm $I3_BUILD/lib/tools/
+  
+  echo "local jvm: $JVM"
+  echo LD_LIBRARY_PATH: $LD_LIBRARY_PATH
+  # ls -lh $I3_BUILD/lib/tools/$localjvm
+}
+
+
 if [[ "$#" == "0" ]]; then
   print_usage
 fi
@@ -77,27 +113,14 @@ if [[ -z $tarball ]]; then
   print_usage
 fi
 
-# Try to figure out where the heck JAVA_HOME is
-for candidate in /home/icecube/tools/j2sdk1.4.2-x86_64 /data2/icecube/tools/j2sdk1.4.2-x86_64 /usr/java/j2sdk1.4.2_12 /home/icecube/i3tools/j2sdk1.4.2_12; do
-  if [[ -d $candidate ]]; then
-    export JAVA_HOME=$candidate
-    break
-  fi
-done
-
-if [[ -z $JAVA_HOME ]]; then
-  echo "Can't find JAVA_HOME!"
-  exit 1
-fi
-
-# Unpack certificates
-tar xvzf doegrids.tar.gz
+# Unpack and set up GridFTP executables
+tar xzf globus.tar.gz
 # Location of CA Certs Directory
-X509_CERT_DIR=${_CONDOR_SCRATCH_DIR}/doegrids
-export X509_CERT_DIR
+export X509_CERT_DIR=${_CONDOR_SCRATCH_DIR}/globus/certificates
+export PATH=$PATH:${_CONDOR_SCRATCH_DIR}/globus/bin
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${_CONDOR_SCRATCH_DIR}/globus/lib
 # Location of my user proxy
-X509_USER_PROXY=${_CONDOR_SCRATCH_DIR}/x509up_u${uid}
-export X509_USER_PROXY
+export X509_USER_PROXY=${_CONDOR_SCRATCH_DIR}/x509up_u${uid}
 
 # Transfer inputs
 for infile in $inputs $tarball; do
@@ -105,9 +128,11 @@ for infile in $inputs $tarball; do
 done
 
 # Unpack the tarball
-tar xvzf `basename $tarball`
+tar xzf `basename $tarball`
 
 export I3_BUILD=${_CONDOR_SCRATCH_DIR}/`basename $tarball .tar.gz`
+
+env
 
 # Run the script in an env-shell
 $I3_BUILD/env-shell.sh $@
