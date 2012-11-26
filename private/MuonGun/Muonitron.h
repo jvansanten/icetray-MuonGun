@@ -5,8 +5,6 @@
 #include <icetray/I3Module.h>
 #include <dataclasses/I3Constants.h>
 #include <dataclasses/physics/I3Particle.h>
-#include <sim-services/I3PropagatorServiceBase.h>
-
 #include <MuonGun/MuonPropagator.h>
 
 namespace {
@@ -33,13 +31,10 @@ public:
 	static I3Position Impact(const I3Particle &);
 private:
 	bool PropagateTrack(I3Particle &target, double depth);
-	bool PropagateTrackSimple(I3Particle &target, double depth);
 	
-	I3PropagatorServiceBasePtr propagator_;
-	boost::shared_ptr<I3MuonGun::MuonPropagator> spropagator_;
+	boost::shared_ptr<I3MuonGun::MuonPropagator> propagator_;
 	
 	std::vector<double> depths_;
-	double cyl_length_;
 };
 
 #endif // MUONGUN_MUONITRON_H_INCLUDED

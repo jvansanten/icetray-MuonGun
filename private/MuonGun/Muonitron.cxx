@@ -11,11 +11,10 @@
 
 I3_MODULE(Muonitron);
 
-Muonitron::Muonitron(const I3Context &ctx) : I3Module(ctx), spropagator_(new I3MuonGun::MuonPropagator("ice"))
+Muonitron::Muonitron(const I3Context &ctx) : I3Module(ctx)
 {
 	AddParameter("Depths", "Propagate muons to these vertical depths (in meters water-equivalent)", depths_);
-	AddParameter("MMC", "Instance of I3PropagatorServiceBase", propagator_);
-	AddParameter("CylinderHeight", "Height of the MMC cylinder", 0.);
+	AddParameter("Propagator", "MuonPropagator instance", propagator_);
 	
 	AddOutBox("OutBox");
 }
@@ -24,8 +23,7 @@ void
 Muonitron::Configure()
 {
 	GetParameter("Depths", depths_);
-	GetParameter("MMC", propagator_);
-	GetParameter("CylinderHeight", cyl_length_);
+	GetParameter("Propagator", propagator_);
 	
 	if (depths_.size() == 0)
 		log_fatal("You must specify at least one vertical depth!");
@@ -107,34 +105,10 @@ Muonitron::GetSurfaceZenith(double zenith, double d, double r)
 	return zenith - GetGeocentricZenith(zenith, d, r);
 }
 
-// Propagate the given muon a set distance, and set its energy and x-y position at
-// the observation surface. If the muon decayed before reaching the surface, return false.
 bool
 Muonitron::PropagateTrack(I3Particle &target, double slant_depth)
-{
-	std::vector<I3Particle> secondaries;
-	
-	// Move the new track up in z so that it enters the simulation volume at the desired slant depth 
-	double dz = slant_depth + cyl_length_/2.;
-	I3Position pos = target.GetPos();
-	pos.SetZ(dz);
-	target.SetPos(pos);
-	I3MMCTrackPtr mmctrack = propagator_->Propagate(target, secondaries);
-	if (mmctrack && mmctrack->GetEi() > 0) {
-		target.SetPos(mmctrack->GetXi(), mmctrack->GetYi(), 0);
-		target.SetTime(mmctrack->GetTi());
-		target.SetEnergy(mmctrack->GetEi());
-		return true;
-	} else {
-		// Remove muons that didn't make it
-		return false;
-	}
-}
-
-bool
-Muonitron::PropagateTrackSimple(I3Particle &target, double slant_depth)
 {	
-	target = spropagator_->propagate(target, slant_depth);
+	target = propagator_->propagate(target, slant_depth);
 	return target.GetEnergy() > 0;
 }
 
@@ -163,8 +137,7 @@ Muonitron::DAQ(I3FramePtr frame)
 		double dx = GetOverburden(primary.GetDir().GetZenith(), vdepth/IceDensity) - traveled;
 		std::vector<I3MuonGun::CompactTrack> deep_tracks;
 		for (std::list<I3Particle>::iterator pit = tracks.begin(); pit != tracks.end(); ) {
-			// if (PropagateTrack(*pit, dx)) {
-			if (PropagateTrackSimple(*pit, dx)) {	
+			if (PropagateTrack(*pit, dx)) {
 				deep_tracks.push_back(I3MuonGun::CompactTrack(*pit));
 				pit++;
 			} else {
