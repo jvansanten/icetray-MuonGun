@@ -144,7 +144,6 @@ CanCan::GetLivetime() const
 		sides = 2*M_PI*Integrate(dN_dOmega, low, high, 2e-8, 2e-8, 10000u);
 	}
 	
-	printf("top: %e sides %e\n", top, sides);
 	return top + sides;
 }
 

@@ -11,7 +11,7 @@
 
 I3_MODULE(Muonitron);
 
-Muonitron::Muonitron(const I3Context &ctx) : I3Module(ctx)
+Muonitron::Muonitron(const I3Context &ctx) : I3Module(ctx), spropagator_(new I3MuonGun::MuonPropagator("ice"))
 {
 	AddParameter("Depths", "Propagate muons to these vertical depths (in meters water-equivalent)", depths_);
 	AddParameter("MMC", "Instance of I3PropagatorServiceBase", propagator_);
@@ -131,6 +131,13 @@ Muonitron::PropagateTrack(I3Particle &target, double slant_depth)
 	}
 }
 
+bool
+Muonitron::PropagateTrackSimple(I3Particle &target, double slant_depth)
+{	
+	target = spropagator_->propagate(target, slant_depth);
+	return target.GetEnergy() > 0;
+}
+
 void
 Muonitron::DAQ(I3FramePtr frame)
 {
@@ -146,7 +153,7 @@ Muonitron::DAQ(I3FramePtr frame)
 		if (it->GetType() == I3Particle::MuPlus || it->GetType() == I3Particle::MuMinus)
 			tracks.push_back(RotateToZenith(primary, *it));
 	
-	std::cout << "Surface: " << (tracks.size()) << " muons" << std::endl;
+	// std::cout << "Surface: " << (tracks.size()) << " muons" << std::endl;
 	
 	I3MuonGun::TrackBundlePtr bundle = boost::make_shared<I3MuonGun::TrackBundle>();
 	double traveled = 0;
@@ -156,7 +163,8 @@ Muonitron::DAQ(I3FramePtr frame)
 		double dx = GetOverburden(primary.GetDir().GetZenith(), vdepth/IceDensity) - traveled;
 		std::vector<I3MuonGun::CompactTrack> deep_tracks;
 		for (std::list<I3Particle>::iterator pit = tracks.begin(); pit != tracks.end(); ) {
-			if (PropagateTrack(*pit, dx)) {
+			// if (PropagateTrack(*pit, dx)) {
+			if (PropagateTrackSimple(*pit, dx)) {	
 				deep_tracks.push_back(I3MuonGun::CompactTrack(*pit));
 				pit++;
 			} else {
@@ -167,7 +175,7 @@ Muonitron::DAQ(I3FramePtr frame)
 		traveled += dx;
 		
 		// std::cout << "zenith: " << primary.GetDir().GetZenith() << " ice depth: " << vdepth/IceDensity << std::endl;
-		std::cout << vdepth << " mwe (" << traveled << " slant): " << (deep_tracks.size()) << " muons" << std::endl;
+		// std::cout << vdepth << " mwe (" << traveled << " slant): " << (deep_tracks.size()) << " muons" << std::endl;
 		
 		if (deep_tracks.size() > 0)
 			(*bundle)[vdepth].swap(deep_tracks); 

@@ -19,13 +19,14 @@ public:
 	
 	I3Particle Generate() const;
 	double GetLivetime() const;
+	double GetDepth(double z) const;
+	
 private:
 	I3Position GetImpactPoint(const I3Direction &dir) const;
 	double GetDifferentialArea(double cos_zenith) const;
 	double GetDifferentialTopArea(double cos_zenith) const;
 	double GetDifferentialSideArea(double cos_zenith) const;
 	
-	double GetDepth(double z) const;
 	
 	SingleMuonFlux flux_;
 	double density_;

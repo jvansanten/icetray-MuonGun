@@ -18,14 +18,19 @@ namespace I3MuonGun {
 
 namespace binning {
 
-struct scheme {
-	virtual const std::vector<double>& edges() const = 0;
+class scheme {
+public:
 	virtual const size_t index(double value) const = 0;
 	
 	virtual ~scheme() {};
+	
+	const std::vector<double>& edges() const
+	{ return edges_; }
+protected:
+	std::vector<double> edges_;
 };
 
-// general case: arbitrarily-spaced edges, findable by binary search
+// In the general case, the proper bin can be found in logarithmic time
 class general : public scheme {
 public:
 	general(const std::vector<double> &edges)
@@ -37,8 +42,10 @@ public:
 			edges_.push_back(std::numeric_limits<double>::infinity());
 	}
 	
-	const std::vector<double>& edges() const
-	{ return edges_; }
+	static boost::shared_ptr<general> create(const std::vector<double> &edges)
+	{
+		return boost::make_shared<general>(edges);
+	}
 	
 	const size_t index(double value) const
 	{
@@ -48,8 +55,6 @@ public:
 		assert(j > 0);
 		return j-1;
 	}
-private:
-	std::vector<double> edges_;
 };
 
 struct identity {
@@ -60,6 +65,11 @@ struct identity {
 struct log10 {
 	static inline double map(double v) { return std::pow(10, v); }
 	static inline double imap(double v) { return std::log10(v); }
+};
+
+struct cosine {
+	static inline double map(double v) { return std::acos(v); }
+	static inline double imap(double v) { return std::cos(v); }
 };
 
 template <int N>
@@ -76,7 +86,7 @@ struct power<2> {
 
 
 // Optimal case: bin edges uniform under some transformation
-// between set limits
+// between set limits; constant time
 template <typename Transformation = identity >
 class uniform : public scheme {
 public:
@@ -92,8 +102,11 @@ public:
 		edges_.push_back(std::numeric_limits<double>::infinity());
 	}
 	
-	const std::vector<double>& edges() const
-	{ return edges_; }
+	static boost::shared_ptr<uniform<Transformation> > create(double low,
+	    double high, size_t nsteps)
+	{
+		return boost::make_shared<uniform<Transformation> >(low, high, nsteps);
+	}
 	
 	const size_t index(double value) const
 	{
@@ -117,13 +130,30 @@ private:
 	
 	double offset_, range_, min_, max_;
 	size_t nsteps_;
-	std::vector<double> edges_;
 };
+
+};
+
+class histogram_base {
+public:
+	typedef boost::multi_array_types::index index;
+	typedef boost::multi_array_types::size_type size_type;
+	
+	virtual ~histogram_base();
+	
+	virtual const char* raw_bincontent() const = 0;
+	virtual const char* raw_squaredweights() const = 0;
+	
+	virtual std::vector<std::vector<double> > binedges() const = 0;
+	
+	virtual size_type ndim() const = 0;
+	virtual std::vector<size_type> shape() const = 0;
+	virtual std::vector<index> strides() const = 0;
 
 };
 
 template <size_t N, typename T = double>
-class histogram {
+class histogram : public histogram_base {
 public:
 	typedef boost::array<boost::variant< std::vector<double>, boost::shared_ptr<binning::scheme> >, N> bin_specification;
 public:
@@ -164,7 +194,60 @@ public:
 		squaredweights_(idx) += weight*weight;
 	}
 	
-	const boost::array<std::vector<double>, N> & edges() const { return edges_; }
+	const boost::array<std::vector<double>, N> & edges() const
+	{
+		return edges_;
+	}
+
+	const T* bincontent() const
+	{
+		return bincontent_.data();
+	}
+	
+	const T* squaredweights() const
+	{
+		return squaredweights_.data();
+	}
+	
+public:
+	// template-agnostic part of the interface
+	const char* raw_bincontent() const
+	{
+		return (char*)bincontent_.data();
+	}
+	
+	const char* raw_squaredweights() const
+	{
+		return (char*)squaredweights_.data();
+	}
+	
+	std::vector<std::vector<double> > binedges() const
+	{
+		std::vector<std::vector<double> > edges;
+		edges.assign(edges_.begin(), edges_.end());
+		return edges;
+	}
+	
+	size_type ndim() const
+	{
+		return N;
+	}
+	
+	std::vector<size_type> shape() const
+	{
+		std::vector<size_type> shape;
+		shape.assign(bincontent_.shape(), bincontent_.shape()+N);
+		
+		return shape;
+	}
+	
+	std::vector<index> strides() const
+	{
+		std::vector<index> strides;
+		strides.assign(bincontent_.strides(), bincontent_.strides()+N);
+		
+		return strides;
+	}
 	
 private:
 	void make_datacube()
@@ -188,7 +271,7 @@ private:
 		{ return v; }
 		
 		scheme_ptr operator()(const std::vector<double> & v) const
-		{ return boost::make_shared<binning::general>(v); }
+		{ return binning::general::create(v); }
 	};
 
 private:

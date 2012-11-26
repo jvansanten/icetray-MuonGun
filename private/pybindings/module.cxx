@@ -48,6 +48,9 @@ register_extras()
 	;
 }
 
+void register_histogram();
+void register_TrackBinner();
+void register_MuonPropagator();
 void register_RadialDistribution();
 void register_CanCan();
 
@@ -55,6 +58,9 @@ I3_PYTHON_MODULE(MuonGun)
 {
 	load_project("libMuonGun", false);
 	
+	register_histogram();
+	register_TrackBinner();
+	register_MuonPropagator();
 	register_extras();
 	register_Muonitron();
 	register_CompactTrack();

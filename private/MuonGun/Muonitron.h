@@ -7,6 +7,8 @@
 #include <dataclasses/physics/I3Particle.h>
 #include <sim-services/I3PropagatorServiceBase.h>
 
+#include <MuonGun/MuonPropagator.h>
+
 namespace {
 	const double EarthRadius = 637131500*I3Units::cm; // as in CORSIKA
 	const double SurfaceRadius = EarthRadius+I3Constants::SurfaceElev;
@@ -31,8 +33,10 @@ public:
 	static I3Position Impact(const I3Particle &);
 private:
 	bool PropagateTrack(I3Particle &target, double depth);
+	bool PropagateTrackSimple(I3Particle &target, double depth);
 	
 	I3PropagatorServiceBasePtr propagator_;
+	boost::shared_ptr<I3MuonGun::MuonPropagator> spropagator_;
 	
 	std::vector<double> depths_;
 	double cyl_length_;
