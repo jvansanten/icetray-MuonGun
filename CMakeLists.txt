@@ -6,10 +6,16 @@ i3_add_library(MuonGun
     private/MuonGun/CompactTrack.cxx
     private/MuonGun/RadialDistribution.cxx
     private/MuonGun/CanCan.cxx
+    private/MuonGun/TrackBinner.cxx
+    private/MuonGun/MuonPropagator.cxx
+    private/MuonGun/histogram.cxx
     private/cubature/cubature.c
+    
+    # private/boost/numpy/*.cpp
     # private/MUSIC/I3MUSICService.cxx
     USE_TOOLS log4cplus boost python gsl
-    USE_PROJECTS icetray dataclasses phys-services simclasses mmc-icetray sim-services
+    USE_PROJECTS icetray dataclasses phys-services simclasses PROPOSAL
+sim-services
 )
 
 # enable_language(Fortran)
@@ -37,6 +43,6 @@ add_subdirectory(private/pybindings)
 i3_test_executable(test 
   private/test/main.cxx
   private/test/DepthTest.cxx
-  USE_PROJECTS icetray dataclasses phys-services
+  USE_PROJECTS MuonGun icetray dataclasses phys-services
 )
 
