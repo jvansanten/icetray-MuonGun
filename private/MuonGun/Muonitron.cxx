@@ -11,10 +11,11 @@
 
 I3_MODULE(Muonitron);
 
-Muonitron::Muonitron(const I3Context &ctx) : I3Module(ctx)
+Muonitron::Muonitron(const I3Context &ctx) : I3Module(ctx), iceWorld_(I3Constants::SurfaceElev - I3Constants::OriginElev, 6374134)
 {
-	AddParameter("Depths", "Propagate muons to these vertical depths (in meters water-equivalent)", depths_);
-	AddParameter("Propagator", "MuonPropagator instance", propagator_);
+	AddParameter("Depths", "Propagate muons to these vertical depths (in meters)", depths_);
+	AddParameter("Crust", "Air and firn layers surrounding the bulk medium", crust_);
+	AddParameter("Propagator", "MuonPropagator instance", bulkPropagator_);
 	
 	AddOutBox("OutBox");
 }
@@ -23,11 +24,14 @@ void
 Muonitron::Configure()
 {
 	GetParameter("Depths", depths_);
-	GetParameter("Propagator", propagator_);
+	GetParameter("Crust", crust_);
+	GetParameter("Propagator", bulkPropagator_);
 	
 	if (depths_.size() == 0)
 		log_fatal("You must specify at least one vertical depth!");
-	if (!propagator_)
+	if (!crust_)
+		log_fatal("No crust layers configured!");
+	if (!bulkPropagator_)
 		log_fatal("No MMC propagator configured!");
 }
 
@@ -108,7 +112,9 @@ Muonitron::GetSurfaceZenith(double zenith, double d, double r)
 bool
 Muonitron::PropagateTrack(I3Particle &target, double slant_depth)
 {	
-	target = propagator_->propagate(target, slant_depth);
+	double l = target.GetLength();
+	target = bulkPropagator_->propagate(target, slant_depth);
+	target.SetLength(l + std::min(slant_depth, target.GetLength()));
 	return target.GetEnergy() > 0;
 }
 
@@ -124,28 +130,34 @@ Muonitron::DAQ(I3FramePtr frame)
 	
 	std::list<I3Particle> tracks;
 	for (it++; it != mctree->end(); it++)
-		if (it->GetType() == I3Particle::MuPlus || it->GetType() == I3Particle::MuMinus)
-			tracks.push_back(RotateToZenith(primary, *it));
-	
+		if (it->GetType() == I3Particle::MuPlus || it->GetType() == I3Particle::MuMinus) {
+			// Transport from the atmosphere through the firn layer into the bulk ice
+			I3Particle track = crust_->Ingest(*it);
+			if (track.GetEnergy() > 0)
+				tracks.push_back(track);
+		}	
 	// std::cout << "Surface: " << (tracks.size()) << " muons" << std::endl;
 	
 	I3MuonGun::TrackBundlePtr bundle = boost::make_shared<I3MuonGun::TrackBundle>();
 	double traveled = 0;
+	// std::cout << "*" << std::endl;
 	BOOST_FOREACH(double vdepth, depths_) {
-		// Convert each vertical depth (in meters water-equivalent) to a slant depth in ice,
-		// subtracting the portion the muon has already traveled through
-		double dx = GetOverburden(primary.GetDir().GetZenith(), vdepth/IceDensity) - traveled;
+		
+		// Find the slant depth from the surface of the glacier to
+		// a point vdepth meters below grid center.
+		double dx = GetOverburden(primary.GetDir().GetZenith(), vdepth, 6374134);
 		std::vector<I3MuonGun::CompactTrack> deep_tracks;
 		for (std::list<I3Particle>::iterator pit = tracks.begin(); pit != tracks.end(); ) {
-			if (PropagateTrack(*pit, dx)) {
-				deep_tracks.push_back(I3MuonGun::CompactTrack(*pit));
+			// std::cout << "h: " << vdepth << " slant: " << dx << " l: " << pit->GetLength() << std::endl;
+			
+			// Propagate the muon the remaining distance to reach the desired depth.
+			if (PropagateTrack(*pit, dx-pit->GetLength())) {
+				deep_tracks.push_back(I3MuonGun::CompactTrack(RotateToZenith(primary, *pit)));
 				pit++;
 			} else {
 				pit = tracks.erase(pit);
 			}
 		}
-		
-		traveled += dx;
 		
 		// std::cout << "zenith: " << primary.GetDir().GetZenith() << " ice depth: " << vdepth/IceDensity << std::endl;
 		// std::cout << vdepth << " mwe (" << traveled << " slant): " << (deep_tracks.size()) << " muons" << std::endl;
@@ -153,6 +165,7 @@ Muonitron::DAQ(I3FramePtr frame)
 		if (deep_tracks.size() > 0)
 			(*bundle)[vdepth].swap(deep_tracks); 
 	}
+	// std::cout << "*" << std::endl;
 	
 	frame->Put("MCPrimary", boost::make_shared<I3Particle>(primary));
 	frame->Put("Tracks", bundle);

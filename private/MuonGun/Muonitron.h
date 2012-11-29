@@ -32,7 +32,9 @@ public:
 private:
 	bool PropagateTrack(I3Particle &target, double depth);
 	
-	boost::shared_ptr<I3MuonGun::MuonPropagator> propagator_;
+	boost::shared_ptr<I3MuonGun::MuonPropagator> bulkPropagator_;
+	boost::shared_ptr<I3MuonGun::Crust> crust_;
+	I3MuonGun::Sphere iceWorld_;
 	
 	std::vector<double> depths_;
 };

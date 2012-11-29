@@ -86,4 +86,28 @@ MuonPropagator::propagate(const I3Particle &p, double distance)
 	return endpoint;
 }
 
+void Crust::AddLayer(boost::shared_ptr<Surface> s, boost::shared_ptr<MuonPropagator> p)
+{
+	boundaries_.push_back(s);
+	propagators_.push_back(p);
+}
+
+I3Particle
+Crust::Ingest(const I3Particle &p)
+{
+	I3Particle propped(p);
+	double l = 0;
+	for (unsigned i = 0; (propped.GetEnergy() > 0) && (i < boundaries_.size()); i++) {
+		double dx = boundaries_[i]->GetIntersection(propped.GetPos(), propped.GetDir()).first;
+		propped = (i > 0 ? propagators_[i-1] : defaultPropagator_)->propagate(propped, dx);
+		// Force lengths to measure the distance back to the outermost surface
+		if (i > 0)
+			l += std::min(dx, propped.GetLength());
+	}
+	propped.SetLength(l);
+	
+	return propped;
+}
+
+
 }

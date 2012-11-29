@@ -13,4 +13,10 @@ register_MuonPropagator()
 	    .def("propagate", &MuonPropagator::propagate)
 	    .def("set_seed", &MuonPropagator::SetSeed)
 	;
+	
+	class_<Crust, boost::shared_ptr<Crust> >("Crust",
+	    init<boost::shared_ptr<MuonPropagator> >())
+	    .def("add_layer", &Crust::AddLayer)
+	    .def("ingest", &Crust::Ingest)
+	;
 }

@@ -22,14 +22,19 @@ sort(std::pair<double, double> &pair)
 	}
 }
 
+static const double SurfaceRadius = 6371300+2834;
+
 }
 
 // Find the distances to the points of intersection with a centered at (0,0,0)
 // and aligned along the z axis. Adapted from:
 // http://code.icecube.wisc.edu/svn/projects/mmc/trunk/src/tfa/Amanda.java
 // (D. Chirkin)
+
+Surface::~Surface() {}
+
 std::pair<double, double>
-CylinderIntersection(const I3Position &p, const I3Direction &dir, double length, double radius)
+Cylinder::GetIntersection(const I3Position &p, const I3Direction &dir) const
 {
 	std::pair<double, double> h(0, 0), r(0, 0);
 	
@@ -43,14 +48,14 @@ CylinderIntersection(const I3Position &p, const I3Direction &dir, double length,
 	double costh = cos(dir.GetZenith());
 	
 	double b = x*cosph + y*sinph;
-	double d = b*b + radius*radius - x*x - y*y;
+	double d = b*b + radius_*radius_ - x*x - y*y;
 	
 	if (d > 0) {
 		d = sqrt(d);
 		// down-track distance to the endcaps
 		if (costh != 0) {
-			h.first  = (z - length/2)/costh;
-			h.second = (z + length/2)/costh;
+			h.first  = (z - length_/2)/costh;
+			h.second = (z + length_/2)/costh;
 			sort(h);
 		}
 		// down-track distance to the side surfaces
@@ -61,13 +66,13 @@ CylinderIntersection(const I3Position &p, const I3Direction &dir, double length,
 		}
 		// Perfectly horizontal tracks never intersect the endcaps
 		if (costh == 0) {
-			if ((z > -length/2) && (z < length/2))
+			if ((z > -length_/2) && (z < length_/2))
 				h = r;
 			else
 				h = std::make_pair(0, 0);
 		// Perfectly vertical tracks never intersect the sides
 		} else if (sinth == 0) {
-			if (hypot(x, y) >= radius)
+			if (hypot(x, y) >= radius_)
 				h = std::make_pair(0, 0);
 		// For general tracks, take the last entrace and first exit
 		} else {
@@ -78,6 +83,32 @@ CylinderIntersection(const I3Position &p, const I3Direction &dir, double length,
 				h.second = std::min(r.second, h.second);
 			}
 		}
+	}
+	
+	return h;
+}
+
+std::pair<double, double>
+Sphere::GetIntersection(const I3Position &p, const I3Direction &dir) const
+{
+	std::pair<double, double> h(0, 0);
+	
+	double x = p.GetX();
+	double y = p.GetY();
+	double z = p.GetZ() - originDepth_;
+	
+	double sinph = sin(dir.GetAzimuth());
+	double cosph = cos(dir.GetAzimuth());
+	double sinth = sin(dir.GetZenith());
+	double costh = cos(dir.GetZenith());
+	
+	double b = (x*cosph + y*sinph)*sinth + (z + radius_)*costh;
+	double d = b*b - (x*x + y*y + z*(z + 2*radius_));
+	
+	if (d > 0) {
+		d = sqrt(d);
+		h.first = b - d;
+		h.second = b + d;
 	}
 	
 	return h;

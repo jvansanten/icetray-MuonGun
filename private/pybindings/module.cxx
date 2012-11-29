@@ -6,6 +6,7 @@ namespace bp = boost::python;
 
 #include <MuonGun/CompactTrack.h>
 #include <MuonGun/Muonitron.h>
+#include <MuonGun/I3MuonGun.h>
 
 #include <icetray/python/dataclass_suite.hpp>
 
@@ -14,6 +15,20 @@ register_Muonitron()
 {
 	bp::def("overburden", &Muonitron::GetOverburden, (bp::arg("z"), bp::arg("d")=OriginDepth, bp::arg("r")=SurfaceRadius));
 	bp::def("impact", &Muonitron::Impact);
+	
+	{
+		using namespace I3MuonGun;
+		bp::class_<Surface, boost::noncopyable>("Surface", bp::no_init)
+			.def("intersection", &Surface::GetIntersection)
+		;
+		
+		bp::class_<Cylinder, bp::bases<Surface> >("Cylinder", bp::init<double, double>())
+		;
+		
+		bp::class_<Sphere, bp::bases<Surface> >("Sphere", bp::init<double, double>())
+		;
+	}
+
 	bp::def("rotate_to_zenith", (I3Particle (*)(const I3Particle&, const I3Particle&))&Muonitron::RotateToZenith);
 }
 

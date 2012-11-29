@@ -4,6 +4,7 @@
 
 #include "icetray/I3Units.h"
 #include "dataclasses/physics/I3Particle.h"
+#include "MuonGun/I3MuonGun.h"
 
 class Propagate;
 
@@ -20,6 +21,21 @@ public:
 	
 private:
 	Propagate *propagator_;
+};
+
+// A set of nested media layers
+class Crust {
+public:
+	Crust(boost::shared_ptr<MuonPropagator> defaultPropagator) : defaultPropagator_(defaultPropagator) {};
+	
+	// Add an inner layer
+	void AddLayer(boost::shared_ptr<Surface>, boost::shared_ptr<MuonPropagator>);
+	// Propagate a muon to the outer boundary of the innermost layer
+	I3Particle Ingest(const I3Particle &p);
+private:
+	boost::shared_ptr<MuonPropagator> defaultPropagator_;
+	std::vector<boost::shared_ptr<Surface> > boundaries_;
+	std::vector<boost::shared_ptr<MuonPropagator> > propagators_;
 };
 
 }
