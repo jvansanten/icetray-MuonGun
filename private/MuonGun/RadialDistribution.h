@@ -10,15 +10,12 @@ namespace I3MuonGun {
 	
 // These classes are effectively a re-implemenation of MUPAGE:
 // http://arxiv.org/abs/0802.0562v2
-	
-// Get the depth of the given IceCube coordinate in kilometers water-equivalent
-// double GetDepth(const I3Position &);
 
 class Distribution : public I3FrameObject {
 public:
 	virtual ~Distribution() {};
 	I3RandomServicePtr GetRandomService() const { return rng_; }
-	void SetRandomService(I3RandomServicePtr r) { rng_ = r; }
+	virtual void SetRandomService(I3RandomServicePtr r) { rng_ = r; }
 	
 protected:
 	I3RandomServicePtr rng_;
@@ -30,12 +27,17 @@ protected:
 
 I3_POINTER_TYPEDEFS(Distribution);
 
+struct Sample {
+	double value, prob;
+	Sample(double v, double p) : value(v), prob(p) {}
+};
+
 class RadialDistribution : public Distribution {
 public:
 	virtual ~RadialDistribution() {};
-	virtual double GetGenerationProbability(double depth, double cos_theta,
+	virtual double operator()(double depth, double cos_theta,
 	    unsigned multiplicity, double radius) const = 0;
-	virtual double Generate(double depth, double cos_theta,
+	virtual Sample Generate(double depth, double cos_theta,
 	    unsigned multiplicity) const = 0;
 private:
 	friend class boost::serialization::access;
@@ -49,9 +51,9 @@ class BMSSRadialDistribution : public RadialDistribution {
 public:
 	BMSSRadialDistribution();
 	virtual ~BMSSRadialDistribution() {};
-	virtual double GetGenerationProbability(double depth, double cos_theta,
+	virtual double operator()(double depth, double cos_theta,
 	    unsigned multiplicity, double radius) const;
-	virtual double Generate(double depth, double cos_theta,
+	virtual Sample Generate(double depth, double cos_theta,
 	    unsigned multiplicity) const;
 private:
 	double GetMeanRadius(double, double, unsigned) const;

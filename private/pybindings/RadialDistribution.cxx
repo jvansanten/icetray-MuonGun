@@ -14,7 +14,8 @@ register_RadialDistribution()
 	
 	bp::class_<RadialDistribution, RadialDistributionPtr,
 	    bp::bases<Distribution>, boost::noncopyable>("RadialDistribution", bp::no_init)
-	    .def("generation_probability", &RadialDistribution::GetGenerationProbability)
+	    // .def("generation_probability", &RadialDistribution::GetGenerationProbability)
+	    .def("__call__", &RadialDistribution::operator())
 	    .def("generate", &RadialDistribution::Generate)
 	;
 	

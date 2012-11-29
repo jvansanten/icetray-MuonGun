@@ -60,7 +60,7 @@ BMSSRadialDistribution::GetGenerationProbability(double R, double a, double radi
 }
 
 double
-BMSSRadialDistribution::GetGenerationProbability(double h, double cos_theta,
+BMSSRadialDistribution::operator()(double h, double cos_theta,
     unsigned N, double radius) const
 {
 	double theta = acos(cos_theta);
@@ -68,7 +68,7 @@ BMSSRadialDistribution::GetGenerationProbability(double h, double cos_theta,
 	return GetGenerationProbability(GetMeanRadius(h, theta, N), GetShapeParameter(h, theta, N), radius);
 }
 
-double
+Sample
 BMSSRadialDistribution::Generate(double h, double cos_theta,
     unsigned N) const
 {
@@ -90,7 +90,7 @@ BMSSRadialDistribution::Generate(double h, double cos_theta,
 		r = rng_->Uniform(rmax_);
 	} while (rng_->Uniform(max_prob) <= GetGenerationProbability(R, a, r));
 
-	return r;
+	return Sample(r, GetGenerationProbability(R, a, r));
 }
 
 }
