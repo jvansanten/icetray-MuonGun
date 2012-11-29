@@ -184,6 +184,8 @@ public:
 	void fill(const boost::array<double, N> &values, T weight=1)
 	{
 		boost::array<typename datacube_type::index, N> idx;
+		if (!std::isfinite(weight))
+			return;
 		for (size_t i=0; i < N; i++) {
 			if (std::isnan(values[i]))
 				return;
