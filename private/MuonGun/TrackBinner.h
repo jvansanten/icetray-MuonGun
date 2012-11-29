@@ -12,7 +12,7 @@ namespace I3MuonGun {
 
 class TrackBinner {
 public:
-	TrackBinner();
+	TrackBinner(double mindepth, double maxdepth, unsigned steps);
 	void Consume(boost::shared_ptr<const TrackBundle> tracks, double energy, double zenith, double weight);
 
 	boost::shared_ptr<histogram<2> > primary_;
