@@ -9,7 +9,7 @@
 namespace I3MuonGun {
 
 CanCan::CanCan(double radius, double height, unsigned maxMultiplicity) :
-    surface_(height, radius),
+    surface_(height, radius), radius_(radius), height_(height), 
     originDepth_(I3Constants::SurfaceElev-I3Constants::OriginElev),
     maxMultiplicity_(maxMultiplicity), totalRate_(NAN)
 {
@@ -233,10 +233,16 @@ CanCan::GetTotalRate() const
 
 SingleMuonFlux::~SingleMuonFlux() {}
 
+// AdHocSingleMuonFlux::AdHocSingleMuonFlux() :
+//     a0_(0.001055), a1_(2.257), b0_(-0.08405), b1_(-0.4036),
+//     c0_(5.821), c1_(-0.5493), d0_(-0.01342), d1_(0.02279)
+// {}
+
 AdHocSingleMuonFlux::AdHocSingleMuonFlux() :
-    a0_(0.001055), a1_(2.257), b0_(-0.08405), b1_(-0.4036),
-    c0_(5.821), c1_(-0.5493), d0_(-0.01342), d1_(0.02279)
+    a0_(0.001141), a1_(2.227), b0_(-0.01691), b1_(-0.3627),
+    c0_(8.045), c1_(-0.8095), d0_( -0.01141), d1_(0.02310)
 {}
+
 
 double
 AdHocSingleMuonFlux::operator()(double h, double x) const
