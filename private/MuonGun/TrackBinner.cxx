@@ -30,7 +30,7 @@ TrackBinner::TrackBinner(double mindepth, double maxdepth, unsigned steps)
 	
 	{
 		histogram<3>::bin_specification specs = {{
-		    uniform<cosine>::create(0, M_PI/2, 101), mspecs[1], uniform<>::create(1, 100, 10)}};
+		    uniform<cosine>::create(0, M_PI/2, 101), mspecs[1], uniform<>::create(1, 100, 100)}};
 		multiplicity_ = boost::make_shared<histogram<3> >(specs);
 	}
 	
