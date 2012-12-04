@@ -11,10 +11,15 @@ namespace I3MuonGun {
 MuonPropagator::MuonPropagator(const std::string &medium, double ecut, double vcut, double rho)
 	: propagator_(new Propagate(medium, ecut, vcut, "mu", rho))
 {
+	
 	propagator_->sdec      = true; // stopped muon decay
-	propagator_->contiCorr = true; // continuous randomization
 	propagator_->exactTime = true; // exact local time
 	propagator_->molieScat = true; // Moliere scattering
+	
+	// Turn on continuous randomization if no absolute
+	// energy cutoff set
+	propagator_->contiCorr = ecut < 0;
+	propagator_->contiCorr = false;
 	
 	// LPM suppression
 	propagator_->get_cros()->set_lpm(true); 
@@ -99,7 +104,8 @@ Crust::Ingest(const I3Particle &p)
 	double l = 0;
 	for (unsigned i = 0; (propped.GetEnergy() > 0) && (i < boundaries_.size()); i++) {
 		double dx = boundaries_[i]->GetIntersection(propped.GetPos(), propped.GetDir()).first;
-		propped = (i > 0 ? propagators_[i-1] : defaultPropagator_)->propagate(propped, dx);
+		if (dx > 0)
+			propped = (i > 0 ? propagators_[i-1] : defaultPropagator_)->propagate(propped, dx);
 		// Force lengths to measure the distance back to the outermost surface
 		if (i > 0)
 			l += std::min(dx, propped.GetLength());
