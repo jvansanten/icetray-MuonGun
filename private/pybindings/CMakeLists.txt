@@ -2,6 +2,7 @@ i3_add_pybindings(MuonGun
   CanCan.cxx
   RadialDistribution.cxx
   EnergyDistribution.cxx
+  SingleMuonFlux.cxx
   TrackBinner.cxx
   MuonPropagator.cxx
   histogram.cxx

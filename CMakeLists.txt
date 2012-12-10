@@ -4,17 +4,22 @@ i3_add_library(MuonGun
     private/MuonGun/I3MuonGun.cxx
     private/MuonGun/Muonitron.cxx
     private/MuonGun/CompactTrack.cxx
-    private/MuonGun/RadialDistribution.cxx
-    private/MuonGun/CanCan.cxx
     private/MuonGun/TrackBinner.cxx
     private/MuonGun/MuonPropagator.cxx
     private/MuonGun/histogram.cxx
     private/cubature/cubature.c
     
+    private/MuonGun/Distribution.cxx
+    private/MuonGun/SingleMuonFlux.cxx
+    private/MuonGun/MultiplicityFraction.cxx
+    private/MuonGun/RadialDistribution.cxx
+    private/MuonGun/EnergyDistribution.cxx
+    private/MuonGun/CanCan.cxx
+    
     # private/boost/numpy/*.cpp
     # private/MUSIC/I3MUSICService.cxx
     USE_TOOLS log4cplus boost python gsl
-    USE_PROJECTS icetray dataclasses phys-services simclasses PROPOSAL
+    USE_PROJECTS icetray dataclasses phys-services simclasses PROPOSAL photospline
 sim-services
 )
 
