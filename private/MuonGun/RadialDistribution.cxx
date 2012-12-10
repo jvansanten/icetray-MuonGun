@@ -6,13 +6,6 @@ namespace I3MuonGun {
 
 template <typename Archive>
 void
-Distribution::serialize(Archive &ar, unsigned version)
-{
-	ar & make_nvp("I3FrameObject", base_object<I3FrameObject>(*this));
-}
-
-template <typename Archive>
-void
 RadialDistribution::serialize(Archive &ar, unsigned version)
 {
 	ar & make_nvp("Distribution", base_object<Distribution>(*this));
@@ -93,10 +86,52 @@ BMSSRadialDistribution::Generate(double h, double cos_theta,
 	return Sample(r, GetGenerationProbability(R, a, r));
 }
 
+SplineRadialDistribution::SplineRadialDistribution(const std::string &path)
+    : I3SplineTable(path) {}
+
+double
+SplineRadialDistribution::operator()(double depth, double cos_theta,
+    unsigned N, double radius) const
+{
+	double coords[4] = {cos_theta, depth, N, radius};
+	double logprob;
+	
+	if (I3SplineTable::Eval(coords, &logprob) != 0)
+		return 0.;
+	else
+		// Spline is fit to log(dP/dr^2)
+		return 2*radius*std::exp(logprob);
 }
 
-I3_SERIALIZABLE(I3MuonGun::Distribution);
-I3_SERIALIZABLE(I3MuonGun::RadialDistribution);
-I3_SERIALIZABLE(I3MuonGun::BMSSRadialDistribution);
+Sample
+SplineRadialDistribution::Generate(double depth, double cos_theta,
+    unsigned N) const
+{
+	if (!rng_)
+		log_fatal("No random number service set!");
+	
+	double radius, logprob, maxprob;
+	std::pair<double, double> extent = I3SplineTable::GetExtents(3);
+	double coords[4] = {cos_theta, depth, N, extent.first};
+	if (I3SplineTable::Eval(coords, &maxprob) != 0)
+		maxprob = -std::numeric_limits<double>::infinity();
+	
+	// The spline is fit to log(dP/dr^2) as a function of r,
+	// so we generate proposals uniformly in r^2, then take
+	// a square root to evaluate.
+	do {
+		coords[3] = std::sqrt(rng_->Uniform(extent.first*extent.first,
+		    extent.second*extent.second));
+		if (I3SplineTable::Eval(coords, &logprob) != 0)
+			logprob = -std::numeric_limits<double>::infinity();
+	} while (std::log(rng_->Uniform()) > logprob - maxprob);
+	
+	return Sample(coords[3], 2*coords[3]*std::exp(logprob));
+}
+
+}
+
+// I3_SERIALIZABLE(I3MuonGun::RadialDistribution);
+// I3_SERIALIZABLE(I3MuonGun::BMSSRadialDistribution);
 
 

@@ -1,12 +1,21 @@
 
 #include <MuonGun/I3MuonGun.h>
 #include <dataclasses/physics/I3Particle.h>
+#include <dataclasses/I3Constants.h>
+#include <phys-services/I3RandomService.h>
 #include <icetray/I3Logging.h>
+#include <icetray/I3Units.h>
 
 #include <gsl/gsl_integration.h>
 #include <cubature/cubature.h>
 
 namespace I3MuonGun {
+	
+double
+GetDepth(double z)
+{
+	return (I3Constants::SurfaceElev - I3Constants::OriginElev - z)/I3Units::km;
+}
 
 // SET_LOGGER("I3MuonGun");
 
@@ -88,6 +97,104 @@ Cylinder::GetIntersection(const I3Position &p, const I3Direction &dir) const
 	return h;
 }
 
+double
+Cylinder::GetDifferentialArea(double coszen) const
+{
+	return M_PI*radius_*(radius_*coszen + (2*length_/M_PI)*sqrt(1-coszen*coszen));
+}
+
+double
+Cylinder::GetMaxDifferentialArea() const
+{
+	double thetaMax = atan(2*length_/(M_PI*radius_));
+	return GetDifferentialArea(cos(thetaMax));
+}
+
+double
+Cylinder::GetMinDepth() const
+{
+	return GetDepth(length_/2.);
+}
+
+// dAd Omega/dcos(theta) dphi (only one depth)
+double
+Cylinder::GetDifferentialTopArea(double coszen) const
+{
+	return M_PI*radius_*(radius_*coszen);
+}
+
+// dAd Omega/dcos(theta) dphi dz (differential also in depth)
+double
+Cylinder::GetDifferentialSideArea(double coszen) const
+{
+	return M_PI*radius_*((2/M_PI)*sqrt(1-coszen*coszen));
+}
+
+double
+Cylinder::IntegrateFlux(boost::function<double (double, double)> flux,
+    double cosMin, double cosMax) const
+{
+        typedef boost::function<double (double)> f1;
+	typedef boost::function<double (double, double)> f2;
+	
+	double total = 0;
+	
+	// First, integrate to find dN/dt on the cap(s)
+	{
+		f1 dN = boost::bind<double>(flux, GetDepth(length_/2.), _1);
+		f1 dOmega = boost::bind(&Cylinder::GetDifferentialTopArea, this, _1);
+		f1 dN_dOmega = detail::multiply<1>(dN, dOmega);
+		total += 2*M_PI*Integrate(dN_dOmega, cosMin, cosMax);
+	}
+	
+	// Now, the more complicated bit: integrate over the sides. The flux is now a function of both depth and zenith!
+	{
+		f2 dN = boost::bind(flux, boost::bind(GetDepth, _1), _2);
+		f2 dOmega = boost::bind(&Cylinder::GetDifferentialSideArea, this, _2);
+		f2 dN_dOmega = detail::multiply<2>(dN, dOmega);
+		boost::array<double, 2> low = {{-length_/2., 0.}};
+		boost::array<double, 2> high = {{length_/2., 1.}};
+		total += 2*M_PI*Integrate(dN_dOmega, low, high, 2e-8, 2e-8, 10000u);
+	}
+	
+	return total;
+}
+
+double
+Cylinder::SampleImpactRay(I3Position &impact, I3Direction &dir, I3RandomService &rng,
+    double cosMin, double cosMax) const
+{
+	double coszen = rng.Uniform(cosMin, cosMax);
+	dir = I3Direction(acos(coszen), rng.Uniform(0, 2*M_PI));
+	
+	// The projection of a cylinder onto a plane whose
+	// normal is inclined by `zenith` w.r.t to the cylinder
+	// axis is a rectangle of width 2*r and height h*sin(theta)
+	// capped with two half-ellipses of major axis r and
+	// minor axis r*cos(theta). Pick a point from a uniform
+	// distribution over this area.
+	double a = sin(dir.GetZenith())*length_/2.;
+	double b = cos(dir.GetZenith())*radius_;
+	double x, y;
+	do {
+		x = radius_*rng.Uniform(-1, 1);
+		y = (a + b)*rng.Uniform(-1, 1);
+	} while (fabs(y) > a + b*sqrt(1 - (x*x)/(radius_*radius_)));
+	impact = I3Position(y, x, 0);
+	impact.RotateY(dir.GetZenith());
+	impact.RotateZ(dir.GetAzimuth());
+	
+	// Now, project back to the entry point
+	double l = GetIntersection(impact, dir).first;
+	impact.SetX(impact.GetX() + l*dir.GetX());
+	impact.SetY(impact.GetY() + l*dir.GetY());
+	impact.SetZ(impact.GetZ() + l*dir.GetZ());
+	
+	// Calculate d(A_projected)/d(cos(theta))
+	return 2*M_PI*GetDifferentialArea(coszen);
+}
+
+
 std::pair<double, double>
 Sphere::GetIntersection(const I3Position &p, const I3Direction &dir) const
 {
@@ -123,16 +230,6 @@ double gsl_thunk(double x, void *p)
 	return (*f)(x);
 }
 
-void integrate_thunk(unsigned ndims, const double *x, void *p, unsigned fdims, double *fval)
-{
-	assert(ndims == 2);
-	assert(fdims == 1);
-	
-	typedef boost::function<double (double, double)> func_t;
-	func_t *f = static_cast<func_t*>(p);
-	fval[0] = (*f)(x[0], x[1]);
-}
-
 }
 
 double Integrate(boost::function<double (double)> f, double low, double high, double epsabs, double epsrel, size_t limit)
@@ -154,18 +251,5 @@ double Integrate(boost::function<double (double)> f, double low, double high, do
 	
 	return result;
 }
-
-double Integrate(boost::function<double (double, double)> f, double low[2], double high[2], double epsabs, double epsrel, size_t maxcall)
-{
-	double result, error;
-	// Special case: 2-dimensional, scalar-valued.
-	unsigned fdims = 1;
-	unsigned ndims = 2;
-	
-	int err = adapt_integrate(fdims, &integrate_thunk, &f, ndims, low, high, maxcall, epsabs, epsrel, &result, &error);
-	
-	return result;
-}
-
 
 }
