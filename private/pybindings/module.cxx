@@ -67,6 +67,7 @@ void register_histogram();
 void register_TrackBinner();
 void register_MuonPropagator();
 void register_RadialDistribution();
+void register_EnergyDistribution();
 void register_CanCan();
 
 I3_PYTHON_MODULE(MuonGun)
@@ -80,6 +81,7 @@ I3_PYTHON_MODULE(MuonGun)
 	register_Muonitron();
 	register_CompactTrack();
 	register_RadialDistribution();
+	register_EnergyDistribution();
 	register_CanCan();
 	
 }
