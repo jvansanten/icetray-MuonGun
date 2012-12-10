@@ -2,23 +2,26 @@
 
 from optparse import OptionParser
 
-parser = OptionParser()
-parser.add_option("--single", dest="single", action="store_true", default=False)
-
+parser = OptionParser(usage="%prog [options] ")
+parser.add_option("--single", dest="single", action="store_true", default=False, help="Fit single-muon energy distribution (dependent on depth and angle) rather than bundle energy distribution (additionally dependent on multiplicity and radius)")
 opts, args = parser.parse_args()
+try:
+	infile, outfile = args
+except ValueError:
+	infile = "/data/uwa/jvansanten/projects/2012/muongun/corsika/SIBYLL/Hoerandel5/atmod_12.hdf5"
+	outfile = "Hoerandel5_atmod12_SIBYLL.%s.fits" % (['bundle_energy', 'single_energy'] % opts.single)
 
-import numpy, tables, dashi
+import numpy, tables, dashi, os
 from icecube.photospline import spglam as glam
-
+from icecube.photospline import splinefitstable
 from utils import load_espec, pad_knots
 
-fname = "/data/uwa/jvansanten/projects/2012/muongun/corsika/SIBYLL/Hoerandel5/atmod_12.hdf5"
-
 bias = 50
-hes = load_espec(fname, opts.single, bias)
+hes = load_espec(infile, opts.single, bias)
 
 extents = [(e[1], e[-2]) for e in hes._h_binedges]
 
+# construct a pseudo-chi^2 weight such that weight_i*(log(x_i + sigma_i) - log(x_i)) = 1
 weights = 1./(numpy.log(numpy.exp(hes.bincontent - bias) + numpy.sqrt(hes._h_squaredweights[hes._h_visiblerange])) - (hes.bincontent - bias))
 weights[numpy.logical_not(numpy.isfinite(weights))] = 0
 # weights[0,:,:] = 0 # ingore the horizon bin
@@ -44,44 +47,7 @@ if not opts.single:
 spline = glam.fit(hes.bincontent,weights,hes._h_bincenters,knots,order,smooth,penalties=penalties)
 spline.bias = bias
 
-from icecube.photospline import splinefitstable
+if os.path.exists(outfile):
+	os.unlink(outfile)
+splinefitstable.write(spline, outfile)
 
-from icecube.photospline.glam.glam import grideval
-import pylab
-from utils import colorize
-dashi.visual()
-
-for di in xrange(3, 19, 3):
-	mi = 1
-	ri = 1
-	pylab.figure()
-	for c, zi in colorize(range(1, 11), 'jet'):
-		if opts.single:
-			sub = hes[zi,di,:]
-			idx = (zi-1, di-1, slice(None))
-		else:
-			sub = hes[zi,di,mi,ri,:]
-			idx = (zi-1, di-1, mi-1, ri-1, slice(None))
-		coords = []
-		for i, s in enumerate(idx):
-			axis = hes._h_bincenters[i][s]
-			try:
-				len(axis)
-				#axis = numpy.linspace(axis[0], axis[-1], 101)
-				axis = numpy.linspace(0, 20, 101)
-				# print axis
-			except TypeError:
-				axis = [axis]
-			coords.append(axis)
-		deg = (180*numpy.arccos(coords[0][0])/numpy.pi)
-		sub.scatter(color=c, label='%d deg' % deg)
-		print deg, sub.bincontent.sum()
-		# print coords
-		pylab.plot(coords[-1], grideval(spline, coords).flatten(), color=c)
-	pylab.legend()
-	title = '%d m' % (coords[1][0]*1000)
-	if not opts.single:
-		title += ', N~=%.1f, r~=%.1f m' % (hes._h_bincenters[2][mi-1], hes._h_bincenters[3][ri-1])
-	pylab.title(title)
-
-pylab.show()

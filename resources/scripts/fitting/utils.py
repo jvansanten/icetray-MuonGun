@@ -12,6 +12,18 @@ def histload(hdf, where):
 	print 'norm: %.1f' % node._v_attrs['count']
 	return h
 
+def points(self, differential=False):
+	sp = dashi.scatterpoints.points2d()
+	sp.x = self.bincenters
+	sp.xerr = self.binwidths/2.
+	sp.y = self.bincontent.copy()
+	sp.yerr = self.binerror
+	if differential:
+		sp.y /= self.binwidths
+		sp.yerr /= self.binwidths
+	return sp
+dashi.histogram.hist1d.points = points
+
 def load_group(fname, group='energy'):
 	with tables.openFile(fname) as hdf:
 		import operator
