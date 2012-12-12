@@ -9,6 +9,7 @@ try:
 except ValueError:
 	infile = "/data/uwa/jvansanten/projects/2012/muongun/corsika/SIBYLL/Hoerandel5/atmod_12.hdf5"
 	outfile = "Hoerandel5_atmod12_SIBYLL.radius.fits"
+print infile, outfile
 
 import numpy, tables, dashi, os
 from icecube.photospline import spglam as glam

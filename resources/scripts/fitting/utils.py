@@ -12,6 +12,7 @@ def histload(hdf, where):
 	print 'norm: %.1f' % node._v_attrs['count']
 	return h
 
+# Monkey-patch some handy features into dashi
 def points(self, differential=False):
 	sp = dashi.scatterpoints.points2d()
 	sp.x = self.bincenters
@@ -24,6 +25,62 @@ def points(self, differential=False):
 	return sp
 dashi.histogram.hist1d.points = points
 
+from icecube.photospline import numpy_extensions # meshgrid_nd
+def select_fit_bins(self, range, differential):
+	if range is None:
+		x = numpy_extensions.meshgrid_nd(*self._h_bincenters, lex_order=True)
+		y = self.bincontent.copy() # copy to allow in-place differentiation later
+		error = numpy.sqrt(self.squaredweights)
+		slices = [slice(None)]*self.ndim
+	else:
+		if not len(range) == self.ndim:
+			raise ValueError("range must be a sequence of length ndim")
+		slices = []
+		for r, centers in zip(range, self._h_bincenters):
+			if isinstance(r, slice):
+				slices.append(r)
+			else:
+				if not len(r) == 2:
+					raise ValueError("range for each dimension must be a 2-tuple")
+				idxs = numpy.searchsorted(centers, r)
+				slices.append(slice(idxs[0], idxs[1]))
+		centers = [c[sl] for c, sl in zip(self._h_bincenters, slices)]
+		x = numpy_extensions.meshgrid_nd(*centers, lex_order=True)
+		y = self.bincontent[slices].copy()
+		error = numpy.sqrt(self.squaredweights[slices])
+ 
+	for dim in differential:
+		if dim < 0 or dim >= self.ndim:
+			raise ValueError("This %d-d histogram doesn't have a dimension %d" % (self.ndim, dim))
+		edges = self._h_binedges[dim][self._h_visiblerange[dim]][slices[dim]]
+		shape = [1]*self.ndim
+		shape[dim] = edges.size-1
+		dx = numpy.diff(edges).reshape(shape)
+		y /= dx
+		error /= dx
+	return x, y, error
+
+dashi.histogram.histogram._select_fit_bins = select_fit_bins
+
+def multi_leastsq(self, model, range=None, differential=[], **kwargs):
+	"""
+	The n-dimensional generalization of hist1d.leastsq
+
+	:param range: A list of slices or (min, max) pairs giving the selection of
+	              bins to include in the fit. There must be one entry for each
+	              dimension in the histogram.
+	:param differential: A list containing the indices of the dimensions that
+	                     should be differentiated before fitting.
+	"""
+	x, y, error = self._select_fit_bins(range, differential)
+	return dashi.fitting.leastsq(x, y, model, error, **kwargs)
+
+dashi.histogram.histogram.leastsq = multi_leastsq
+
+def multi_empty_like(self):
+	return dashi.histogram.histogram(self.ndim, [e.copy() for e in self._h_binedges], self.labels, self.title)
+dashi.histogram.histogram.empty_like = multi_empty_like
+
 def load_group(fname, group='energy'):
 	with tables.openFile(fname) as hdf:
 		import operator
@@ -33,7 +90,7 @@ def load_group(fname, group='energy'):
 		    h += histload(hdf, '/%s/%s' % (e, group))
 	return h
 
-def load_espec(fname, single=True, bias=50):
+def load_espec(fname, single=True, bias=50, transform=True):
 	he = load_group(fname, 'energy')
 
 	if single:
@@ -54,26 +111,27 @@ def load_espec(fname, single=True, bias=50):
 	he._h_bincontent[vrange] /= norm
 	he._h_squaredweights[vrange] /= norm*norm
 	
-	# convert energies to log-log
-	he._h_bincontent[:] = numpy.log(he._h_bincontent) + bias
-	he._h_binedges[-1][1:-1] = numpy.log(he._h_binedges[-1][1:-1])
+	if transform:
+		# convert energies to log-log
+		he._h_bincontent[:] = numpy.log(he._h_bincontent) + bias
+		he._h_binedges[-1][1:-1] = numpy.log(he._h_binedges[-1][1:-1])
 	
-	# convert zenith angles to cos(zenith), reversing the angular axis in the process
-	he._h_binedges[0][1:-1] = numpy.cos(he._h_binedges[0][1:-1][::-1])
-	# reverse through a temporary to avoid overwriting bits we want to read later
-	rev = he._h_bincontent[::-1,:,:].copy()
-	he._h_bincontent[:] = rev
-	rev = he._h_squaredweights[::-1,:,:].copy()
-	he._h_squaredweights[:] = rev
+		# convert zenith angles to cos(zenith), reversing the angular axis in the process
+		he._h_binedges[0][1:-1] = numpy.cos(he._h_binedges[0][1:-1][::-1])
+		# reverse through a temporary to avoid overwriting bits we want to read later
+		rev = he._h_bincontent[::-1,:,:].copy()
+		he._h_bincontent[:] = rev
+		rev = he._h_squaredweights[::-1,:,:].copy()
+		he._h_squaredweights[:] = rev
 	
-	# zero out non-finite weights
-	mask = numpy.logical_not(numpy.isfinite(he._h_bincontent) & numpy.isfinite(he._h_squaredweights))
-	he._h_bincontent[mask] = 0
-	he._h_squaredweights[mask] = 0
+		# zero out non-finite weights
+		mask = numpy.logical_not(numpy.isfinite(he._h_bincontent) & numpy.isfinite(he._h_squaredweights))
+		he._h_bincontent[mask] = 0
+		he._h_squaredweights[mask] = 0
 	
 	return he
 
-def load_radial_distribution(fname, bias=50):
+def load_radial_distribution(fname, bias=50, transform=True):
 	h = load_group(fname, 'radius')
 	#normalize
 	norm = h._h_bincontent.sum(axis=3).reshape(h._h_bincontent.shape[:-1] + (1,))
@@ -82,26 +140,68 @@ def load_radial_distribution(fname, bias=50):
 
 	# convert to differential
 	shape = (1,)*(h.bincontent.ndim-1) + (h.bincontent.shape[-1],)
-	norm = numpy.diff(h._h_binedges[-1][1:-1]**2).reshape(shape)
+	if transform:
+		norm = numpy.diff(h._h_binedges[-1][1:-1]**2).reshape(shape)
+	else:
+		norm = numpy.diff(h._h_binedges[-1][1:-1]).reshape(shape)
 	vrange = h._h_visiblerange
 	h._h_bincontent[vrange] /= norm
 	h._h_squaredweights[vrange] /= norm*norm
 	
-	# parameterize log(dP/dR^2) as a function of R
-	h._h_bincontent[:] = numpy.log(h._h_bincontent) + bias
+	if transform:
 	
-	# convert zenith angles to cos(zenith), reversing the angular axis in the process
-	h._h_binedges[0][1:-1] = numpy.cos(h._h_binedges[0][1:-1][::-1])
-	# reverse through a temporary to avoid overwriting bits we want to read later
-	rev = h._h_bincontent[::-1,:,:].copy()
-	h._h_bincontent[:] = rev
-	rev = h._h_squaredweights[::-1,:,:].copy()
-	h._h_squaredweights[:] = rev
+		# parameterize log(dP/dR^2) as a function of R
+		h._h_bincontent[:] = numpy.log(h._h_bincontent) + bias
 	
-	# zero out non-finite weights
-	mask = numpy.logical_not(numpy.isfinite(h._h_bincontent) & numpy.isfinite(h._h_squaredweights))
-	h._h_bincontent[mask] = 0
-	h._h_squaredweights[mask] = 0
+		# convert zenith angles to cos(zenith), reversing the angular axis in the process
+		h._h_binedges[0][1:-1] = numpy.cos(h._h_binedges[0][1:-1][::-1])
+		# reverse through a temporary to avoid overwriting bits we want to read later
+		rev = h._h_bincontent[::-1,:,:].copy()
+		h._h_bincontent[:] = rev
+		rev = h._h_squaredweights[::-1,:,:].copy()
+		h._h_squaredweights[:] = rev
+	
+		# zero out non-finite weights
+		mask = numpy.logical_not(numpy.isfinite(h._h_bincontent) & numpy.isfinite(h._h_squaredweights))
+		h._h_bincontent[mask] = 0
+		h._h_squaredweights[mask] = 0
+	
+	return h
+
+def load_flux(fname, transform=False, bias=50):
+	h = load_group(fname, 'multiplicity')
+	norm = numpy.diff(numpy.cos(h._h_binedges[0][::-1])).reshape((h._h_bincontent.shape[0],) + (1,)*(h.ndim-1))	
+	h._h_bincontent /= norm
+	h._h_squaredweights /= norm*norm
+	
+	if h._h_binedges[2][1] > 0.5:
+		# center bins on integers
+		h._h_binedges[2] -= 0.5
+	
+		# iron out a stupid precision issue in the binning
+		for sl in (slice(27,29), slice(54,56), slice(59,61)):
+			h._h_bincontent[:,:,sl] = 0
+			h._h_squaredweights[:,:,sl] = 0
+	
+	if transform:
+		
+		h._h_bincontent[h._h_bincontent < 1e-16] = 0
+		
+		# parameterize log(flux)
+		h._h_bincontent[:] = numpy.log(h._h_bincontent) + bias
+		
+		# convert zenith angles to cos(zenith), reversing the angular axis in the process
+		h._h_binedges[0][1:-1] = numpy.cos(h._h_binedges[0][1:-1][::-1])
+		# reverse through a temporary to avoid overwriting bits we want to read later
+		rev = h._h_bincontent[::-1,:,:].copy()
+		h._h_bincontent[:] = rev
+		rev = h._h_squaredweights[::-1,:,:].copy()
+		h._h_squaredweights[:] = rev
+	
+		# zero out non-finite weights
+		mask = numpy.logical_not(numpy.isfinite(h._h_bincontent) & numpy.isfinite(h._h_squaredweights))
+		h._h_bincontent[mask] = 0
+		h._h_squaredweights[mask] = 0
 	
 	return h
 

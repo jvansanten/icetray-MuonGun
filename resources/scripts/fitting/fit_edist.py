@@ -2,7 +2,7 @@
 
 from optparse import OptionParser
 
-parser = OptionParser(usage="%prog [options] ")
+parser = OptionParser(usage="%prog [options] infile outfile")
 parser.add_option("--single", dest="single", action="store_true", default=False, help="Fit single-muon energy distribution (dependent on depth and angle) rather than bundle energy distribution (additionally dependent on multiplicity and radius)")
 opts, args = parser.parse_args()
 try:
