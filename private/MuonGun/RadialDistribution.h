@@ -11,6 +11,7 @@ namespace I3MuonGun {
 class RadialDistribution : public Distribution {
 public:
 	virtual ~RadialDistribution() {};
+	// TODO: short-circuit for multiplicity == 1
 	virtual double operator()(double depth, double cos_theta,
 	    unsigned multiplicity, double radius) const = 0;
 	virtual Sample Generate(double depth, double cos_theta,

@@ -10,11 +10,16 @@ i3_add_library(MuonGun
     private/cubature/cubature.c
     
     private/MuonGun/Distribution.cxx
-    private/MuonGun/SingleMuonFlux.cxx
-    private/MuonGun/MultiplicityFraction.cxx
+    private/MuonGun/Generator.cxx
+    private/MuonGun/WeightCalculator.cxx
+    private/MuonGun/Surface.cxx
+    private/MuonGun/Flux.cxx
     private/MuonGun/RadialDistribution.cxx
     private/MuonGun/EnergyDistribution.cxx
+
     private/MuonGun/CanCan.cxx
+    private/MuonGun/SingleMuonFlux.cxx
+    private/MuonGun/MultiplicityFraction.cxx
     
     # private/boost/numpy/*.cpp
     # private/MUSIC/I3MUSICService.cxx

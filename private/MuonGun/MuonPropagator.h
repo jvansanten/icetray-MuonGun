@@ -5,6 +5,7 @@
 #include "icetray/I3Units.h"
 #include "dataclasses/physics/I3Particle.h"
 #include "MuonGun/I3MuonGun.h"
+#include "MuonGun/Surface.h"
 
 class Propagate;
 

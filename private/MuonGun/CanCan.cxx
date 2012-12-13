@@ -5,6 +5,7 @@
 
 #include <boost/bind.hpp>
 #include <boost/make_shared.hpp>
+#include <boost/foreach.hpp>
 
 #include <icetray/I3Module.h>
 #include <dataclasses/I3Double.h>
@@ -13,16 +14,50 @@
 
 namespace I3MuonGun {
 
-void
-BundleInjector::SetRandomService(I3RandomServicePtr r)
+namespace {
+
+std::string
+GetTablePath(const std::string &subpath)
 {
-	Distribution::SetRandomService(r);
-	flux_->SetRandomService(r);
-	multiplicity_->SetRandomService(r);
+	std::ostringstream tablePath;
+	tablePath << getenv("I3_BUILD") << "/MuonGun/resources/scripts/fitting/" << subpath;
+	return tablePath.str();
+}
+
+}
+
+StaticSurfaceInjector::StaticSurfaceInjector()
+{
+	SetSurface(boost::make_shared<Cylinder>(1600, 800));
+	
+	FluxPtr flux = boost::make_shared<SplineFlux>(
+	    GetTablePath("Hoerandel5_atmod12_SIBYLL.single_flux.fits"),
+	    GetTablePath("Hoerandel5_atmod12_SIBYLL.bundle_flux.fits"));
+	flux->SetMinMultiplicity(1);
+	flux->SetMaxMultiplicity(1);
+	SetFlux(flux);
+	
+	energyGenerator_ = boost::make_shared<OffsetPowerLaw>(2, 500., 50, 1e6);
+	
+	// energySpectrum_ = boost::make_shared<SplineEnergyDistribution>(
+	//     GetTablePath("Hoerandel5_atmod12_SIBYLL.single_energy.fits"),
+	//     GetTablePath("Hoerandel5_atmod12_SIBYLL.bundle_energy.fits"));
+	
+	radialDistribution_ = boost::make_shared<SplineRadialDistribution>(
+	    GetTablePath("Hoerandel5_atmod12_SIBYLL.radius.fits"));
 }
 
 void
-BundleInjector::SetSurface(CylinderPtr p)
+StaticSurfaceInjector::SetRandomService(I3RandomServicePtr r)
+{
+	Distribution::SetRandomService(r);
+	flux_->SetRandomService(r);
+	energyGenerator_->SetRandomService(r);
+	radialDistribution_->SetRandomService(r);
+}
+
+void
+StaticSurfaceInjector::SetSurface(SamplingSurfacePtr p)
 {
 	surface_ = p;
 	totalRate_ = NAN;
@@ -30,7 +65,7 @@ BundleInjector::SetSurface(CylinderPtr p)
 }
 
 void
-BundleInjector::SetFlux(SingleMuonFluxPtr p)
+StaticSurfaceInjector::SetFlux(FluxPtr p)
 {
 	flux_ = p;
 	totalRate_ = NAN;
@@ -38,33 +73,25 @@ BundleInjector::SetFlux(SingleMuonFluxPtr p)
 }
 
 void
-BundleInjector::SetMultiplicity(MultiplicityFractionPtr p)
-{
-	multiplicity_ = p;
-	totalRate_ = NAN;
-}
-
-void
-BundleInjector::CalculateMaxFlux()
+StaticSurfaceInjector::CalculateMaxFlux()
 {
 	if (surface_ && flux_)
-		maxFlux_ = (*flux_)(surface_->GetMinDepth(), 1.)*surface_->GetMaxDifferentialArea();
+		maxFlux_ = (*flux_)(surface_->GetMinDepth(), 1., 1u)*surface_->GetMaxDifferentialArea();
 }
 
 double
-BundleInjector::GetTotalRate() const
+StaticSurfaceInjector::GetTotalRate() const
 {
-	if (std::isnan(totalRate_) && surface_ && flux_ && multiplicity_) {
+	if (std::isnan(totalRate_) && surface_ && flux_) {
 		totalRate_ = 0;
-		for (unsigned m = multiplicity_->GetMin(); m <= multiplicity_->GetMax(); m++)
-			totalRate_ += surface_->IntegrateFlux(detail::multiply<2>(
-			    boost::cref(*flux_), boost::bind(boost::cref(*multiplicity_), _1, _2, m)));
+		for (unsigned m = flux_->GetMinMultiplicity(); m <= flux_->GetMaxMultiplicity(); m++)
+			totalRate_ += surface_->IntegrateFlux(boost::bind(boost::cref(*flux_), _1, _2, m));
 	}
 	return totalRate_;
 }
 
-boost::tuple<I3Particle, unsigned, double>
-BundleInjector::GenerateAxis() const
+void
+StaticSurfaceInjector::GenerateAxis(std::pair<I3Particle, unsigned> &axis) const
 {
 	I3Direction dir;
 	I3Position pos;
@@ -72,129 +99,88 @@ BundleInjector::GenerateAxis() const
 	double h, flux;
 	do {
 		surface_->SampleImpactRay(pos, dir, *rng_);
-		m = rng_->Integer(multiplicity_->GetMax()-multiplicity_->GetMin())
-		    + multiplicity_->GetMin();
+		m = rng_->Integer(flux_->GetMaxMultiplicity() - flux_->GetMinMultiplicity())
+		    + flux_->GetMinMultiplicity();
 		// Now, calculate the flux expectation at the chosen zenith angle
 		// and at the depth where the shower axis crosses the surface
 		double h = GetDepth(pos.GetZ());
 		double coszen = cos(dir.GetZenith());
-		flux = (*flux_)(h, coszen)
-		    * (*multiplicity_)(h, coszen, m)
+		flux = (*flux_)(h, coszen, m)
 		    * surface_->GetDifferentialArea(coszen);
 	} while (flux <= rng_->Uniform(0., maxFlux_));
 	
-	I3Particle p;
-	p.SetPos(pos);
-	p.SetDir(dir);
-	p.SetShape(I3Particle::Primary);
-	p.SetLocationType(I3Particle::Anywhere);
-	p.SetType(I3Particle::unknown);
-	
-	return ::boost::make_tuple(p, m, GetTotalRate());
+	axis.first.SetPos(pos);
+	axis.first.SetDir(dir);
+	axis.first.SetShape(I3Particle::Primary);
+	axis.first.SetLocationType(I3Particle::Anywhere);
+	axis.first.SetType(I3Particle::unknown);
+	axis.second = m;
 }
 
+void
+StaticSurfaceInjector::FillMCTree(const std::pair<I3Particle, unsigned> &axis,
+    I3MCTree &mctree, BundleConfiguration &bundlespec) const
+{
+	const I3Particle &primary = axis.first;
+	I3MCTreeUtils::AddPrimary(mctree, primary);
+	double h = GetDepth(primary.GetPos().GetZ());
+	double coszen = cos(primary.GetDir().GetZenith());
+	
+	unsigned multiplicity = axis.second;
+	for (unsigned i=0; i < multiplicity; i++) {
+		I3Particle track;
+		track.SetLocationType(I3Particle::InIce);
+		track.SetType(I3Particle::MuMinus);
+		track.SetDir(primary.GetDir());
+		track.SetSpeed(I3Constants::c);
+		
+		double radius = (multiplicity > 1u) ?
+		    radialDistribution_->Generate(h, coszen, multiplicity).value : 0.;
+		double azimuth = rng_->Uniform(0, 2*M_PI);
+		I3Position offset(radius, 0, 0);
+		offset.RotateY(primary.GetDir().GetZenith());
+		offset.RotateZ(azimuth);
+		track.SetPos(offset.GetX()+primary.GetPos().GetX(),
+		             offset.GetY()+primary.GetPos().GetY(),
+		             offset.GetZ()+primary.GetPos().GetZ());
+		// TODO: shift the times and positions of off-axis tracks
+		// so that they correspond to a plane wave crossing the sampling
+		// surface at time 0
+			
+		track.SetEnergy(energyGenerator_->Generate());
+		I3MCTreeUtils::AppendChild(mctree, primary, track);
+		bundlespec.push_back(std::make_pair(radius, track.GetEnergy()));
+	}
+}
 
-class BundleGenerator : public I3Module, private BundleInjector {
-public:
-	BundleGenerator(const I3Context &ctx) : I3Module(ctx), nEvents_(0)
-	{
-		AddOutBox("OutBox");
-		AddParameter("NEvents", "", 1u);
+void
+StaticSurfaceInjector::Generate(I3MCTree &mctree, BundleConfiguration &bundlespec) const
+{
+	std::pair<I3Particle, unsigned> axis;
+	GenerateAxis(axis);
+	FillMCTree(axis, mctree, bundlespec);
+}
+
+double
+StaticSurfaceInjector::GetGenerationProbability(const I3Particle &axis,
+    const BundleConfiguration &bundlespec) const
+{
+	std::pair<double, double> steps = surface_->GetIntersection(axis.GetPos(), axis.GetDir());
+	assert(steps.first >= 0);
+	double h = GetDepth(axis.GetPos().GetZ() + steps.first*axis.GetDir().GetZ());
+	double coszen = cos(axis.GetDir().GetZenith());
+	unsigned m = bundlespec.size();
+	
+	double prob = flux_->operator()(h, coszen, m)*surface_->GetDifferentialArea(coszen)/GetTotalRate();
+	BOOST_FOREACH(const BundleConfiguration::value_type &pair, bundlespec) {
+		if (m > 1)
+			prob *= (*radialDistribution_)(h, coszen, m, pair.first);
+		prob *= (*energyGenerator_)(pair.second);
 	}
 	
-	void Configure()
-	{
-		BundleInjector::SetFlux(boost::make_shared<AdHocSingleMuonFlux>());
-		MultiplicityFractionPtr multiplicity = boost::make_shared<BMSSMultiplicityFraction>();
-		multiplicity->SetMin(1);
-		multiplicity->SetMax(1);
-		BundleInjector::SetMultiplicity(multiplicity);
-		BundleInjector::SetSurface(boost::make_shared<Cylinder>(1600, 800));
-		
-		energyGenerator_ = boost::make_shared<OffsetPowerLaw>(2, 500., 50, 1e6);
-		
-		std::string singles, bundles;
-		{
-			std::ostringstream tablePath;
-			tablePath << getenv("I3_BUILD") << "/MuonGun/resources/scripts/fitting/Hoerandel5_atmod12_SIBYLL.fits";
-			singles = tablePath.str();
-		}
-		{
-			std::ostringstream tablePath;
-			tablePath << getenv("I3_BUILD") << "/MuonGun/resources/scripts/fitting/Hoerandel5_atmod12_SIBYLL_multi.fits";
-			bundles = tablePath.str();
-		}
-		energySpectrum_ = boost::make_shared<SplineEnergyDistribution>(singles, bundles);
-		
-		std::string radial;
-		{
-			std::ostringstream tablePath;
-			tablePath << getenv("I3_BUILD") << "/MuonGun/resources/scripts/fitting/Hoerandel5_atmod12_SIBYLL.radius.fits";
-			radial = tablePath.str();
-		}
-		radialDistribution_ = boost::make_shared<SplineRadialDistribution>(radial);
-		
-		GetParameter("NEvents", maxEvents_);
-		I3RandomServicePtr rng = context_.Get<I3RandomServicePtr>();
-		BundleInjector::SetRandomService(rng);
-		energyGenerator_->SetRandomService(rng);
-	}
-	
-	void DAQ(I3FramePtr frame)
-	{
-		boost::tuple<I3Particle, unsigned, double> axis = BundleInjector::GenerateAxis();
-		
-		I3Particle &primary = boost::get<0>(axis);
-		I3MCTreePtr mctree = boost::make_shared<I3MCTree>();
-		I3MCTreeUtils::AddPrimary(mctree, primary);
-		
-		double h = GetDepth(primary.GetPos().GetZ());
-		double coszen = cos(primary.GetDir().GetZenith());
-		double rate = boost::get<2>(axis)/maxEvents_;
-		
-		unsigned multiplicity = boost::get<1>(axis);
-		for (unsigned i=0; i < multiplicity; i++) {
-			I3Particle track;
-			track.SetLocationType(I3Particle::InIce);
-			track.SetType(I3Particle::MuMinus);
-			track.SetDir(primary.GetDir());
-			track.SetSpeed(I3Constants::c);
-			
-			double radius = (multiplicity > 1u) ?
-			    radialDistribution_->Generate(h, coszen, multiplicity).value : 0.;
-			double azimuth = rng_->Uniform(0, 2*M_PI);
-			I3Position offset(radius, 0, 0);
-			offset.RotateY(primary.GetDir().GetZenith());
-			offset.RotateZ(azimuth);
-			track.SetPos(offset.GetX()+primary.GetPos().GetX(),
-			             offset.GetY()+primary.GetPos().GetY(),
-			             offset.GetZ()+primary.GetPos().GetZ());
-			// TODO: shift the times and positions of off-axis tracks
-			// so that they correspond to a plane wave crossing the sampling
-			// surface at time 0
-			
-			track.SetEnergy(energyGenerator_->Generate());
-			rate *= (*energySpectrum_)(h, coszen, multiplicity, radius, track.GetEnergy())
-			    / (*energyGenerator_)(track.GetEnergy());
-			I3MCTreeUtils::AppendChild(mctree, primary, track);
-		}
-		
-		frame->Put("I3MCTree", mctree);
-		frame->Put("Weight", boost::make_shared<I3Double>(rate));
-		
-		PushFrame(frame);
-		
-		if (++nEvents_ >= maxEvents_)
-			RequestSuspension();
-	}
-private:
-	size_t nEvents_, maxEvents_;
-	boost::shared_ptr<OffsetPowerLaw> energyGenerator_;
-	EnergyDistributionPtr energySpectrum_;
-	RadialDistributionPtr radialDistribution_;
-
-};
+	return prob;
+}
 
 }
 
-I3_MODULE(I3MuonGun::BundleGenerator);
+// I3_MODULE(I3MuonGun::BundleGenerator);

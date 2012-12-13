@@ -4,15 +4,13 @@
 void
 register_CanCan()
 {
-	namespace bp = boost::python;
 	using namespace I3MuonGun;
+	using namespace boost::python;
 	
-	// bp::class_<CanCan, boost::shared_ptr<CanCan>,
-	//     bp::bases<Distribution>, boost::noncopyable>("CanCan", bp::init<double, double>(
-	//     (bp::arg("radius"), bp::arg("length"))))
-	//     .def("generate_bundle", &CanCan::GenerateBundle)
-	//     .def("get_depth", &CanCan::GetDepth)
-	//     .add_property("total_rate", &CanCan::GetTotalRate)
-	// 	    
-	// ;
+	class_<StaticSurfaceInjector, bases<Generator, Distribution> >("StaticSurfaceInjector")
+		#define PROPS (Surface)(Flux)(RadialDistribution)(EnergyDistribution)
+		BOOST_PP_SEQ_FOR_EACH(WRAP_PROP, StaticSurfaceInjector, PROPS)
+		#undef PROPS
+		.add_property("total_rate", &StaticSurfaceInjector::GetTotalRate)
+	;
 }
