@@ -11,7 +11,7 @@ from cubicle import fluxes
 import numpy
 from optparse import OptionParser
 parser = OptionParser(option_class=GenerationProbability.option())
-parser.add_option("--flux", dest="flux", default="Hoerandel5", choices=("GaisserH3a", "GaisserH4a", "Hoerandel5"), help="CR flux model to weight to")
+parser.add_option("--flux", dest="flux", default="Hoerandel5", choices=("GaisserH3a", "GaisserH4a", "Hoerandel5", "CascadeOptimized"), help="CR flux model to weight to")
 parser.add_option("--detcfg", dest="detcfg", type=float, default=None, help="height/diameter ratio of target volume. If unspecified, assume a uniform flux over all solid angle.")
 parser.add_option("--mindepth", dest="mindepth", type=float, default=1.0, help="minimum vertical depth to propagate to [%default km]")
 parser.add_option("--maxdepth", dest="maxdepth", type=float, default=5.0, help="maximum vertical depth to propagate to [%default km]")
@@ -33,7 +33,7 @@ ucr_opts += ("-DEPTH=1950 -LENGTH=1600 -RADIUS=800" % locals())
 tray.AddModule('I3InfiniteSource', 'driver')
 tray.AddModule('I3GeneratorUCR', 'reader', EventsToIssue=int(1e9), UCROpts=ucr_opts)
 
-from utils import MMCFactory, dcorsika_spectra, IsotropicWeight, VolumeCorrWeight, Filler, FastFiller, Router
+from utils import MMCFactory, dcorsika_spectra, EnergyWeightCollection, IsotropicWeight, VolumeCorrWeight, Filler, FastFiller, Router
 from icecube.MuonGun import MuonPropagator, Crust, Sphere
 
 crust = Crust(MuonPropagator("air", ecut=-1, vcut=5e-2, rho=0.673))
@@ -48,43 +48,84 @@ tray.AddModule('Muonitron', 'propagator',
 
 ptype = dataclasses.I3Particle.ParticleType
 elements = [('H', ptype.PPlus), ('He', ptype.He4Nucleus), ('N', ptype.N14Nucleus), ('Al', ptype.Al27Nucleus), ('Fe', ptype.Fe56Nucleus)]
-components = dcorsika_spectra(nevents=2.5e6)
+generated_components = dcorsika_spectra(nevents=2.5e6)
 
-print components
+print generated_components
 
-# """
-from collections import defaultdict
-routes = defaultdict(list)
-for (name, primary), spectrum in zip(elements, components):
-	if primary == ptype.PPlus:
-		z = 1
-	else:
-		z = int(primary)%100
-	flux = getattr(fluxes, opts.flux)(z)
-	if opts.detcfg:
-		weighter = EnergyWeight(flux, VolumeCorrWeight(opts.detcfg, spectrum))
-	else:
-		weighter = EnergyWeight(flux, IsotropicWeight(spectrum))
-	name = str(primary)
-	tray.AddModule(FastFiller, name,
-	    Outfile=outfile+'/'+name, Weight=weighter,
+if opts.flux == "CascadeOptimized":
+	# Weight to a pseudo-flux that integrates to NEvents/(Area*SolidAngle)
+	flux_components = dcorsika_spectra([-2.6]*5, [3., 2., 1., 1., 1.], 3e4, 1e9, 1)
+	
+	print flux_components
+	
+	# flux_components = dcorsika_spectra(nevents=1.0)
+	r = 800
+	l = 1600
+	area = numpy.pi**2*r*(r+l)
+	# shove the sampling area into the denominator
+	generation_spectra = dict([(primary, VolumeCorrWeight(opts.detcfg, f*area)) for (name, primary), f in zip(elements, generated_components)])
+	
+	fluxes = dict([(primary, f) for (name, primary), f in zip(elements, flux_components)])
+	weighter = EnergyWeightCollection(fluxes, generation_spectra)
+	tray.AddModule(FastFiller, 'filler',
+	    Outfile=outfile, Weight=weighter,
 	    MinDepth=opts.mindepth, MaxDepth=opts.maxdepth, DepthSteps=opts.steps)
-	routes[primary].append(name)
-# """
+	tray.AddModule('TrashCan', 'YesWeCan')
+	    
+else:
+	"""
+	spectra = dict()
+	fluxdict = dict()
+	for i, ((name, primary), spectrum) in enumerate(zip(elements, generated_components)):
+		if primary == ptype.PPlus:
+			z = 1
+		else:
+			z = int(primary)%100
+		flux = getattr(fluxes, opts.flux)(z)
+		fluxdict[primary] = flux
+		if opts.detcfg:
+			spectra[primary] = (VolumeCorrWeight(opts.detcfg, spectrum))
+		else:
+			spectra[primary] = (IsotropicWeight(spectrum))
+	weighter = EnergyWeightCollection(fluxdict, spectra)
+	tray.AddModule(FastFiller, 'filler',
+	    Outfile=outfile, Weight=weighter,
+	    MinDepth=opts.mindepth, MaxDepth=opts.maxdepth, DepthSteps=opts.steps)
+	tray.AddModule('TrashCan', 'YesWeCan')	
+	
+	"""
+	
+	from collections import defaultdict
+	routes = defaultdict(list)
+	for i, ((name, primary), spectrum) in enumerate(zip(elements, generated_components)):
+		if primary == ptype.PPlus:
+			z = 1
+		else:
+			z = int(primary)%100
+		flux = getattr(fluxes, opts.flux)(z)
+		if opts.detcfg:
+			weighter = EnergyWeight(flux, VolumeCorrWeight(opts.detcfg, spectrum))
+		else:
+			weighter = EnergyWeight(flux, IsotropicWeight(spectrum))
+		name = str(primary)
+		tray.AddModule(FastFiller, name,
+		    Outfile=outfile+'/'+name, Weight=weighter,
+		    MinDepth=opts.mindepth, MaxDepth=opts.maxdepth, DepthSteps=opts.steps)
+		routes[primary].append(name)
 
-tray.AddModule(Router, 'router', Routes=routes)
+	tray.AddModule(Router, 'router', Routes=routes)
 
-tray.AddModule('TrashCan', 'YesWeCan')
+	tray.AddModule('TrashCan', 'YesWeCan')
 
-tray.ConnectBoxes('driver', 'OutBox', 'reader')
-tray.ConnectBoxes('reader', 'OutBox', 'propagator')
-tray.ConnectBoxes('propagator', 'OutBox', 'router')
-tray.ConnectBoxes('router', 'OutBox', 'YesWeCan')
+	tray.ConnectBoxes('driver', 'OutBox', 'reader')
+	tray.ConnectBoxes('reader', 'OutBox', 'propagator')
+	tray.ConnectBoxes('propagator', 'OutBox', 'router')
+	tray.ConnectBoxes('router', 'OutBox', 'YesWeCan')
 
-for group in routes.itervalues():
-	for name in group:
-		tray.ConnectBoxes('router', name, name)
-		tray.ConnectBoxes(name, 'OutBox', 'YesWeCan')
+	for group in routes.itervalues():
+		for name in group:
+			tray.ConnectBoxes('router', name, name)
+			tray.ConnectBoxes(name, 'OutBox', 'YesWeCan')
 
 tray.Execute()
 tray.Finish()

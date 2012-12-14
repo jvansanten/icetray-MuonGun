@@ -52,10 +52,19 @@ def dcorsika_spectra(gamma=[-2.]*5, normalization=[10., 5., 3., 2., 1.], emin=6e
 	Calculate the generation spectra for the H, He, N, Al, and Fe components of 5-component dCORSIKA
 	"""
 	from cubicle.weighting import PowerLaw
-	masses = [1, 4, 7, 27, 56]
+	masses = [1, 4, 14, 27, 56] 
 	fluxsums = numpy.array([n*fluxsum(emin*m, emax, g) for m, g, n in zip(masses, gamma, normalization)])
 	nshower = nevents*fluxsums/fluxsums.sum()
+	print nshower
 	return [PowerLaw(n, emin*m, emax, g) for n, m, g in zip(nshower, masses, gamma)]
+
+
+class EnergyWeightCollection(object):
+	def __init__(self, target_fluxes, generation_spectra):
+		self.target_fluxes = target_fluxes
+		self.generation_spectra = generation_spectra
+	def __call__(self, ptype, E, zenith):
+		return self.target_fluxes[ptype](E)/self.generation_spectra[ptype](E, zenith)
 
 class IsotropicWeight(object):
 	def __init__(self, f):
@@ -359,7 +368,7 @@ class FastFiller(icetray.I3ConditionalModule):
 		
 		energy = primary.energy
 		zenith = primary.dir.zenith
-		weight = float(self.weighter(energy, zenith))
+		weight = float(self.weighter(primary.type, energy, zenith))
 		# weight = 1.
 		
 		self.binner.consume(frame['Tracks'], energy, zenith, weight)
