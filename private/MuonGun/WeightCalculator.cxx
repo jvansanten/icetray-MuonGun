@@ -11,6 +11,8 @@
 #include <icetray/I3Module.h>
 #include <dataclasses/physics/I3MCTreeUtils.h>
 #include <dataclasses/I3Double.h>
+#include <simclasses/I3MMCTrack.h>
+#include <phys-services/I3Calculator.h>
 #include <boost/make_shared.hpp>
 
 namespace I3MuonGun {
@@ -58,18 +60,42 @@ public:
 		I3MCTreeConstPtr mctree = frame->Get<I3MCTreeConstPtr>();
 		I3MCTree::iterator primary = mctree->begin();
 		
-		// Harvest the direct daughters of the primary. This method is
-		// appropriate only for the output of StaticCylinderInjector
+
 		BundleConfiguration bundlespec;
-		BOOST_FOREACH(const I3Particle &p, std::make_pair(mctree->begin(primary), mctree->end(primary))) {
-			if (p.GetType() != I3Particle::MuMinus)
-				continue;
-			bundlespec.push_back(std::make_pair(p.GetPos().CalcDistance(primary->GetPos()), p.GetEnergy()));
+		if (primary->IsNucleus()) {
+			// For complete air-shower simulation, harvest radial offsets and
+			// energies at the sampling surface from the MMCTrackList
+			I3MMCTrackListConstPtr mmctracks = frame->Get<I3MMCTrackListConstPtr>("MMCTrackList");
+			if (!mmctracks)
+				log_fatal("This appears to be CORSIKA simulation, but I have no MMCTrackList!");
+			BOOST_FOREACH(const I3MMCTrack &track, *mmctracks) {
+				// Get the position where the track crosses the sampling surface,
+				// in a coordinate system where the shower plane is the
+				// X-Y plane and the shower axis is the z axis.
+				I3Position impact(track.GetXi()-primary->GetPos().GetX(),
+				                  track.GetYi()-primary->GetPos().GetY(),
+				                  track.GetZi()-primary->GetPos().GetZ());
+				impact.RotateZ(-primary->GetDir().GetAzimuth());
+				impact.RotateY(-primary->GetDir().GetZenith());
+				impact.RotateZ(primary->GetDir().GetAzimuth());
+				
+				bundlespec.push_back(std::make_pair(impact.GetRho(), track.GetEi()));
+			}
+		} else {
+			// Harvest the direct daughters of the primary. This method is
+			// appropriate only for the output of StaticCylinderInjector
+			BOOST_FOREACH(const I3Particle &p,
+			    std::make_pair(mctree->begin(primary), mctree->end(primary))) {
+				if (p.GetType() != I3Particle::MuMinus)
+					continue;
+				bundlespec.push_back(std::make_pair(
+				    p.GetPos().CalcDistance(primary->GetPos()), p.GetEnergy()));
+			}
 		}
 		
 		double weight = calculator_->GetWeight(*primary, bundlespec);
 		
-		frame->Put("Weight", boost::make_shared<I3Double>(weight));
+		frame->Put(GetName(), boost::make_shared<I3Double>(weight));
 		PushFrame(frame);
 	}
 private:
