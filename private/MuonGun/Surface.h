@@ -4,8 +4,8 @@
 
 #include <icetray/I3PointerTypedefs.h>
 #include <boost/function.hpp>
+#include <dataclasses/I3Position.h>
 
-class I3Position;
 class I3Direction;
 class I3RandomService;
 
@@ -41,7 +41,7 @@ namespace I3MuonGun {
 
 	class Cylinder : public SamplingSurface {
 	public:
-		Cylinder(double length, double radius) : length_(length), radius_(radius) {};
+		Cylinder(double length, double radius, I3Position center=I3Position(0,0,0)) : length_(length), radius_(radius), center_(center) {};
 		std::pair<double, double> GetIntersection(const I3Position &p, const I3Direction &dir) const;
 	
 		// Get d(A_projected)/d(cos(theta)) at a particular cos(theta)
@@ -62,6 +62,7 @@ namespace I3MuonGun {
 		double GetDifferentialSideArea(double cos_zenith) const;
 	
 		double length_, radius_;
+		I3Position center_;
 	};
 
 	I3_POINTER_TYPEDEFS(Cylinder);

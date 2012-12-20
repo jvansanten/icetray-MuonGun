@@ -20,6 +20,12 @@ sort(std::pair<double, double> &pair)
 	}
 }
 
+inline std::pair<double, double>
+no_intersection()
+{
+	return std::make_pair(NAN, NAN);
+}
+
 static const double SurfaceRadius = 6371300+2834;
 
 }
@@ -36,11 +42,11 @@ SamplingSurface::~SamplingSurface() {}
 std::pair<double, double>
 Cylinder::GetIntersection(const I3Position &p, const I3Direction &dir) const
 {
-	std::pair<double, double> h(0, 0), r(0, 0);
+	std::pair<double, double> h(no_intersection()), r(no_intersection());
 	
-	double x = p.GetX();
-	double y = p.GetY();
-	double z = p.GetZ();
+	double x = p.GetX()-center_.GetX();
+	double y = p.GetY()-center_.GetY();
+	double z = p.GetZ()-center_.GetZ();
 	
 	double sinph = sin(dir.GetAzimuth());
 	double cosph = cos(dir.GetAzimuth());
@@ -69,15 +75,15 @@ Cylinder::GetIntersection(const I3Position &p, const I3Direction &dir) const
 			if ((z > -length_/2) && (z < length_/2))
 				h = r;
 			else
-				h = std::make_pair(0, 0);
+				h = no_intersection();
 		// Perfectly vertical tracks never intersect the sides
 		} else if (sinth == 0) {
 			if (hypot(x, y) >= radius_)
-				h = std::make_pair(0, 0);
+				h = no_intersection();
 		// For general tracks, take the last entrace and first exit
 		} else {
 			if (h.first >= r.second || h.second <= r.first)
-				h = std::make_pair(0, 0);
+				h = no_intersection();
 			else {
 				h.first = std::max(r.first, h.first);
 				h.second = std::min(r.second, h.second);
@@ -171,11 +177,15 @@ Cylinder::SampleImpactRay(I3Position &impact, I3Direction &dir, I3RandomService 
 		x = radius_*rng.Uniform(-1, 1);
 		y = (a + b)*rng.Uniform(-1, 1);
 	} while (fabs(y) > a + b*sqrt(1 - (x*x)/(radius_*radius_)));
+	// Rotate into the transverse plane
 	impact = I3Position(y, x, 0);
 	impact.RotateY(dir.GetZenith());
 	impact.RotateZ(dir.GetAzimuth());
-	
-	// Now, project back to the entry point
+	// Shift from cylinder-centered to real coordinates
+	impact.SetX(impact.GetX() + center_.GetX());
+	impact.SetY(impact.GetY() + center_.GetY());
+	impact.SetZ(impact.GetZ() + center_.GetZ());
+	// Project back to the entry point
 	double l = GetIntersection(impact, dir).first;
 	impact.SetX(impact.GetX() + l*dir.GetX());
 	impact.SetY(impact.GetY() + l*dir.GetY());
@@ -189,7 +199,7 @@ Cylinder::SampleImpactRay(I3Position &impact, I3Direction &dir, I3RandomService 
 std::pair<double, double>
 Sphere::GetIntersection(const I3Position &p, const I3Direction &dir) const
 {
-	std::pair<double, double> h(0, 0);
+	std::pair<double, double> h(no_intersection());
 	
 	double x = p.GetX();
 	double y = p.GetY();

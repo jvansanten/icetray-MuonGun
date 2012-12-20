@@ -25,7 +25,7 @@ struct BundleModel {
 class WeightCalculator {
 public:
 	WeightCalculator(SamplingSurfacePtr s, FluxPtr flux,
-	    RadialDistributionPtr radius, EnergyDistributionPtr energy, GeneratorPtr g)
+	    RadialDistributionPtr radius, EnergyDistributionPtr energy, GenerationProbabilityPtr g)
 	    : surface_(s), flux_(flux), radius_(radius), energy_(energy), generator_(g) {}
 	
 	double GetWeight(const I3Particle &, const BundleConfiguration &) const;
@@ -34,7 +34,7 @@ private:
 	FluxPtr flux_;
 	RadialDistributionPtr radius_;
 	EnergyDistributionPtr energy_;
-	GeneratorPtr generator_;
+	GenerationProbabilityPtr generator_;
 };
 
 }
