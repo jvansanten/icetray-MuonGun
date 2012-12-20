@@ -21,7 +21,9 @@ public:
 	
 	// Generator Interface
 	void Generate(I3MCTree &tree, BundleConfiguration &bundle) const;
+	GenerationProbabilityPtr Clone() const;
 	double GetGenerationProbability(const I3Particle &axis, const BundleConfiguration &bundle) const;
+	SurfaceConstPtr GetInjectionSurface() const { return surface_; }
 	
 	void SetRandomService(I3RandomServicePtr p);
 	

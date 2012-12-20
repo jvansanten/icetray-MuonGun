@@ -47,6 +47,12 @@ StaticSurfaceInjector::StaticSurfaceInjector()
 	    GetTablePath("Hoerandel5_atmod12_SIBYLL.radius.fits"));
 }
 
+GenerationProbabilityPtr
+StaticSurfaceInjector::Clone() const
+{
+	return boost::make_shared<StaticSurfaceInjector>(*this);
+}
+
 void
 StaticSurfaceInjector::SetRandomService(I3RandomServicePtr r)
 {
@@ -84,8 +90,10 @@ StaticSurfaceInjector::GetTotalRate() const
 {
 	if (std::isnan(totalRate_) && surface_ && flux_) {
 		totalRate_ = 0;
-		for (unsigned m = flux_->GetMinMultiplicity(); m <= flux_->GetMaxMultiplicity(); m++)
+		for (unsigned m = flux_->GetMinMultiplicity(); m <= flux_->GetMaxMultiplicity(); m++) {
+			std::cout << "m = " << m << std::endl;
 			totalRate_ += surface_->IntegrateFlux(boost::bind(boost::cref(*flux_), _1, _2, m));
+		}
 	}
 	return totalRate_;
 }
@@ -96,7 +104,7 @@ StaticSurfaceInjector::GenerateAxis(std::pair<I3Particle, unsigned> &axis) const
 	I3Direction dir;
 	I3Position pos;
 	unsigned m;
-	double h, flux;
+	double flux;
 	do {
 		surface_->SampleImpactRay(pos, dir, *rng_);
 		m = rng_->Integer(flux_->GetMaxMultiplicity() - flux_->GetMinMultiplicity())
@@ -166,7 +174,7 @@ StaticSurfaceInjector::GetGenerationProbability(const I3Particle &axis,
     const BundleConfiguration &bundlespec) const
 {
 	std::pair<double, double> steps = surface_->GetIntersection(axis.GetPos(), axis.GetDir());
-	assert(steps.first >= 0);
+	// assert(steps.first >= 0);
 	double h = GetDepth(axis.GetPos().GetZ() + steps.first*axis.GetDir().GetZ());
 	double coszen = cos(axis.GetDir().GetZenith());
 	unsigned m = bundlespec.size();

@@ -1,4 +1,4 @@
-i3_project(MuonGun)
+i3_project(MuonGun PYTHON_DIR python)
 
 i3_add_library(MuonGun
     private/MuonGun/I3MuonGun.cxx
@@ -18,8 +18,7 @@ i3_add_library(MuonGun
     private/MuonGun/EnergyDistribution.cxx
 
     private/MuonGun/CanCan.cxx
-    private/MuonGun/SingleMuonFlux.cxx
-    private/MuonGun/MultiplicityFraction.cxx
+    private/MuonGun/CORSIKAGenerationProbability.cxx
     
     # private/boost/numpy/*.cpp
     # private/MUSIC/I3MUSICService.cxx

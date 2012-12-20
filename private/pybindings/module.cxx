@@ -4,21 +4,22 @@
 
 namespace bp = boost::python;
 
-#include <icetray/python/dataclass_suite.hpp>
-#include <dataclasses/physics/I3Particle.h>
-
-void
-register_extras()
-{
-	bp::class_<std::vector<I3Particle::ParticleType> >("I3ParticleTypeSeries")
-	    .def(bp::dataclass_suite<std::vector<I3Particle::ParticleType> >())
-	;
-}
+// #include <icetray/python/dataclass_suite.hpp>
+// #include <dataclasses/physics/I3Particle.h>
+// 
+// void
+// register_extras()
+// {
+// 	bp::class_<std::vector<I3Particle::ParticleType> >("I3ParticleTypeSeries")
+// 	    .def(bp::dataclass_suite<std::vector<I3Particle::ParticleType> >())
+// 	;
+// }
 
 #define REGISTER_THESE_THINGS                                           \
-  (histogram)(TrackBinner)(MuonPropagator)(extras)(I3MuonGun)           \
+  (histogram)(TrackBinner)(MuonPropagator)(I3MuonGun)                   \
   (CompactTrack)(RadialDistribution)(EnergyDistribution)                \
-  (Flux)(Generator)(Surface)(WeightCalculator)(CanCan)
+  (Flux)(Generator)(Surface)(WeightCalculator)(CanCan)                  \
+  (CORSIKAGenerationProbability)
 
 #define I3_REGISTRATION_FN_DECL(r, data, t) void BOOST_PP_CAT(register_,t)();
 #define I3_REGISTER(r, data, t) BOOST_PP_CAT(register_,t)();

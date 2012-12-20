@@ -15,6 +15,7 @@ void register_Surface()
 	implicitly_convertible<SurfacePtr, SurfaceConstPtr>();
 	
 	class_<SamplingSurface, SamplingSurfacePtr, bases<Surface>, boost::noncopyable>("SamplingSurface", no_init)
+	    .def("differential_area", &SamplingSurface::GetDifferentialArea)
 	;
 	
 	implicitly_convertible<SamplingSurfacePtr, SamplingSurfaceConstPtr>();

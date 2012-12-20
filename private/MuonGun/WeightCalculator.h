@@ -3,12 +3,15 @@
 #define I3MUONGUN_WEIGHTCALCULATOR_H_INCLUDED
 
 #include <MuonGun/Generator.h>
-#include <MuonGun/Surface.h>
-#include <MuonGun/Flux.h>
-#include <MuonGun/RadialDistribution.h>
-#include <MuonGun/EnergyDistribution.h>
+#include <icetray/I3PointerTypedefs.h>
 
 namespace I3MuonGun {
+
+I3_FORWARD_DECLARATION(Generator);
+I3_FORWARD_DECLARATION(SamplingSurface);
+I3_FORWARD_DECLARATION(Flux);
+I3_FORWARD_DECLARATION(RadialDistribution);
+I3_FORWARD_DECLARATION(EnergyDistribution);
 
 struct BundleModel {
 	// BundleModel() {}

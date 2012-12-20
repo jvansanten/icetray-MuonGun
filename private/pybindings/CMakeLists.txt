@@ -8,6 +8,7 @@ i3_add_pybindings(MuonGun
   RadialDistribution.cxx
   EnergyDistribution.cxx
   WeightCalculator.cxx
+  CORSIKAGenerationProbability.cxx
   TrackBinner.cxx
   MuonPropagator.cxx
   histogram.cxx

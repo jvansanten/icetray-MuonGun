@@ -6,7 +6,6 @@
 
 #include <boost/function.hpp>
 #include <boost/array.hpp>
-#include <boost/python/signature.hpp>
 #include <cubature/cubature.h>
 
 class I3Position;

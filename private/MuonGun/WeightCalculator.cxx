@@ -1,5 +1,10 @@
 
 #include <MuonGun/WeightCalculator.h>
+#include <MuonGun/Generator.h>
+#include <MuonGun/Surface.h>
+#include <MuonGun/Flux.h>
+#include <MuonGun/RadialDistribution.h>
+#include <MuonGun/EnergyDistribution.h>
 #include <MuonGun/I3MuonGun.h>
 #include <boost/foreach.hpp>
 
