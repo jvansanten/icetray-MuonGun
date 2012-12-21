@@ -62,7 +62,7 @@ public:
 		
 
 		BundleConfiguration bundlespec;
-		if (primary->IsNucleus()) {
+		if (primary->GetType() == I3Particle::PPlus || primary->IsNucleus()) {
 			// For complete air-shower simulation, harvest radial offsets and
 			// energies at the sampling surface from the MMCTrackList
 			I3MMCTrackListConstPtr mmctracks = frame->Get<I3MMCTrackListConstPtr>("MMCTrackList");

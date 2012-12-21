@@ -103,7 +103,11 @@ public:
 	{
 		GetParameter("Generator", generator_);
 		
-		generator_->SetRandomService(context_.Get<I3RandomServicePtr>());
+		I3RandomServicePtr rng = context_.Get<I3RandomServicePtr>();
+		if (rng)
+			generator_->SetRandomService(rng);
+		else if (!generator_->GetRandomService())
+			log_fatal("No RandomService configured!");
 		maxEvents_ = generator_->GetTotalEvents();
 	}
 	

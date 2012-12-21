@@ -50,6 +50,7 @@ public:
 private:
 	I3SplineTable singles_;
 	I3SplineTable bundles_;
+	double minLogEnergy_;
 };
 
 class OffsetPowerLaw : public Distribution {

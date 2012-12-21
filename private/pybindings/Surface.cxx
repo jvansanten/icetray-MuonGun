@@ -20,7 +20,8 @@ void register_Surface()
 	
 	implicitly_convertible<SamplingSurfacePtr, SamplingSurfaceConstPtr>();
 	
-	class_<Cylinder, CylinderPtr, bases<SamplingSurface> >("Cylinder", init<double, double>())
+	class_<Cylinder, CylinderPtr, bases<SamplingSurface> >("Cylinder",
+	    init<double, double, I3Position>((arg("length"), arg("radius"), arg("center")=I3Position(0,0,0))))
 	;
 	
 	class_<Sphere, bases<Surface> >("Sphere", init<double, double>())

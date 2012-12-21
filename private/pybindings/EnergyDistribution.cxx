@@ -15,7 +15,7 @@ void register_EnergyDistribution()
 	    init<const std::string&, const std::string&>((arg("singles"), "bundles")))
 	;
 	
-	class_<OffsetPowerLaw>("OffsetPowerLaw",
+	class_<OffsetPowerLaw, bases<Distribution> >("OffsetPowerLaw",
 	    init<double,double,double,double>((arg("gamma"), "offset", "min", "max")))
 	    .def("__call__", &OffsetPowerLaw::operator())
 	    .def("generate", &OffsetPowerLaw::Generate)

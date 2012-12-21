@@ -27,7 +27,10 @@ BMSSFlux::operator()(double depth, double cos_theta, unsigned multiplicity) cons
 
 SplineFlux::SplineFlux(const std::string &singles, const std::string &bundles)
     : singles_(singles), bundles_(bundles)
-{}
+{
+	SetMinMultiplicity(1);
+	SetMaxMultiplicity(bundles_.GetExtents(2).second);
+}
 
 double
 SplineFlux::operator()(double depth, double cos_theta, unsigned multiplicity) const
@@ -35,7 +38,9 @@ SplineFlux::operator()(double depth, double cos_theta, unsigned multiplicity) co
 	double coords[3] = {cos_theta, depth, multiplicity};
 	double logflux;
 	
-	if ((multiplicity > 1 ? bundles_ : singles_).Eval(coords, &logflux) != 0)
+	if (multiplicity < GetMinMultiplicity() || multiplicity > GetMaxMultiplicity())
+		return 0.;
+	else if ((multiplicity > 1 ? bundles_ : singles_).Eval(coords, &logflux) != 0)
 		return 0.;
 	else
 		return std::exp(logflux);
