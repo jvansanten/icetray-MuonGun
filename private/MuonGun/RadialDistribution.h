@@ -9,18 +9,41 @@ class I3RandomService;
 
 namespace I3MuonGun {
 
+/**
+ * @brief The distribution of distance between a muon and the bundle axis
+ */
 class RadialDistribution {
 public:
 	virtual ~RadialDistribution();
 	// TODO: short-circuit for multiplicity == 1
+	/**
+	 * Calculate the probability of obtaining the given radial offset
+	 *
+	 * @param[in] depth        vertical depth in km
+	 * @param[in] cos_theta    cosine of zenith angle
+	 * @param[in] multiplicity number of muons in the bundle
+	 * @param[in] radius       distance to bundle axis
+	 * @returns a properly normalized propability @f$ dP/dr \,\, [m^{-1}] @f$
+	 */
 	virtual double operator()(double depth, double cos_theta,
 	    unsigned multiplicity, double radius) const = 0;
+	/**
+	 * Draw a sample from the distribution of radii
+	 *
+	 * @param[in] depth        vertical depth in km
+	 * @param[in] cos_theta    cosine of zenith angle
+	 * @param[in] multiplicity number of muons in the bundle
+	 * @returns a radius in m
+	 */
 	virtual double Generate(I3RandomService &rng, double depth, double cos_theta,
 	    unsigned multiplicity) const = 0;
 };
 
 I3_POINTER_TYPEDEFS(RadialDistribution);
 
+/**
+ * @brief Radial distribution according to Becherini et al.
+ */
 class BMSSRadialDistribution : public RadialDistribution {
 public:
 	BMSSRadialDistribution();
@@ -38,6 +61,12 @@ private:
 
 I3_POINTER_TYPEDEFS(BMSSRadialDistribution);
 
+/**
+ * @brief Radial distribution fit to a tensor-product B-spline surface
+ *
+ * The surface is fit to @f$ d \log{P} / d{r^2} @f$ to remove the factor
+ * of differential area implicit in @f$ dP / dr @f$
+ */
 class SplineRadialDistribution : public RadialDistribution, private I3SplineTable {
 public:
 	SplineRadialDistribution(const std::string&);

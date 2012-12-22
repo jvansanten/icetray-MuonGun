@@ -14,6 +14,9 @@ namespace {
 	const double IceDensity = 0.917*1.005; // as in MMC
 }
 
+/**
+ * @brief a utility module for recording the state of a muon bundle as it propagates to depth
+ */
 class Muonitron : public I3Module {
 public:
 	Muonitron(const I3Context &);

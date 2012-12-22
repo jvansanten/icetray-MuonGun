@@ -14,6 +14,15 @@
 
 namespace I3MuonGun {
 
+/**
+ * @brief A simple rejection-sampling Generator
+ *
+ * StaticSurfaceInjector samples bundle impact points, angles, multiplicities,
+ * and radial distributions at their natural frequencies on a fixed surface
+ * using a brain-dead acceptance/rejection technique. Energies, on the other hand,
+ * are sampled from an OffsetPowerLaw, which both boosts efficiency and allows
+ * a measure of control over the generated energy distribution.
+ */
 class StaticSurfaceInjector : public Generator {
 public:
 	StaticSurfaceInjector();
@@ -36,12 +45,24 @@ public:
 	void SetEnergyDistribution(boost::shared_ptr<OffsetPowerLaw> e) { energyGenerator_ = e; }
 	boost::shared_ptr<OffsetPowerLaw> GetEnergyDistribution() { return energyGenerator_; }
 	
+	/**
+	 * Integrate the configured flux over the sampling surface, summing over
+	 * all allowed multiplicities.
+	 *
+	 * @returns a rate in units of @f$ [s^{-1}] @f$
+	 */
 	double GetTotalRate() const;
 private:
-	// Draw a sample from the distribution of shower impact points,
-	// returning the shower core and multiplicity
-	void GenerateAxis(I3RandomService &rng, std::pair<I3Particle, unsigned> &axis) const;
-	// Generate and distribute the given number of muons over the transverse plane
+	/**
+	 * Draw a sample from the distribution of shower impact points
+	 *
+	 * @returns shower axis and multiplicity
+	 */
+	 void GenerateAxis(I3RandomService &rng, std::pair<I3Particle, unsigned> &axis) const;
+	/**
+	 * Distribute the given number of muons in the transverse plane
+	 * and draw an energy for each
+	 */
 	void FillMCTree(I3RandomService &rng, const std::pair<I3Particle, unsigned> &axis, I3MCTree &, BundleConfiguration &) const;
 	
 	void CalculateMaxFlux();

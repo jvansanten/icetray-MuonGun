@@ -40,6 +40,12 @@ WeightCalculator::GetWeight(const I3Particle &axis, const BundleConfiguration &b
 	return rate;
 }
 
+/**
+ * @brief Interface between WeightCalculator and IceTray
+ *
+ * WeightCalculatorModule handles the details of extracting energies and
+ * radial offsets of muons from an I3MCTree. 
+ */
 class WeightCalculatorModule : public I3Module {
 public:
 	WeightCalculatorModule(const I3Context &ctx) : I3Module(ctx)

@@ -7,6 +7,9 @@
 
 namespace I3MuonGun {
 
+/**
+ * @brief A compressed representation of a muon in a bundle
+ */
 class CompactTrack {
 public:
 	CompactTrack() {};
@@ -31,6 +34,9 @@ private:
 	void serialize(Archive&, unsigned);
 };
 
+/**
+ * @brief The state of a muon bundle at a set of vertical depths
+ */
 struct TrackBundle : public I3FrameObject, std::map<double, std::vector<CompactTrack> > {
 	friend class boost::serialization::access;
 	template <typename Archive>

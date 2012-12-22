@@ -3,11 +3,10 @@
 #include <boost/foreach.hpp>
 #include <boost/python/slice.hpp>
 
-using namespace I3MuonGun;
 namespace bp = boost::python;
 
 static bp::object
-to_dashi(boost::shared_ptr<histogram_base> h)
+to_dashi(boost::shared_ptr<I3MuonGun::histogram::histogram_base> h)
 {
 	bp::object histmodule = bp::import("dashi.histogram");
 	bp::object numpy = bp::import("numpy");
@@ -40,9 +39,9 @@ to_dashi(boost::shared_ptr<histogram_base> h)
 	return dhist;
 }
 
-static boost::shared_ptr<histogram_base> test_histogram()
+static boost::shared_ptr<I3MuonGun::histogram::histogram_base> test_histogram()
 {
-	using namespace I3MuonGun;
+	using namespace I3MuonGun::histogram;
 	
 	histogram<3>::bin_specification edges;
 	{
@@ -69,6 +68,9 @@ static boost::shared_ptr<histogram_base> test_histogram()
 
 void register_histogram()
 {
+	using namespace I3MuonGun::histogram;
+	namespace bp = boost::python;
+	
 	bp::def("test_histogram", &test_histogram);
 	
 	bp::class_<histogram_base, shared_ptr<histogram_base>, boost::noncopyable>("histogram", bp::no_init)

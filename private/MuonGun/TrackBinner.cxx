@@ -7,6 +7,8 @@ namespace I3MuonGun {
 
 TrackBinner::TrackBinner(double mindepth, double maxdepth, unsigned steps)
 {
+	using namespace histogram;
+	
 	std::vector<double> multbins, rbins;
 	{
 		using namespace boost::assign;

@@ -89,6 +89,9 @@ operator+(GenerationProbabilityPtr p1, GenerationProbabilityPtr p2)
 	return boost::make_shared<GenerationProbabilityCollection>(p1, p2);
 }
 
+/**
+ * @brief Interface between Generator and IceTray
+ */
 class GeneratorModule : public I3Module {
 public:
 	GeneratorModule(const I3Context &ctx) : I3Module(ctx), maxEvents_(0), numEvents_(0)

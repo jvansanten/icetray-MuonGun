@@ -5,6 +5,13 @@
 
 namespace I3MuonGun {
 
+/**
+ * @brief A parameterization of the total muon-bundle flux
+ * 
+ * The total flux (in units of @f$ [ m^{-2} sr^{-2} s^{-1} ]@f$)
+ * is parameterized in terms of vertical depth @f$ km @f$, the
+ * cosine of the zenith angle, and bundle multiplicity.
+ */
 class Flux {
 public:
 	Flux();
@@ -25,7 +32,9 @@ private:
 
 I3_POINTER_TYPEDEFS(Flux);
 
-// From Becherini et al.
+/**
+ * @brief Total flux according to Becherini et al.
+ */
 class BMSSFlux : public Flux {
 public:
 	BMSSFlux();
@@ -35,6 +44,9 @@ private:
 	double v0a_, v0b_, v0c_, v1a_, v1b_;
 };
 
+/**
+ * @brief Total flux, fit to a tensor-product B-spline surface
+ */
 class SplineFlux : public Flux {
 public:
 	SplineFlux(const std::string &singles, const std::string &bundles);

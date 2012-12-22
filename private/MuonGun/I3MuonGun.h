@@ -15,9 +15,10 @@ class I3RandomService;
 // Commonly-used bits
 namespace I3MuonGun {
 
-// Convert an IceCube z-coordinate [m] to a vertical depth [km]
+/** Convert an IceCube z-coordinate [m] to a vertical depth [km] */
 double GetDepth(double z);
 
+/** @cond */
 namespace detail {
 	
 template <size_t N> struct multiply;
@@ -83,6 +84,8 @@ integrate_thunk(unsigned ndims, const double *x, void *p, unsigned fdims, double
 }
 
 }
+/** @endcond */
+
 
 // 1-dimensional quadtature via GSL QAGS implementation
 double Integrate(boost::function<double (double)> f, double low, double high, double epsabs=1.49e-8, double epsrel=1.49e-8, size_t limit=50);

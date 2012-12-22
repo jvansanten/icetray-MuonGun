@@ -2,6 +2,7 @@
 #include <MuonGun/TrackBinner.h>
 
 using namespace I3MuonGun;
+using namespace I3MuonGun::histogram;
 namespace bp = boost::python;
 
 static boost::shared_ptr<histogram_base> get_primary(TrackBinner &t) { return t.primary_; }

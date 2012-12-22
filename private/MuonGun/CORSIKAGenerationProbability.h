@@ -12,6 +12,9 @@ I3_FORWARD_DECLARATION(Flux);
 I3_FORWARD_DECLARATION(RadialDistribution);
 I3_FORWARD_DECLARATION(EnergyDistribution);
 
+/**
+ * @brief A parametrization of the muon yield from direct air-shower simulation
+ */
 class CORSIKAGenerationProbability : public GenerationProbability {
 public:
 	CORSIKAGenerationProbability(SamplingSurfacePtr, FluxPtr, RadialDistributionPtr, EnergyDistributionPtr);

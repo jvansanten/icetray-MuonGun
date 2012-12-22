@@ -15,24 +15,40 @@
 // An n-dimensional histogram class, loosely inspired by dashi.histogram
 
 namespace I3MuonGun {
+	
+namespace histogram {
 
 namespace binning {
 
+/**
+ * @brief Base class for binning schemes
+ */ 
 class scheme {
 public:
+	/** Get the bin index of the given value */
 	virtual const size_t index(double value) const = 0;
 	
 	virtual ~scheme() {};
 	
+	/** Return the edges of the bins */
 	const std::vector<double>& edges() const
 	{ return edges_; }
 protected:
 	std::vector<double> edges_;
 };
 
-// In the general case, the proper bin can be found in logarithmic time
+/**
+ * @brief A non-equispaced binning scheme
+ *
+ * In the general case, the proper bin can be found in logarithmic time
+ * by binary search
+ */
 class general : public scheme {
 public:
+	/**
+	 * Construct a binning scheme from the given ordered list
+	 * of bin edges, inserting under- and overflow bins as necessary
+	 */
 	general(const std::vector<double> &edges)
 	{
 		if (edges.front() > -std::numeric_limits<double>::infinity())
@@ -57,36 +73,59 @@ public:
 	}
 };
 
+/**
+ * @brief Trivial linear mapping
+ */
 struct identity {
 	static inline double map(double v) { return v; }
 	static inline double imap(double v) { return v; }
 };
 
+/**
+ * @brief Bin edges linear in @f$ \log_{10}{x} @f$
+ */
 struct log10 {
 	static inline double map(double v) { return std::pow(10, v); }
 	static inline double imap(double v) { return std::log10(v); }
 };
 
+/**
+ * @brief Bin edges linear in @f$ \cos{\theta} @f$
+ */
 struct cosine {
 	static inline double map(double v) { return std::acos(v); }
 	static inline double imap(double v) { return std::cos(v); }
 };
 
+/**
+ * @brief Bin edges linear in @f$ x^N @f$
+ *
+ * @tparam N the exponent of the power law
+ */
 template <int N>
 struct power {
 	static inline double map(double v) { return std::pow(v, N); }
 	static inline double imap(double v) { return std::pow(v, 1./N); }
 };
 
+/** @cond */
 template <>
 struct power<2> {
 	static inline double map(double v) { return v*v; }
 	static inline double imap(double v) { return std::sqrt(v); }
 };
+/** @endcond */
 
-
-// Optimal case: bin edges uniform under some transformation
-// between set limits; constant time
+/**
+ * @brief An equispaced binning scheme
+ *
+ * In this optimal case the bin edges are uniform under some
+ * transformation between set limits and the bin index can be
+ * found in constant time
+ *
+ * @tparam Transformation the transformation that makes the bin edges
+ *                        equispaced
+ */
 template <typename Transformation = identity >
 class uniform : public scheme {
 public:
@@ -134,6 +173,10 @@ private:
 
 };
 
+/**
+ * @brief A base class for histograms of arbitrary type
+ *        and dimensionality
+ */
 class histogram_base {
 public:
 	typedef boost::multi_array_types::index index;
@@ -141,23 +184,35 @@ public:
 	
 	virtual ~histogram_base();
 	
+	/** Get a pointer to the memory backing the bin contents */
 	virtual const char* raw_bincontent() const = 0;
+	/** Get a pointer to the memory backing the sum of squared weights */
 	virtual const char* raw_squaredweights() const = 0;
 	
+	/** Get the bin edges */
 	virtual std::vector<std::vector<double> > binedges() const = 0;
 	
+	/** Get the dimensionality of the histogram */
 	virtual size_type ndim() const = 0;
+	/** Get the number of elements along each dimension */
 	virtual std::vector<size_type> shape() const = 0;
+	/** Get the stride required to move sequentially along each dimension */
 	virtual std::vector<index> strides() const = 0;
 
 };
 
+/**
+ * @brief An N-dimensional histogram
+ *
+ * @tparam N number of dimensions
+ * @tparam T type weight stored in the histogram
+ */
 template <size_t N, typename T = double>
 class histogram : public histogram_base {
 public:
 	typedef boost::array<boost::variant< std::vector<double>, boost::shared_ptr<binning::scheme> >, N> bin_specification;
 public:
-	// Construct with non-uniform bins in all dimensions
+	/** Construct with non-uniform bins in all dimensions */
 	histogram(const boost::array<std::vector<double>, N> &edges)
 	{
 		for (size_t i=0; i < N; i++)
@@ -166,14 +221,14 @@ public:
 		make_datacube();
 	}
 	
-	// Construct with uniform bins in all dimensions
+	/** Construct with uniform bins in all dimensions */
 	histogram(const boost::array<boost::shared_ptr<binning::scheme>, N> &schemes)
 	    : binners_(schemes)
 	{
 		make_datacube();
 	}
 	
-	// Construct with a mix of uniform and non-uniform bins in different dimensions
+	/** Construct with a mix of uniform and non-uniform bins in different dimensions */
 	histogram(const boost::array<boost::variant< std::vector<double>, boost::shared_ptr<binning::scheme> >, N> &schemes)
 	{
 		for (size_t i=0; i < N; i++)
@@ -181,6 +236,12 @@ public:
 		make_datacube();
 	}
 	
+	/**
+	 * Add a sample to the histogram
+	 *
+	 * @param[in] values value of the sample in each dimension
+	 * @param[in] weight weight to assign to the sample
+	 */
 	void fill(const boost::array<double, N> &values, T weight=1)
 	{
 		boost::array<typename datacube_type::index, N> idx;
@@ -267,6 +328,7 @@ private:
 		std::fill(squaredweights_.data(), squaredweights_.data()+squaredweights_.size(), 0);
 	}
 	
+	/** @cond */
 	typedef boost::shared_ptr<binning::scheme > scheme_ptr;
 	struct bin_visitor : public boost::static_visitor<scheme_ptr> {
 		scheme_ptr operator()(const scheme_ptr & v) const
@@ -275,6 +337,7 @@ private:
 		scheme_ptr operator()(const std::vector<double> & v) const
 		{ return binning::general::create(v); }
 	};
+	/** @endcond */
 
 private:
 	boost::array<scheme_ptr, N> binners_;
@@ -286,6 +349,8 @@ private:
 
 };
 
-}
+} // namespace histogram
+
+} // namespace I3MuonGun
 
 #endif
