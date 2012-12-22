@@ -2,10 +2,13 @@
 #ifndef I3MUONGUN_GENERATOR_H_INCLUDED
 #define I3MUONGUN_GENERATOR_H_INCLUDED
 
-#include <MuonGun/Distribution.h>
+#include <vector>
 #include <boost/make_shared.hpp>
 
+#include <icetray/I3PointerTypedefs.h>
+
 class I3Particle;
+class I3RandomService;
 template <typename T> class I3Tree;
 typedef I3Tree<I3Particle> I3MCTree;
 
@@ -51,10 +54,10 @@ GenerationProbabilityPtr operator*(GenerationProbabilityPtr, size_t);
 GenerationProbabilityPtr operator*=(GenerationProbabilityPtr, size_t);
 GenerationProbabilityPtr operator+(GenerationProbabilityPtr p1, GenerationProbabilityPtr p2);
 
-class Generator : public Distribution, public GenerationProbability {
+class Generator : public GenerationProbability {
 public:
 	virtual ~Generator();
-	virtual void Generate(I3MCTree &tree, BundleConfiguration &bundle) const = 0;
+	virtual void Generate(I3RandomService &rng, I3MCTree &tree, BundleConfiguration &bundle) const = 0;
 	virtual SurfaceConstPtr GetInjectionSurface() const = 0;
 };
 

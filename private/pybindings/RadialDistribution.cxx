@@ -1,5 +1,6 @@
 
 #include <MuonGun/RadialDistribution.h>
+#include <phys-services/I3RandomService.h>
 
 void
 register_RadialDistribution()
@@ -7,18 +8,8 @@ register_RadialDistribution()
 	namespace bp = boost::python;
 	using namespace I3MuonGun;
 	
-	bp::class_<Distribution, DistributionPtr,
-	    bp::bases<I3FrameObject> >("Distribution")
-	    .add_property("random_service", &Distribution::GetRandomService, &Distribution::SetRandomService)
-	;
-	
-	bp::class_<Sample>("Sample", bp::init<double,double>())
-	    .def_readwrite("value", &Sample::value)
-	    .def_readwrite("prob", &Sample::prob)
-	;
-	
 	bp::class_<RadialDistribution, RadialDistributionPtr,
-	    bp::bases<Distribution>, boost::noncopyable>("RadialDistribution", bp::no_init)
+	    boost::noncopyable>("RadialDistribution", bp::no_init)
 	    .def("__call__", &RadialDistribution::operator())
 	    .def("generate", &RadialDistribution::Generate)
 	;

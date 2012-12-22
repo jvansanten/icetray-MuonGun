@@ -4,17 +4,6 @@
 
 namespace bp = boost::python;
 
-// #include <icetray/python/dataclass_suite.hpp>
-// #include <dataclasses/physics/I3Particle.h>
-// 
-// void
-// register_extras()
-// {
-// 	bp::class_<std::vector<I3Particle::ParticleType> >("I3ParticleTypeSeries")
-// 	    .def(bp::dataclass_suite<std::vector<I3Particle::ParticleType> >())
-// 	;
-// }
-
 #define REGISTER_THESE_THINGS                                           \
   (histogram)(TrackBinner)(MuonPropagator)(I3MuonGun)                   \
   (CompactTrack)(RadialDistribution)(EnergyDistribution)                \

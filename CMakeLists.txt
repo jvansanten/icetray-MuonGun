@@ -9,7 +9,6 @@ i3_add_library(MuonGun
     private/MuonGun/histogram.cxx
     private/cubature/cubature.c
     
-    private/MuonGun/Distribution.cxx
     private/MuonGun/Generator.cxx
     private/MuonGun/WeightCalculator.cxx
     private/MuonGun/Surface.cxx

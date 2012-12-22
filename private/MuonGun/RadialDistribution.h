@@ -1,25 +1,22 @@
 #ifndef I3MUONGUN_RADIALDISTRIBUTION_H
 #define I3MUONGUN_RADIALDISTRIBUTION_H
 
-#include <MuonGun/Distribution.h>
 #include <photospline/I3SplineTable.h>
+#include <icetray/I3Logging.h>
 
 class I3Position;
+class I3RandomService;
 
 namespace I3MuonGun {
 
-class RadialDistribution : public Distribution {
+class RadialDistribution {
 public:
-	virtual ~RadialDistribution() {};
+	virtual ~RadialDistribution();
 	// TODO: short-circuit for multiplicity == 1
 	virtual double operator()(double depth, double cos_theta,
 	    unsigned multiplicity, double radius) const = 0;
-	virtual Sample Generate(double depth, double cos_theta,
+	virtual double Generate(I3RandomService &rng, double depth, double cos_theta,
 	    unsigned multiplicity) const = 0;
-private:
-	friend class boost::serialization::access;
-	template <typename Archive>
-	void serialize(Archive &, unsigned);
 };
 
 I3_POINTER_TYPEDEFS(RadialDistribution);
@@ -27,10 +24,9 @@ I3_POINTER_TYPEDEFS(RadialDistribution);
 class BMSSRadialDistribution : public RadialDistribution {
 public:
 	BMSSRadialDistribution();
-	virtual ~BMSSRadialDistribution() {};
-	virtual double operator()(double depth, double cos_theta,
+	double operator()(double depth, double cos_theta,
 	    unsigned multiplicity, double radius) const;
-	virtual Sample Generate(double depth, double cos_theta,
+	double Generate(I3RandomService &rng, double depth, double cos_theta,
 	    unsigned multiplicity) const;
 private:
 	double GetMeanRadius(double, double, unsigned) const;
@@ -38,10 +34,6 @@ private:
 	double GetGenerationProbability(double, double, double) const;
 	double rho0a_, rho0b_, rho1_, theta0_, f_, alpha0a_, alpha0b_, alpha1a_, alpha1b_;
 	double rmax_;
-	
-	friend class boost::serialization::access;
-	template <typename Archive>
-	void serialize(Archive &, unsigned);
 };
 
 I3_POINTER_TYPEDEFS(BMSSRadialDistribution);
@@ -51,7 +43,7 @@ public:
 	SplineRadialDistribution(const std::string&);
 	double operator()(double depth, double cos_theta,
 	    unsigned multiplicity, double radius) const;
-	Sample Generate(double depth, double cos_theta,
+	double Generate(I3RandomService &rng, double depth, double cos_theta,
 	    unsigned multiplicity) const;
 private:
 	double RawProbability(double depth, double cos_theta,

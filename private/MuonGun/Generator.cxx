@@ -103,10 +103,8 @@ public:
 	{
 		GetParameter("Generator", generator_);
 		
-		I3RandomServicePtr rng = context_.Get<I3RandomServicePtr>();
-		if (rng)
-			generator_->SetRandomService(rng);
-		else if (!generator_->GetRandomService())
+		rng_ = context_.Get<I3RandomServicePtr>();
+		if (!rng_)
 			log_fatal("No RandomService configured!");
 		maxEvents_ = generator_->GetTotalEvents();
 	}
@@ -116,7 +114,7 @@ public:
 		I3MCTreePtr mctree = boost::make_shared<I3MCTree>();
 		BundleConfiguration bundlespec;
 		
-		generator_->Generate(*mctree, bundlespec);
+		generator_->Generate(*rng_, *mctree, bundlespec);
 		frame->Put(mctreeName_, mctree);
 		
 		PushFrame(frame);
@@ -125,6 +123,7 @@ public:
 	}
 private:
 	GeneratorPtr generator_;
+	I3RandomServicePtr rng_;
 	size_t maxEvents_, numEvents_;
 	std::string mctreeName_;
 };

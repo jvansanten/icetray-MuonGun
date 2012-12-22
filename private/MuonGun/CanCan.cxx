@@ -11,6 +11,7 @@
 #include <dataclasses/I3Double.h>
 #include <dataclasses/physics/I3MCTree.h>
 #include <dataclasses/physics/I3MCTreeUtils.h>
+#include <phys-services/I3RandomService.h>
 
 namespace I3MuonGun {
 
@@ -54,15 +55,6 @@ StaticSurfaceInjector::Clone() const
 }
 
 void
-StaticSurfaceInjector::SetRandomService(I3RandomServicePtr r)
-{
-	Distribution::SetRandomService(r);
-	flux_->SetRandomService(r);
-	energyGenerator_->SetRandomService(r);
-	radialDistribution_->SetRandomService(r);
-}
-
-void
 StaticSurfaceInjector::SetSurface(SamplingSurfacePtr p)
 {
 	surface_ = p;
@@ -99,15 +91,15 @@ StaticSurfaceInjector::GetTotalRate() const
 }
 
 void
-StaticSurfaceInjector::GenerateAxis(std::pair<I3Particle, unsigned> &axis) const
+StaticSurfaceInjector::GenerateAxis(I3RandomService &rng, std::pair<I3Particle, unsigned> &axis) const
 {
 	I3Direction dir;
 	I3Position pos;
 	unsigned m;
 	double flux;
 	do {
-		surface_->SampleImpactRay(pos, dir, *rng_);
-		m = rng_->Integer(flux_->GetMaxMultiplicity() - flux_->GetMinMultiplicity())
+		surface_->SampleImpactRay(pos, dir, rng);
+		m = rng.Integer(flux_->GetMaxMultiplicity() - flux_->GetMinMultiplicity())
 		    + flux_->GetMinMultiplicity();
 		// Now, calculate the flux expectation at the chosen zenith angle
 		// and at the depth where the shower axis crosses the surface
@@ -115,7 +107,7 @@ StaticSurfaceInjector::GenerateAxis(std::pair<I3Particle, unsigned> &axis) const
 		double coszen = cos(dir.GetZenith());
 		flux = (*flux_)(h, coszen, m)
 		    * surface_->GetDifferentialArea(coszen);
-	} while (flux <= rng_->Uniform(0., maxFlux_));
+	} while (flux <= rng.Uniform(0., maxFlux_));
 	
 	axis.first.SetPos(pos);
 	axis.first.SetDir(dir);
@@ -126,7 +118,8 @@ StaticSurfaceInjector::GenerateAxis(std::pair<I3Particle, unsigned> &axis) const
 }
 
 void
-StaticSurfaceInjector::FillMCTree(const std::pair<I3Particle, unsigned> &axis,
+StaticSurfaceInjector::FillMCTree(I3RandomService &rng,
+    const std::pair<I3Particle, unsigned> &axis,
     I3MCTree &mctree, BundleConfiguration &bundlespec) const
 {
 	const I3Particle &primary = axis.first;
@@ -143,8 +136,8 @@ StaticSurfaceInjector::FillMCTree(const std::pair<I3Particle, unsigned> &axis,
 		track.SetSpeed(I3Constants::c);
 		
 		double radius = (multiplicity > 1u) ?
-		    radialDistribution_->Generate(h, coszen, multiplicity).value : 0.;
-		double azimuth = rng_->Uniform(0, 2*M_PI);
+		    radialDistribution_->Generate(rng, h, coszen, multiplicity) : 0.;
+		double azimuth = rng.Uniform(0, 2*M_PI);
 		I3Position offset(radius, 0, 0);
 		offset.RotateY(primary.GetDir().GetZenith());
 		offset.RotateZ(azimuth);
@@ -155,18 +148,18 @@ StaticSurfaceInjector::FillMCTree(const std::pair<I3Particle, unsigned> &axis,
 		// so that they correspond to a plane wave crossing the sampling
 		// surface at time 0
 			
-		track.SetEnergy(energyGenerator_->Generate());
+		track.SetEnergy(energyGenerator_->Generate(rng));
 		I3MCTreeUtils::AppendChild(mctree, primary, track);
 		bundlespec.push_back(std::make_pair(radius, track.GetEnergy()));
 	}
 }
 
 void
-StaticSurfaceInjector::Generate(I3MCTree &mctree, BundleConfiguration &bundlespec) const
+StaticSurfaceInjector::Generate(I3RandomService &rng, I3MCTree &mctree, BundleConfiguration &bundlespec) const
 {
 	std::pair<I3Particle, unsigned> axis;
-	GenerateAxis(axis);
-	FillMCTree(axis, mctree, bundlespec);
+	GenerateAxis(rng, axis);
+	FillMCTree(rng, axis, mctree, bundlespec);
 }
 
 double

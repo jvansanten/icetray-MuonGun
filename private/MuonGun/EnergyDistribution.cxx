@@ -1,23 +1,10 @@
 
 #include <MuonGun/EnergyDistribution.h>
+#include <phys-services/I3RandomService.h>
 
 namespace I3MuonGun {
 
 EnergyDistribution::~EnergyDistribution() {};
-
-double
-PotemkinEnergyDistribution::operator()(double depth, double cos_theta, 
-    unsigned multiplicity, double radius, double energy) const
-{
-	return 1.;
-}
-
-Sample
-PotemkinEnergyDistribution::Generate(double depth, double cos_theta, 
-    unsigned multiplicity, double radius) const
-{
-	return Sample(1., 1.);
-}
 
 SplineEnergyDistribution::SplineEnergyDistribution(const std::string &singles, const std::string &bundles)
     : singles_(singles), bundles_(bundles)
@@ -47,12 +34,12 @@ SplineEnergyDistribution::operator()(double depth, double cos_theta,
 	return std::exp(logprob);
 }
 
-Sample
-SplineEnergyDistribution::Generate(double depth, double cos_theta, 
+double
+SplineEnergyDistribution::Generate(I3RandomService &rng, double depth, double cos_theta, 
     unsigned multiplicity, double radius) const
 {
 	log_fatal("Sampling is not yet implemented");
-	return Sample(1., 1.);
+	return 1.;
 }
 
 OffsetPowerLaw::OffsetPowerLaw(double gamma, double offset, double emin, double emax)
@@ -75,9 +62,9 @@ OffsetPowerLaw::operator()(double energy) const
 }
 
 double
-OffsetPowerLaw::Generate() const
+OffsetPowerLaw::Generate(I3RandomService &rng) const
 {
-	return std::pow(rng_->Uniform()*(nmax_ - nmin_) + nmin_, 1./(1.-gamma_)) - offset_;
+	return std::pow(rng.Uniform()*(nmax_ - nmin_) + nmin_, 1./(1.-gamma_)) - offset_;
 }
 
 }

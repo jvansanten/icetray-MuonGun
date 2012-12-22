@@ -1,12 +1,11 @@
 #ifndef I3MUONGUN_FLUX_H_INCLUDED
 #define I3MUONGUN_FLUX_H_INCLUDED
 
-#include <MuonGun/Distribution.h>
 #include <photospline/I3SplineTable.h>
 
 namespace I3MuonGun {
 
-class Flux : public Distribution {
+class Flux {
 public:
 	Flux();
 	virtual ~Flux();
