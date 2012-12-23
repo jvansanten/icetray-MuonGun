@@ -1,3 +1,10 @@
+/** $Id$
+ * @file
+ * @author Jakob van Santen <vansanten@wisc.edu>
+ *
+ * @version $Revision$
+ * @date $Date$
+ */
 
 #include <MuonGun/I3MuonGun.h>
 #include <MuonGun/Surface.h>

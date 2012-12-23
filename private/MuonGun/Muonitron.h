@@ -1,3 +1,10 @@
+/** $Id$
+ * @file
+ * @author Jakob van Santen <vansanten@wisc.edu>
+ *
+ * @version $Revision$
+ * @date $Date$
+ */
 
 #ifndef MUONGUN_MUONITRON_H_INCLUDED
 #define MUONGUN_MUONITRON_H_INCLUDED

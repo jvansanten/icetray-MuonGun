@@ -1,3 +1,10 @@
+/** $Id$
+ * @file
+ * @author Jakob van Santen <vansanten@wisc.edu>
+ *
+ * @version $Revision$
+ * @date $Date$
+ */
 
 #ifndef I3MUONGUN_SURFACE_H_INCLUDED
 #define I3MUONGUN_SURFACE_H_INCLUDED

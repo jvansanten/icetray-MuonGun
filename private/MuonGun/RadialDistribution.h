@@ -1,3 +1,11 @@
+/** $Id$
+ * @file
+ * @author Jakob van Santen <vansanten@wisc.edu>
+ *
+ * @version $Revision$
+ * @date $Date$
+ */
+
 #ifndef I3MUONGUN_RADIALDISTRIBUTION_H
 #define I3MUONGUN_RADIALDISTRIBUTION_H
 

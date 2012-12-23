@@ -1,3 +1,10 @@
+/** $Id$
+ * @file
+ * @author Jakob van Santen <vansanten@wisc.edu>
+ *
+ * @version $Revision$
+ * @date $Date$
+ */
 
 #ifndef MUONGUN_I3MUONGUN_H_INCLUDED
 #define MUONGUN_I3MUONGUN_H_INCLUDED

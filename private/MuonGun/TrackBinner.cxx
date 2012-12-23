@@ -1,3 +1,11 @@
+/** $Id$
+ * @file
+ * @author Jakob van Santen <vansanten@wisc.edu>
+ *
+ * @version $Revision$
+ * @date $Date$
+ */
+
 #include <MuonGun/TrackBinner.h>
 #include <boost/assign.hpp>
 #include <boost/foreach.hpp>
