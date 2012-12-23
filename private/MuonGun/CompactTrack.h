@@ -2,8 +2,8 @@
  * @file
  * @author Jakob van Santen <vansanten@wisc.edu>
  *
- * @version $Revision$
- * @date $Date$
+ * $Revision$
+ * $Date$
  */
 
 #ifndef MUONGUN_COMPACTTRACK_H_INCLUDED

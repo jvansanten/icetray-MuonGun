@@ -2,8 +2,8 @@
  * @file
  * @author Jakob van Santen <vansanten@wisc.edu>
  *
- * @version $Revision$
- * @date $Date$
+ * $Revision$
+ * $Date$
  */
 
 #include <MuonGun/Muonitron.h>
