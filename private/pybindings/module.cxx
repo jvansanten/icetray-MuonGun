@@ -1,3 +1,10 @@
+/** $Id$
+ * @file
+ * @author Jakob van Santen <vansanten@wisc.edu>
+ *
+ * $Revision$
+ * $Date$
+ */
 
 #include <icetray/I3FrameObject.h>
 #include <icetray/load_project.h>

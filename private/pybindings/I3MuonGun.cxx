@@ -1,3 +1,10 @@
+/** $Id$
+ * @file
+ * @author Jakob van Santen <vansanten@wisc.edu>
+ *
+ * $Revision$
+ * $Date$
+ */
 
 #include <MuonGun/I3MuonGun.h>
 #include <dataclasses/I3Position.h>

@@ -1,3 +1,10 @@
+/** $Id$
+ * @file
+ * @author Jakob van Santen <vansanten@wisc.edu>
+ *
+ * $Revision$
+ * $Date$
+ */
 
 #include <MuonGun/EnergyDistribution.h>
 #include <phys-services/I3RandomService.h>
