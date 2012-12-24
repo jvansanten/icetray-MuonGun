@@ -93,6 +93,9 @@ public:
 	double operator()(double energy) const;
 	/** Draw an energy from the distribution */
 	double Generate(I3RandomService &rng) const;
+	
+	const double GetMin() const { return emin_; }
+	const double GetMax() const { return emax_; }
 private:
 	double gamma_, offset_;
 	double emin_, emax_;

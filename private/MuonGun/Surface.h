@@ -96,6 +96,16 @@ namespace I3MuonGun {
 		double GetMinDepth() const;
 		double IntegrateFlux(boost::function<double (double, double)> flux, double cosMin=0, double cosMax=1) const;
 		double SampleImpactRay(I3Position &pos, I3Direction &dir, I3RandomService &rng, double cosMin=0, double cosMax=1) const;
+		
+		void SetLength(double v) { length_ = v; }
+		double GetLength() const { return length_; }
+		
+		void SetRadius(double v) { radius_ = v; }
+		double GetRadius() const { return radius_; }
+		
+		void SetCenter(const I3Position &v) { center_ = v; }
+		const I3Position& GetCenter() const { return center_; }
+		
 	private:
 		double GetDifferentialTopArea(double cos_zenith) const;
 		double GetDifferentialSideArea(double cos_zenith) const;

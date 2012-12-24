@@ -27,6 +27,7 @@ namespace I3MuonGun {
 typedef std::vector<std::pair<double, double> > BundleConfiguration;
 
 I3_FORWARD_DECLARATION(Surface);
+I3_FORWARD_DECLARATION(SamplingSurface);
 I3_FORWARD_DECLARATION(GenerationProbability);
 
 /**
@@ -46,23 +47,36 @@ public:
 	 * Calculate the number of events with the given configuration that
 	 * that should have been produced
 	 *
-	 * @param[in] axis   an I3Particle representing the shower axis
+	 * @param[in] depth  the vertical depth [km] where the shower crosses
+	 *                   the sampling surface
+	 * @param[in] coszen the cosine of the shower zenith angle
 	 * @param[in] bundle the radial offset and energy of each muon
 	 *                   in the bundle
 	 */
-	double GetGeneratedEvents(const I3Particle &axis, const BundleConfiguration &bundle) const;
+	double GetGeneratedEvents(double depth, double coszen, const BundleConfiguration &bundle) const;	
 public:
+	/**
+	 * @param[in] axis   an I3Particle representing the shower axis
+	 * @param[in] bundle the radial offset and energy of each muon
+	 *                   in the bundle
+	 * @returns the surface where a bundle of the given characteristics
+	 *          would be placed
+	 */
+	virtual SamplingSurfaceConstPtr GetInjectionSurface(const I3Particle &axis, const BundleConfiguration &bundle) const = 0;
+	 
 	/** Copy self into a shared pointer */
 	virtual GenerationProbabilityPtr Clone() const = 0;
 protected:
 	/**
 	 * Calculate the probability that the given configuration was generated
 	 *
-	 * @param[in] axis   an I3Particle representing the shower axis
+	 * @param[in] depth  the vertical depth [km] where the shower crosses
+	 *                   the sampling surface
+	 * @param[in] coszen the cosine of the shower zenith angle
 	 * @param[in] bundle the radial offset and energy of each muon
 	 *                   in the bundle
 	 */
-	virtual double GetGenerationProbability(const I3Particle &axis, const BundleConfiguration &bundle) const = 0;
+	virtual double GetGenerationProbability(double depth, double coszen, const BundleConfiguration &bundle) const = 0;
 
 private:
 	/** The total number of events that should be generated */
@@ -77,13 +91,17 @@ I3_POINTER_TYPEDEFS(GenerationProbability);
 class GenerationProbabilityCollection : public GenerationProbability, public std::vector<GenerationProbabilityPtr> {
 public:
 	GenerationProbabilityCollection(GenerationProbabilityPtr, GenerationProbabilityPtr);
+	
+public:
+	// GenerationProbability interface
 	GenerationProbabilityPtr Clone() const;
+	SamplingSurfaceConstPtr GetInjectionSurface(const I3Particle &axis, const BundleConfiguration &bundle) const;
 protected:
 	/**
 	 * Calculate the *total* probability that the given configuration was generated
 	 * by any of the distributions in the colleciton.
 	 */
-	double GetGenerationProbability(const I3Particle &axis, const BundleConfiguration &bundle) const;
+	double GetGenerationProbability(double depth, double coszen, const BundleConfiguration &bundle) const;
 };
 
 /** Scale the distribution by the given number of events */
@@ -117,8 +135,6 @@ public:
 	 *                    in the bundle
 	 */
 	virtual void Generate(I3RandomService &rng, I3MCTree &tree, BundleConfiguration &bundle) const = 0;
-	/** Return the surface where bundles will be placed */
-	virtual SurfaceConstPtr GetInjectionSurface() const = 0;
 };
 
 I3_POINTER_TYPEDEFS(Generator);

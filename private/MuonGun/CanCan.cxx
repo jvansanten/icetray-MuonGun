@@ -170,15 +170,10 @@ StaticSurfaceInjector::Generate(I3RandomService &rng, I3MCTree &mctree, BundleCo
 }
 
 double
-StaticSurfaceInjector::GetGenerationProbability(const I3Particle &axis,
+StaticSurfaceInjector::GetGenerationProbability(double h, double coszen,
     const BundleConfiguration &bundlespec) const
 {
-	std::pair<double, double> steps = surface_->GetIntersection(axis.GetPos(), axis.GetDir());
-	// assert(steps.first >= 0);
-	double h = GetDepth(axis.GetPos().GetZ() + steps.first*axis.GetDir().GetZ());
-	double coszen = cos(axis.GetDir().GetZenith());
 	unsigned m = bundlespec.size();
-	
 	double prob = flux_->operator()(h, coszen, m)*surface_->GetDifferentialArea(coszen)/GetTotalRate();
 	BOOST_FOREACH(const BundleConfiguration::value_type &pair, bundlespec) {
 		if (m > 1)

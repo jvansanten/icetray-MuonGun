@@ -25,15 +25,18 @@ I3_FORWARD_DECLARATION(EnergyDistribution);
 class CORSIKAGenerationProbability : public GenerationProbability {
 public:
 	CORSIKAGenerationProbability(SamplingSurfacePtr, FluxPtr, RadialDistributionPtr, EnergyDistributionPtr);
-	GenerationProbabilityPtr Clone() const;
 	
 	SamplingSurfaceConstPtr GetSurface() const { return surface_; }
 	FluxConstPtr GetFlux() const { return flux_; }
 	RadialDistributionConstPtr GetRadialDistribution() const { return radialDistribution_; }
 	EnergyDistributionConstPtr GetEnergyDistribution() const { return energyDistribution_; }
-
+public:
+	// GenerationProbability interface
+	SamplingSurfaceConstPtr GetInjectionSurface(const I3Particle&, const BundleConfiguration&) const { return surface_; }
+	GenerationProbabilityPtr Clone() const;
+	
 protected:
-	double GetGenerationProbability(const I3Particle &axis, const BundleConfiguration &bundle) const;
+	double GetGenerationProbability(double depth, double coszen, const BundleConfiguration &bundle) const;
 private:
 	SamplingSurfacePtr surface_;
 	FluxPtr flux_;

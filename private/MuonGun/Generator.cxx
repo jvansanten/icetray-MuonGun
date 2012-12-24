@@ -7,6 +7,7 @@
  */
 
 #include <MuonGun/Generator.h>
+#include <MuonGun/Surface.h>
 
 #include <icetray/I3Module.h>
 #include <dataclasses/physics/I3MCTreeUtils.h>
@@ -21,9 +22,9 @@ GenerationProbability::~GenerationProbability() {}
 Generator::~Generator() {}
 
 double
-GenerationProbability::GetGeneratedEvents(const I3Particle &axis, const BundleConfiguration &bundle) const
+GenerationProbability::GetGeneratedEvents(double depth, double coszen, const BundleConfiguration &bundle) const
 {
-	return numEvents_*GetGenerationProbability(axis, bundle);
+	return numEvents_*GetGenerationProbability(depth, coszen, bundle);
 }
 
 GenerationProbabilityCollection::GenerationProbabilityCollection(GenerationProbabilityPtr p1, GenerationProbabilityPtr p2)
@@ -33,14 +34,45 @@ GenerationProbabilityCollection::GenerationProbabilityCollection(GenerationProba
 }
 
 double
-GenerationProbabilityCollection::GetGenerationProbability(const I3Particle &axis, const BundleConfiguration &bundle) const
+GenerationProbabilityCollection::GetGenerationProbability(double depth,
+    double coszen, const BundleConfiguration &bundle) const
 {
 	double prob = 0.;
 	BOOST_FOREACH(const value_type &p, *this)
 		if (p)
-			prob += p->GetGeneratedEvents(axis, bundle);
+			prob += p->GetGeneratedEvents(depth, coszen, bundle);
 	
 	return prob;
+}
+
+/**
+ * @brief Find the inner-most injection surface in the collection
+ *
+ * Generators are allowed to use different sampling surfaces, and even
+ * to change the size and shape of their injection surfaces based on the
+ * properties of the muon bundle. The combined weighting for simulations
+ * on different injection surfaces only makes sense, however, if the flux
+ * is measured on the inner-most surface. For a given shower axis, this
+ * is the one whose entry point is furthest away.
+ */
+SamplingSurfaceConstPtr
+GenerationProbabilityCollection::GetInjectionSurface(const I3Particle &axis,
+    const BundleConfiguration &bundle) const
+{
+	std::map<double, SamplingSurfaceConstPtr> surfaces;
+	BOOST_FOREACH(const value_type &p, *this) {
+		SamplingSurfaceConstPtr surface = p->GetInjectionSurface(axis, bundle);
+		std::pair<double, double> steps =
+		    surface->GetIntersection(axis.GetPos(), axis.GetDir());
+		// If any surface is missed the entire event should be
+		// weighted to 0, so we ensure that any that are missed
+		// will be considered "innermost"
+		surfaces[std::isfinite(steps.first) ? steps.first : std::numeric_limits<double>::infinity()] = surface;
+	}
+	
+	if (surfaces.size() == 0)
+		log_fatal("Empty collection!");
+	return (--surfaces.end())->second;
 }
 
 GenerationProbabilityPtr
