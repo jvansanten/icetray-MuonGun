@@ -1,7 +1,7 @@
 i3_project(MuonGun PYTHON_DIR python)
 
 i3_add_library(MuonGun
-    private/MuonGun/I3MuonGun.cxx
+    # Support bits for making muon-flux parametrizations
     private/MuonGun/Muonitron.cxx
     private/MuonGun/CompactTrack.cxx
     private/MuonGun/TrackBinner.cxx
@@ -9,6 +9,8 @@ i3_add_library(MuonGun
     private/MuonGun/histogram.cxx
     private/cubature/cubature.c
     
+    # Base classes and function implementations
+    private/MuonGun/I3MuonGun.cxx
     private/MuonGun/Generator.cxx
     private/MuonGun/WeightCalculator.cxx
     private/MuonGun/Surface.cxx
@@ -16,7 +18,9 @@ i3_add_library(MuonGun
     private/MuonGun/RadialDistribution.cxx
     private/MuonGun/EnergyDistribution.cxx
 
+    # Event generator implementations
     private/MuonGun/CanCan.cxx
+    private/MuonGun/EnergyDependentSurfaceInjector.cxx
     private/MuonGun/CORSIKAGenerationProbability.cxx
     
     # private/boost/numpy/*.cpp

@@ -9,6 +9,7 @@
 #ifndef I3MUONGUN_GENERATOR_H_INCLUDED
 #define I3MUONGUN_GENERATOR_H_INCLUDED
 
+#include <list>
 #include <vector>
 #include <boost/make_shared.hpp>
 
@@ -24,7 +25,7 @@ namespace I3MuonGun {
 /**
  * The radial offset and energy of each muon in a bundle
  */
-typedef std::vector<std::pair<double, double> > BundleConfiguration;
+typedef std::list<std::pair<double, double> > BundleConfiguration;
 
 I3_FORWARD_DECLARATION(Surface);
 I3_FORWARD_DECLARATION(SamplingSurface);
@@ -53,9 +54,17 @@ public:
 	 * @param[in] bundle the radial offset and energy of each muon
 	 *                   in the bundle
 	 */
-	double GetGeneratedEvents(double depth, double coszen, const BundleConfiguration &bundle) const;	
+	double GetGeneratedEvents(double depth, double coszen, const BundleConfiguration &bundle) const;
 public:
 	/**
+	 * Propose an injection surface for the given bundle configuration. If 
+	 * variable-surface and fixed-surface generation schemes are to be combined,
+	 * the variable surface must satisfy a few basic requirements:
+	 * - The variable surface must always be *inside* any fixed surfaces
+	 * - As the bundle properties are sampled at later and later times, the
+	 *   proposed surface must retreat. For example, the surface must become
+	 *   monotonically smaller for lower energies and multiplicities.
+	 *
 	 * @param[in] axis   an I3Particle representing the shower axis
 	 * @param[in] bundle the radial offset and energy of each muon
 	 *                   in the bundle
@@ -135,6 +144,24 @@ public:
 	 *                    in the bundle
 	 */
 	virtual void Generate(I3RandomService &rng, I3MCTree &tree, BundleConfiguration &bundle) const = 0;
+
+	/**
+	 * Place a muon at a given radial offset and rotation with respect
+	 * to the shower axis.
+	 *
+	 * @param[in] radius  perpendicular distance from the shower axis
+	 * @param[in] azimuth rotation about the shower axis
+	 * @param[in] surface place the muon on this surface, with timing
+	 *                    adjusted so that it remains in the shower plane
+	 * @param[in] axis    the shower axis
+	 * @param[out] tree   An I3MCTree to fill the generated bundle in to.
+	 *                    The bundle axis should be used as the primary,
+	 *                    with its type set to I3Particle::unknown
+	 * @param[out] bundle the radial offset and energy of each muon
+	 *                    in the bundle
+	 */
+	static I3Particle CreateParallelTrack(double radius, double azimuth,
+	    const Surface &surface, const I3Particle &axis);
 };
 
 I3_POINTER_TYPEDEFS(Generator);

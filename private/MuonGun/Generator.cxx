@@ -128,6 +128,66 @@ operator+(GenerationProbabilityPtr p1, GenerationProbabilityPtr p2)
 	return boost::make_shared<GenerationProbabilityCollection>(p1, p2);
 }
 
+namespace {
+
+inline I3Position
+operator+(const I3Position &a, const I3Position &b)
+{
+	return I3Position(a.GetX()+b.GetX(), a.GetY()+b.GetY(), a.GetZ()+b.GetZ());
+}
+
+inline I3Position&
+operator+=(I3Position &a, const I3Position &b)
+{
+	a.SetX(a.GetX() + b.GetX());
+	a.SetY(a.GetY() + b.GetY());
+	a.SetZ(a.GetZ() + b.GetZ());
+	return a;
+}
+
+inline I3Position
+operator*(double v, const I3Direction &d)
+{
+	return I3Position(v*d.GetX(), v*d.GetY(), v*d.GetZ());
+}
+
+}
+
+I3Particle
+Generator::CreateParallelTrack(double radius, double azimuth,
+    const Surface &surface, const I3Particle &axis)
+{
+	I3Particle track;
+	track.SetLocationType(I3Particle::InIce);
+	track.SetType(I3Particle::MuMinus);
+	track.SetDir(axis.GetDir());
+	track.SetSpeed(I3Constants::c);
+	track.SetPos(axis.GetPos());
+	track.SetTime(axis.GetTime());
+	
+	if (radius > 0) {
+		// Shift the track parallel to the axis
+		I3Position offset(radius, 0, 0);
+		offset.RotateY(axis.GetDir().GetZenith());
+		offset.RotateZ(azimuth);
+		offset += axis.GetPos();
+		// Find the distance from the offset position to the sampling
+		// surface, and shift so that all tracks have their origin
+		// on the surface, but remain in a plane
+		double shift = 
+		    surface.GetIntersection(offset, track.GetDir()).first
+		    -surface.GetIntersection(axis.GetPos(), axis.GetDir()).first;
+		if (std::isfinite(shift)) {
+			track.SetTime(axis.GetTime() + shift/track.GetSpeed());
+			track.SetPos(offset + shift*track.GetDir());
+		} else {
+			track.SetPos(offset);
+		}
+	}
+	
+	return track;
+}
+
 /**
  * @brief Interface between Generator and IceTray
  */

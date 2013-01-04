@@ -134,27 +134,16 @@ StaticSurfaceInjector::FillMCTree(I3RandomService &rng,
 	double h = GetDepth(primary.GetPos().GetZ());
 	double coszen = cos(primary.GetDir().GetZenith());
 	
-	unsigned multiplicity = axis.second;
-	for (unsigned i=0; i < multiplicity; i++) {
-		I3Particle track;
-		track.SetLocationType(I3Particle::InIce);
-		track.SetType(I3Particle::MuMinus);
-		track.SetDir(primary.GetDir());
-		track.SetSpeed(I3Constants::c);
+	unsigned m = axis.second;
+	for (unsigned i=0; i < m; i++) {
+		double radius = 0., azimuth = 0.;
+		if (m > 1u) {
+			radius = radialDistribution_->Generate(rng, h, coszen, m);
+			azimuth = rng.Uniform(0., 2*M_PI);
+		}
 		
-		double radius = (multiplicity > 1u) ?
-		    radialDistribution_->Generate(rng, h, coszen, multiplicity) : 0.;
-		double azimuth = rng.Uniform(0, 2*M_PI);
-		I3Position offset(radius, 0, 0);
-		offset.RotateY(primary.GetDir().GetZenith());
-		offset.RotateZ(azimuth);
-		track.SetPos(offset.GetX()+primary.GetPos().GetX(),
-		             offset.GetY()+primary.GetPos().GetY(),
-		             offset.GetZ()+primary.GetPos().GetZ());
-		// TODO: shift the times and positions of off-axis tracks
-		// so that they correspond to a plane wave crossing the sampling
-		// surface at time 0
-			
+		I3Particle track = CreateParallelTrack(radius, azimuth, *surface_, primary);
+		
 		track.SetEnergy(energyGenerator_->Generate(rng));
 		I3MCTreeUtils::AppendChild(mctree, primary, track);
 		bundlespec.push_back(std::make_pair(radius, track.GetEnergy()));

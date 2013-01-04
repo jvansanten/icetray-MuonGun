@@ -7,6 +7,7 @@
  */
 
 #include <MuonGun/CanCan.h>
+#include <MuonGun/EnergyDependentSurfaceInjector.h>
 
 void
 register_CanCan()
@@ -20,4 +21,10 @@ register_CanCan()
 		#undef PROPS
 		.add_property("total_rate", &StaticSurfaceInjector::GetTotalRate)
 	;
+
+#if 1
+	class_<EnergyDependentSurfaceInjector >("EnergyDependentSurfaceInjector")
+		.def("total_rate", &EnergyDependentSurfaceInjector::GetTotalRate)
+	;
+#endif
 }

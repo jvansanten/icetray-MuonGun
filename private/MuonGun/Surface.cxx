@@ -148,7 +148,7 @@ Cylinder::IntegrateFlux(boost::function<double (double, double)> flux,
 		f1 dN = boost::bind<double>(flux, GetDepth(center_.GetZ() + length_/2.), _1);
 		f1 dOmega = boost::bind(&Cylinder::GetDifferentialTopArea, this, _1);
 		f1 dN_dOmega = detail::multiply<1>(dN, dOmega);
-		total += 2*M_PI*Integrate(dN_dOmega, cosMin, cosMax, 1e-6, 1e-6);
+		total += 2*M_PI*Integrate(dN_dOmega, cosMin, cosMax, 1e-3, 1e-3);
 	}
 	
 	// Now, the more complicated bit: integrate over the sides. The flux is now a function of both depth and zenith!
@@ -158,7 +158,7 @@ Cylinder::IntegrateFlux(boost::function<double (double, double)> flux,
 		f2 dN_dOmega = detail::multiply<2>(dN, dOmega);
 		boost::array<double, 2> low = {{center_.GetZ()  - length_/2., 0.}};
 		boost::array<double, 2> high = {{center_.GetZ() + length_/2., 1.}};
-		total += 2*M_PI*Integrate(dN_dOmega, low, high, 2e-8, 2e-8, 10000u);
+		total += 2*M_PI*Integrate(dN_dOmega, low, high, 1e-3, 1e-3, 10000u);
 	}
 	
 	return total;

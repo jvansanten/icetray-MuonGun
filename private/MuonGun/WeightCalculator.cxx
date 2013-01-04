@@ -181,7 +181,7 @@ public:
 		
 		// First, harvest the muons in the bundle at their points of injection,
 		// storing iterators over the secondary energy losses
-		std::vector<Track> tracks;
+		std::list<Track> tracks;
 		if (primary->GetType() == I3Particle::PPlus || primary->IsNucleus()) {
 			// For complete air-shower simulation, harvest radial offsets and
 			// energies at the sampling surface from the MMCTrackList
@@ -223,25 +223,57 @@ public:
 		BOOST_FOREACH(const Track &track, tracks)
 			bundlespec.push_back(std::make_pair(track.radius(*primary), track.energy));
 		
-		double rate = 0.;
-		// Get the sampling surface for this bundle.
-		SamplingSurfaceConstPtr surface = generator_->GetInjectionSurface(*primary, bundlespec);
-		std::pair<double, double> steps = surface->GetIntersection(primary->GetPos(), primary->GetDir());
-		if (std::isfinite(steps.first)) {
-			
-			// Track bundle to the sampling surface, which may be identical
-			// to the injection surface
-			bundlespec.clear();
-			BOOST_FOREACH(Track &track, tracks) {
+		// Now, track the bundle to the innermost sampling surface, which may or may
+		// not be identical to the injection surface. Since we allow the surface to
+		// depend on the bundle configuration, we have to repeat this track/query
+		// loop until the surface is stable. 
+		
+		// We will accept tracks that are reasonably close to the proposed surface
+		double tol = 1*I3Units::m;
+		SamplingSurfaceConstPtr surface;
+		while (!surface) {
+			surface = generator_->GetInjectionSurface(*primary, bundlespec);
+			if (!surface)
+				log_fatal("Generator returned a NULL surface!");
+			std::list<Track>::iterator track = tracks.begin();
+			BundleConfiguration::iterator bspec = bundlespec.begin();
+			for ( ; track != tracks.end() && bspec != bundlespec.end(); ) {
 				std::pair<double, double> steps =
-				    surface->GetIntersection(track.GetPos(), track.GetDir());
-				if (!std::isfinite(steps.first))
-					continue;
-				track.advance(steps.first);
-				if (track.energy > 0)
-					bundlespec.push_back(std::make_pair(track.radius(*primary), track.energy));
+				    surface->GetIntersection(track->GetPos(), track->GetDir());
+				if (!std::isfinite(steps.first)) {
+					// This track misses the surface; drop it
+					track = tracks.erase(track);
+					bspec = bundlespec.erase(bspec);
+				} else if (steps.first > tol) {
+					// This track will pierce the newly-proposed
+					// surface, but is still outside. Track it to the
+					// new surface and update its energy and radius.
+					track->advance(steps.first);
+					if (track->energy > 0) {
+						bspec->first = track->radius(*primary);
+						bspec->second = track->energy;
+						track++;
+						bspec++;
+					} else {
+						track = tracks.erase(track);
+						bspec = bundlespec.erase(bspec);
+					}
+					// We had to update the bundle and need to check
+					// that the proposed surface is stable in the
+					// next iteration.
+					surface.reset();
+				} else {
+					// This track is at the proposed surface.
+					track++;
+					bspec++;
+				}
 			}
-			
+		}
+		
+		double rate = 0.;
+		std::pair<double, double> steps =
+		    surface->GetIntersection(primary->GetPos(), primary->GetDir());
+		if (bundlespec.size() > 0 && std::isfinite(steps.first)) {
 			double h = GetDepth(primary->GetPos().GetZ() + steps.first*primary->GetDir().GetZ());
 			double coszen = cos(primary->GetDir().GetZenith());
 			unsigned m = bundlespec.size();
