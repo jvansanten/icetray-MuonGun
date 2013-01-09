@@ -120,7 +120,7 @@ EnergyDependentSurfaceInjector::Generate(I3RandomService &rng, I3MCTree &tree,
 	}
 }
 
-SamplingSurfaceConstPtr
+SamplingSurfacePtr
 EnergyDependentSurfaceInjector::GetSurface(double energy) const
 {
 	// TODO implement realistic/configurable scaling

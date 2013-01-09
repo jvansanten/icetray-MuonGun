@@ -13,6 +13,7 @@
 #include <MuonGun/RadialDistribution.h>
 #include <MuonGun/EnergyDistribution.h>
 #include <MuonGun/I3MuonGun.h>
+#include <MuonGun/Track.h>
 #include <boost/foreach.hpp>
 
 #include <icetray/I3Module.h>
@@ -50,8 +51,38 @@ WeightCalculator::GetWeight(const I3Particle &axis, const BundleConfiguration &b
 	return rate;
 }
 
-namespace {
+// Possibly throw-away utility function: "track" muons to a fixed surface using the
+// same method as WeightCalculatorModule
+std::vector<I3Particle>
+GetMuonsAtSurface(I3FramePtr frame, SurfaceConstPtr surface)
+{
+	std::vector<I3Particle> final_states;
 	
+	I3MCTreeConstPtr mctree = frame->Get<I3MCTreeConstPtr>();
+	I3MMCTrackListConstPtr mmctracks = frame->Get<I3MMCTrackListConstPtr>("MMCTrackList");
+	if (!mctree)
+		log_fatal("I3MCTree missing!");
+	if (!mmctracks)
+		log_fatal("I3MMCTrackList missing!");
+	BOOST_FOREACH(const Track &track, Track::Harvest(*mctree, *mmctracks)) {
+		std::pair<double, double> steps =
+		    surface->GetIntersection(track.GetPos(), track.GetDir());
+		double energy = track.GetEnergy(steps.first);
+		if (energy > 0) {
+			final_states.push_back(track);
+			I3Particle &p = final_states.back();
+			p.SetEnergy(energy);
+			p.SetPos(track.GetPos(steps.first));
+			p.SetTime(track.GetTime(steps.first));
+			p.SetLength(track.GetLength()-steps.first);
+		}
+	}
+	
+	return final_states;
+}
+
+namespace {
+
 namespace ublas = boost::numeric::ublas;
 typedef ublas::bounded_vector<float, 3> vector;
 
@@ -88,54 +119,13 @@ operator-(const vector &v, const I3Position &p)
 	return v-make_vector(p);
 }
 
-struct Track {
-	Track(const I3MMCTrack &t) : pos(make_vector(t.GetXi(), t.GetYi(), t.GetZi())),
-	    dir(make_vector(t.GetI3Particle().GetDir())), energy(t.GetEi()), time(t.GetTi()),
-	    length(t.GetI3Particle().GetLength()-ublas::norm_2(pos-t.GetI3Particle().GetPos()))
-	{};
-	Track(const I3Particle &t) : pos(make_vector(t.GetPos())), dir(make_vector(t.GetDir())),
-	    energy(t.GetEnergy()), time(t.GetTime()), length(t.GetLength())
-	{};
-	double radius(const I3Particle &axis) const
-	{
-		vector r = pos-axis.GetPos();
-		double l2 = ublas::inner_prod(make_vector(axis.GetDir()), r);
-		
-		return sqrt(ublas::inner_prod(r, r) - l2);
-	}
-	void advance(double l)
-	{
-		if (l < 0) {
-			return;
-		} else if (l >= length) {
-			length = 0;
-			energy = 0;
-		} else {
-			pos += l*dir;
-			time += l/I3Constants::c;
-			length -= l;
-			for ( ; (secondaries.first != secondaries.second) &&
-			    (secondaries.first->GetTime() <= time); secondaries.first++)
-				energy -= secondaries.first->GetEnergy();
-		}
-	}
-	
-	I3Position GetPos() const { return I3Position(pos[0], pos[1], pos[2]); }
-	I3Direction GetDir() const { return I3Direction(dir[0], dir[1], dir[2]); }
-	
-	vector pos;
-	vector dir;
-	double energy;
-	double time;
-	double length;
-	std::pair<I3MCTree::sibling_iterator, I3MCTree::sibling_iterator> secondaries;
-};
-
-inline bool
-operator!=(const I3MMCTrack &track, const I3Particle &p)
+inline double
+GetRadius(const I3Particle &axis, const I3Position &pos)
 {
-	return (track.GetI3Particle().GetMajorID() != p.GetMajorID() ||
-	    track.GetI3Particle().GetMinorID() != p.GetMinorID());
+	vector r = pos-axis.GetPos();
+	double l2 = ublas::inner_prod(make_vector(axis.GetDir()), r);
+	
+	return sqrt(ublas::inner_prod(r, r) - l2);
 }
 
 }
@@ -176,52 +166,20 @@ public:
 	
 	void DAQ(I3FramePtr frame)
 	{
+		// First, harvest the muons in the bundle at their points of injection, storing
+		// everything that's necessary to estimate the energy lost up to an arbitrary point
 		I3MCTreeConstPtr mctree = frame->Get<I3MCTreeConstPtr>();
-		I3MCTree::iterator primary = mctree->begin();
-		
-		// First, harvest the muons in the bundle at their points of injection,
-		// storing iterators over the secondary energy losses
-		std::list<Track> tracks;
-		if (primary->GetType() == I3Particle::PPlus || primary->IsNucleus()) {
-			// For complete air-shower simulation, harvest radial offsets and
-			// energies at the sampling surface from the MMCTrackList
-			I3MMCTrackListConstPtr mmctracks = frame->Get<I3MMCTrackListConstPtr>("MMCTrackList");
-			if (!mmctracks)
-				log_fatal("This appears to be CORSIKA simulation, but I have no MMCTrackList!");
-			I3MCTree::iterator p = mctree->begin();
-			BOOST_FOREACH(const I3MMCTrack &mmctrack, *mmctracks) {
-				while (p != mctree->end() && mmctrack != *p)
-					p++;
-				if (p != mctree->end()) {
-					Track track(mmctrack);
-					track.secondaries.first = mctree->begin(p);
-					track.secondaries.second = mctree->end(p);
-					tracks.push_back(track);
-					
-					p = mctree->end(p);
-				}
-			}
-		} else {
-			// Harvest the direct daughters of the primary.
-			for (I3MCTree::iterator p = mctree->begin(primary); p != mctree->end(primary); ) {
-				if (p->GetType() != I3Particle::MuMinus) {
-					p++;
-					continue;
-				} else {
-					Track track(*p);
-					track.secondaries.first = mctree->begin(p);
-					track.secondaries.second = mctree->end(p);
-					tracks.push_back(track);
-					
-					p = mctree->end(p);
-				}
-			}
-		}
-		
-		// Record the state of the bundle at the point of injection
+		I3MMCTrackListConstPtr mmctracks = frame->Get<I3MMCTrackListConstPtr>("MMCTrackList");
+		if (!mctree)
+			log_fatal("I3MCTree missing!");
+		if (!mmctracks)
+			log_fatal("I3MMCTrackList missing!");
+		const I3MCTree::iterator primary = mctree->begin();
+		std::list<Track> tracks = Track::Harvest(*mctree, *mmctracks);
 		BundleConfiguration bundlespec;
 		BOOST_FOREACH(const Track &track, tracks)
-			bundlespec.push_back(std::make_pair(track.radius(*primary), track.energy));
+			bundlespec.push_back(std::make_pair(
+			    GetRadius(*primary, track.GetPos()), track.GetEnergy()));
 		
 		// Now, track the bundle to the innermost sampling surface, which may or may
 		// not be identical to the injection surface. Since we allow the surface to
@@ -231,10 +189,10 @@ public:
 		// We will accept tracks that are reasonably close to the proposed surface
 		double tol = 1*I3Units::m;
 		SamplingSurfaceConstPtr surface;
-		while (!surface) {
+		bool stable = false;
+		while (!stable) {
+			stable = true;
 			surface = generator_->GetInjectionSurface(*primary, bundlespec);
-			if (!surface)
-				log_fatal("Generator returned a NULL surface!");
 			std::list<Track>::iterator track = tracks.begin();
 			BundleConfiguration::iterator bspec = bundlespec.begin();
 			for ( ; track != tracks.end() && bspec != bundlespec.end(); ) {
@@ -248,10 +206,10 @@ public:
 					// This track will pierce the newly-proposed
 					// surface, but is still outside. Track it to the
 					// new surface and update its energy and radius.
-					track->advance(steps.first);
-					if (track->energy > 0) {
-						bspec->first = track->radius(*primary);
-						bspec->second = track->energy;
+					double energy = track->GetEnergy(steps.first);
+					if (energy > 0) {
+						bspec->first = GetRadius(*primary, track->GetPos(steps.first));
+						bspec->second = energy;
 						track++;
 						bspec++;
 					} else {
@@ -261,7 +219,7 @@ public:
 					// We had to update the bundle and need to check
 					// that the proposed surface is stable in the
 					// next iteration.
-					surface.reset();
+					stable = false;
 				} else {
 					// This track is at the proposed surface.
 					track++;

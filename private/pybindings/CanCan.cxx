@@ -23,8 +23,9 @@ register_CanCan()
 	;
 
 #if 1
-	class_<EnergyDependentSurfaceInjector >("EnergyDependentSurfaceInjector")
+	class_<EnergyDependentSurfaceInjector, bases<Generator> >("EnergyDependentSurfaceInjector")
 		.def("total_rate", &EnergyDependentSurfaceInjector::GetTotalRate)
+		.def("get_surface", &EnergyDependentSurfaceInjector::GetSurface)
 	;
 #endif
 }

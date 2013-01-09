@@ -29,6 +29,9 @@ void register_Surface()
 	
 	class_<Cylinder, CylinderPtr, bases<SamplingSurface> >("Cylinder",
 	    init<double, double, I3Position>((arg("length"), arg("radius"), arg("center")=I3Position(0,0,0))))
+	    #define PROPS (Length)(Radius)
+	    BOOST_PP_SEQ_FOR_EACH(WRAP_PROP, Cylinder, PROPS)
+	    #undef PROPS
 	;
 	
 	class_<Sphere, bases<Surface> >("Sphere", init<double, double>())

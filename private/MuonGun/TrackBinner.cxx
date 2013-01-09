@@ -14,9 +14,7 @@
 namespace I3MuonGun {
 
 TrackBinner::TrackBinner(double mindepth, double maxdepth, unsigned steps)
-{
-	using namespace histogram;
-	
+{	
 	std::vector<double> multbins, rbins;
 	{
 		using namespace boost::assign;
@@ -24,33 +22,33 @@ TrackBinner::TrackBinner(double mindepth, double maxdepth, unsigned steps)
 		rbins += 0, 5, 10, 15, 25, 45;
 	}
 	
-	using namespace binning;
-	histogram<5>::bin_specification mspecs;
+	using namespace histogram::binning;
+	histogram::histogram<5>::bin_specification mspecs;
 	mspecs[0] = uniform<cosine>::create(0, M_PI/2, 11);
 	double dh = (maxdepth-mindepth)/(2*(steps-1));
 	mspecs[1] = uniform<>::create(mindepth-dh, maxdepth-dh, steps);
 	mspecs[2] = multbins;
 	mspecs[3] = rbins;
-	mspecs[4] = uniform<binning::log10>::create(1, 1e6, 101);
+	mspecs[4] = uniform<histogram::binning::log10>::create(1, 1e6, 101);
 	
 	{
-		histogram<2>::bin_specification specs = {{mspecs[0], uniform<binning::log10>::create(1e2, 1e11, 101)}};
-		primary_ = boost::make_shared<histogram<2> >(specs);
+		histogram::histogram<2>::bin_specification specs = {{mspecs[0], uniform<histogram::binning::log10>::create(1e2, 1e11, 101)}};
+		primary_ = boost::make_shared<histogram::histogram<2> >(specs);
 	}
 	
 	{
-		histogram<3>::bin_specification specs = {{
+		histogram::histogram<3>::bin_specification specs = {{
 		    uniform<cosine>::create(0, M_PI/2, 101), mspecs[1], uniform<>::create(1, 100, 100)}};
-		multiplicity_ = boost::make_shared<histogram<3> >(specs);
+		multiplicity_ = boost::make_shared<histogram::histogram<3> >(specs);
 	}
 	
 	{
-		histogram<4>::bin_specification specs = {{mspecs[0], mspecs[1], mspecs[2],
+		histogram::histogram<4>::bin_specification specs = {{mspecs[0], mspecs[1], mspecs[2],
 			uniform<power<2> >::create(0, 250, 101)}};
-		radius_ = boost::make_shared<histogram<4> >(specs);
+		radius_ = boost::make_shared<histogram::histogram<4> >(specs);
 	}
 	
-	energy_ = boost::make_shared<histogram<5> >(mspecs);
+	energy_ = boost::make_shared<histogram::histogram<5> >(mspecs);
 	
 }
 

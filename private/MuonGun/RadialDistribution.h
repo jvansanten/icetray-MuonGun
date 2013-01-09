@@ -10,7 +10,7 @@
 #define I3MUONGUN_RADIALDISTRIBUTION_H
 
 #include <photospline/I3SplineTable.h>
-#include <icetray/I3Logging.h>
+#include <icetray/I3PointerTypedefs.h>
 
 class I3Position;
 class I3RandomService;

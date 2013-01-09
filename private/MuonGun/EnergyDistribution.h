@@ -10,6 +10,7 @@
 #define I3MUONGUN_ENERGYDISTRIBUTION_H_INCLUDED
 
 #include <icetray/I3Units.h>
+#include <icetray/I3PointerTypedefs.h>
 #include <photospline/I3SplineTable.h>
 
 class I3RandomService;

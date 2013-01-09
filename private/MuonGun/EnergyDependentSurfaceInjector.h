@@ -47,7 +47,7 @@ public:
 	 * the given maximum muon energy
 	 * by the given energy. This is not necessarily the fastest.
 	 */
-	SamplingSurfaceConstPtr GetSurface(double energy) const;
+	SamplingSurfacePtr GetSurface(double energy) const;
 	/** 
 	 * Integrate the flux to get the total rate on the surface determined
 	 * by the given energy. This is not necessarily the fastest.

@@ -12,6 +12,10 @@
 #include <MuonGun/Generator.h>
 #include <icetray/I3PointerTypedefs.h>
 
+// only for GetMuonsAtSurface
+#include <icetray/I3Frame.h>
+#include <dataclasses/physics/I3Particle.h>
+
 namespace I3MuonGun {
 
 I3_FORWARD_DECLARATION(Generator);
@@ -19,6 +23,9 @@ I3_FORWARD_DECLARATION(SamplingSurface);
 I3_FORWARD_DECLARATION(Flux);
 I3_FORWARD_DECLARATION(RadialDistribution);
 I3_FORWARD_DECLARATION(EnergyDistribution);
+
+std::vector<I3Particle>
+GetMuonsAtSurface(I3FramePtr frame, SurfaceConstPtr surface);
 
 struct BundleModel {
 	// BundleModel() {}

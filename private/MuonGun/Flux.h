@@ -10,6 +10,7 @@
 #define I3MUONGUN_FLUX_H_INCLUDED
 
 #include <photospline/I3SplineTable.h>
+#include <icetray/I3PointerTypedefs.h>
 
 namespace I3MuonGun {
 
