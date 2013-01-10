@@ -49,6 +49,46 @@ SplineEnergyDistribution::Generate(I3RandomService &rng, double depth, double co
 	return 1.;
 }
 
+BMSSEnergyDistribution::BMSSEnergyDistribution() : 
+    beta_(0.42), g0_(-0.232), g1_(3.961), e0a_(0.0304), e0b_(0.359), e1a_(-0.0077), e1b_(0.659),
+    a0_(0.0033), a1_(0.0079), b0a_(0.0407), b0b_(0.0283), b1a_(-0.312), b1b_(6.124),
+    q0_(0.0543), q1_(-0.365), c0a_(-0.069), c0b_(0.488), c1_(-0.117),
+    d0a_(-0.398), d0b_(3.955), d1a_(0.012), d1b_(-0.35)
+{}
+
+double
+BMSSEnergyDistribution::operator()(double depth, double cos_theta, 
+    unsigned m, double r, double energy) const
+{
+	// Convert to water-equivalent depth
+	double h = (200*I3Units::m/I3Units::km)*0.832 + (depth-(200*I3Units::m/I3Units::km))*0.917;
+	double bX = beta_*h/cos_theta;
+	double g, eps;
+	if (m == 1) {
+		g = g0_*log(h) + g1_;
+		eps = e0a_*exp(e0b_*h)/cos_theta + e1a_*h + e1b_;
+	} else {
+		m = std::min(m, 4u);
+		double a = a0_*h + a1_;
+		double b = (b0a_*m + b0b_)*h + (b1a_*m + b1b_);
+		double q = q0_*h + q1_;
+		g = a*r + b*(1 - 0.5*exp(q*r));
+		double c = (c0a_*h + c0b_)*exp(c1_*r);
+		double d = (d0a_*h + d0b_)*pow(r, d1a_*h + d1b_);
+		eps = c*acos(cos_theta) + d;
+	}
+	double norm = (g-1)*pow(eps, g-1)*exp((g-1)*bX)*pow(1-exp(-bX), g-1);
+	return norm*exp((1-g)*bX)*pow(energy + eps*(1-exp(-bX)), -g);
+}
+
+double
+BMSSEnergyDistribution::Generate(I3RandomService &rng, double depth, double cos_theta, 
+    unsigned multiplicity, double radius) const
+{
+	log_fatal("Sampling is not yet implemented");
+	return 1.;
+}
+
 OffsetPowerLaw::OffsetPowerLaw(double gamma, double offset, double emin, double emax)
     : gamma_(gamma), offset_(offset), emin_(emin), emax_(emax)
 {

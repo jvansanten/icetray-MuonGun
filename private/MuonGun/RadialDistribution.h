@@ -25,7 +25,7 @@ public:
 	virtual ~RadialDistribution();
 	// TODO: short-circuit for multiplicity == 1
 	/**
-	 * Calculate the probability of obtaining the given radial offset
+	 * @brief Calculate the probability of obtaining the given radial offset
 	 *
 	 * @param[in] depth        vertical depth in km
 	 * @param[in] cos_theta    cosine of zenith angle
@@ -36,8 +36,9 @@ public:
 	virtual double operator()(double depth, double cos_theta,
 	    unsigned multiplicity, double radius) const = 0;
 	/**
-	 * Draw a sample from the distribution of radii
+	 * @brief Draw a sample from the distribution of radii
 	 *
+	 * @param[in] rng          a random number generator
 	 * @param[in] depth        vertical depth in km
 	 * @param[in] cos_theta    cosine of zenith angle
 	 * @param[in] multiplicity number of muons in the bundle

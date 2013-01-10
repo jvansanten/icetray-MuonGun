@@ -67,6 +67,21 @@ private:
 	double minLogEnergy_;
 };
 
+class BMSSEnergyDistribution : public EnergyDistribution {
+public:
+	BMSSEnergyDistribution();
+	double operator()(double depth, double cos_theta, 
+	    unsigned multiplicity, double radius, double energy) const;
+	double Generate(I3RandomService &rng, double depth, double cos_theta,
+	    unsigned multiplicity, double radius) const;
+private:
+	// Single-muon energy distribution
+	double beta_, g0_, g1_, e0a_, e0b_, e1a_, e1b_;
+	// Bundle energy distribution
+	double a0_, a1_, b0a_, b0b_, b1a_, b1b_, q0_, q1_,
+	    c0a_, c0b_, c1_, d0a_, d0b_, d1a_, d1b_;
+};
+
 /**
  * @brief An approximate form for the underground muon energy spectrum
  *

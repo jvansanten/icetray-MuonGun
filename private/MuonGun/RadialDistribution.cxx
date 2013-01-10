@@ -39,18 +39,22 @@ BMSSRadialDistribution::GetGenerationProbability(double R, double a, double radi
 }
 
 double
-BMSSRadialDistribution::operator()(double h, double cos_theta,
+BMSSRadialDistribution::operator()(double depth, double cos_theta,
     unsigned N, double radius) const
 {
+	// Convert to water-equivalent depth
+	double h = (200*I3Units::m/I3Units::km)*0.832 + (depth-(200*I3Units::m/I3Units::km))*0.917;
 	double theta = acos(cos_theta);
 	
 	return GetGenerationProbability(GetMeanRadius(h, theta, N), GetShapeParameter(h, theta, N), radius);
 }
 
 double
-BMSSRadialDistribution::Generate(I3RandomService &rng, double h, double cos_theta,
+BMSSRadialDistribution::Generate(I3RandomService &rng, double depth, double cos_theta,
     unsigned N) const
 {
+	// Convert to water-equivalent depth
+	double h = (200*I3Units::m/I3Units::km)*0.832 + (depth-(200*I3Units::m/I3Units::km))*0.917;
 	double theta = acos(cos_theta);
 	double R = GetMeanRadius(h, theta, N);
 	double a = GetShapeParameter(h, theta, N);

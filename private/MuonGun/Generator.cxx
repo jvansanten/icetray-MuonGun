@@ -16,6 +16,10 @@
 #include <boost/make_shared.hpp>
 #include <boost/foreach.hpp>
 
+#ifdef USE_SIM_SERVICES
+#include <sim-services/PropagatorServiceUtils.h>
+#endif
+
 namespace I3MuonGun {
 
 GenerationProbability::~GenerationProbability() {}
@@ -191,19 +195,23 @@ Generator::CreateParallelTrack(double radius, double azimuth,
 /**
  * @brief Interface between Generator and IceTray
  */
+#ifdef USE_SIM_SERVICES
 class GeneratorModule : public I3Module {
 public:
 	GeneratorModule(const I3Context &ctx) : I3Module(ctx), maxEvents_(0), numEvents_(0)
 	{
 		AddOutBox("OutBox");
-		AddParameter("Generator", "", generator_);
+		AddParameter("Generator", "Muon bundle generator", generator_);
+		AddParameter("Propagator", "Muon propagator service", propagator_);
 		
 		mctreeName_ = "I3MCTree";
+		mmcTrackListName_ = "MMCTrackList";
 	}
 	
 	void Configure()
 	{
 		GetParameter("Generator", generator_);
+		GetParameter("Propagator", propagator_);
 		
 		rng_ = context_.Get<I3RandomServicePtr>();
 		if (!rng_)
@@ -217,6 +225,20 @@ public:
 		BundleConfiguration bundlespec;
 		
 		generator_->Generate(*rng_, *mctree, bundlespec);
+		
+		// Propagate muons if we can
+		if (propagator_) {
+			I3MMCTrackListPtr tracks = 
+			    PropagatorServiceUtils::Propagate(mctree, propagator_);
+			if (I3MMCTrackListConstPtr old =
+			    frame->Get<I3MMCTrackListConstPtr>(mmcTrackListName_)) {
+				std::copy(old->begin(), old->end(),
+				    std::back_inserter(*tracks));
+				frame->Delete(mmcTrackListName_);
+			}
+			frame->Put(mmcTrackListName_, tracks);
+		}
+		
 		frame->Put(mctreeName_, mctree);
 		
 		PushFrame(frame);
@@ -226,10 +248,14 @@ public:
 private:
 	GeneratorPtr generator_;
 	I3RandomServicePtr rng_;
+	I3PropagatorServiceBasePtr propagator_;
 	size_t maxEvents_, numEvents_;
-	std::string mctreeName_;
+	std::string mctreeName_, mmcTrackListName_;
 };
+#endif
 
 }
 
+#ifdef USE_SIM_SERVICES
 I3_MODULE(I3MuonGun::GeneratorModule);
+#endif

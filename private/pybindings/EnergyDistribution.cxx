@@ -24,6 +24,10 @@ void register_EnergyDistribution()
 	    init<const std::string&, const std::string&>((arg("singles"), "bundles")))
 	;
 	
+	class_<BMSSEnergyDistribution, boost::shared_ptr<BMSSEnergyDistribution>,
+	    bases<EnergyDistribution> >("BMSSEnergyDistribution")
+	;
+	
 	class_<OffsetPowerLaw, boost::shared_ptr<OffsetPowerLaw> >("OffsetPowerLaw",
 	    init<double,double,double,double>((arg("gamma"), "offset", "min", "max")))
 	    .def("__call__", &OffsetPowerLaw::operator())

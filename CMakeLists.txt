@@ -41,6 +41,15 @@ ELSE (IS_DIRECTORY ${CMAKE_SOURCE_DIR}/PROPOSAL)
     COLORMSG (CYAN "+-- PROPOSAL not found, disabling Muonitron table-maker")
 ENDIF (IS_DIRECTORY ${CMAKE_SOURCE_DIR}/PROPOSAL)
 
+IF (IS_DIRECTORY ${CMAKE_SOURCE_DIR}/sim-services)
+    LIST (APPEND LIB_${PROJECT_NAME}_PROJECTS
+        sim-services cmc
+    )
+    ADD_DEFINITIONS(-DUSE_SIM_SERVICES)
+ELSE (IS_DIRECTORY ${CMAKE_SOURCE_DIR}/sim-services)
+    COLORMSG (CYAN "+-- sim-services not found, disabling GeneratorModule")
+ENDIF (IS_DIRECTORY ${CMAKE_SOURCE_DIR}/sim-services)
+
 i3_add_library(MuonGun
     ${LIB_${PROJECT_NAME}_SOURCEFILES}
     USE_TOOLS log4cplus boost python gsl
@@ -49,9 +58,11 @@ i3_add_library(MuonGun
 
 add_subdirectory(private/pybindings)
 
-i3_test_executable(test 
-  private/test/main.cxx
-  private/test/DepthTest.cxx
-  USE_PROJECTS MuonGun icetray dataclasses phys-services
-)
+i3_test_scripts(resources/test/test_StaticSurfaceInjector.py)
+
+# i3_test_executable(test 
+#   private/test/main.cxx
+#   private/test/DepthTest.cxx
+#   USE_PROJECTS MuonGun icetray dataclasses phys-services
+# )
 

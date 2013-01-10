@@ -33,6 +33,8 @@ namespace I3MuonGun {
 class StaticSurfaceInjector : public Generator {
 public:
 	StaticSurfaceInjector();
+	StaticSurfaceInjector(SamplingSurfacePtr surface, FluxPtr flux,
+	    boost::shared_ptr<OffsetPowerLaw> edist, RadialDistributionPtr rdist);
 	
 	// Generator Interface
 	void Generate(I3RandomService &rng, I3MCTree &tree, BundleConfiguration &bundle) const;

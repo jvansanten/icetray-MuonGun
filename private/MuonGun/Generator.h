@@ -45,7 +45,7 @@ public:
 	size_t GetTotalEvents() const { return numEvents_; }
 	
 	/**
-	 * Calculate the number of events with the given configuration that
+	 * @brief Calculate the number of events with the given configuration that
 	 * that should have been produced
 	 *
 	 * @param[in] depth  the vertical depth [km] where the shower crosses
@@ -57,8 +57,9 @@ public:
 	double GetGeneratedEvents(double depth, double coszen, const BundleConfiguration &bundle) const;
 public:
 	/**
-	 * Propose an injection surface for the given bundle configuration. If 
-	 * variable-surface and fixed-surface generation schemes are to be combined,
+	 * @brief Propose an injection surface for the given bundle configuration.
+	 * 
+	 * If variable-surface and fixed-surface generation schemes are to be combined,
 	 * the variable surface must satisfy a few basic requirements:
 	 * - The variable surface must always be *inside* any fixed surfaces
 	 * - As the bundle properties are sampled at later and later times, the
@@ -77,7 +78,7 @@ public:
 	virtual GenerationProbabilityPtr Clone() const = 0;
 protected:
 	/**
-	 * Calculate the probability that the given configuration was generated
+	 * @brief Calculate the probability that the given configuration was generated
 	 *
 	 * @param[in] depth  the vertical depth [km] where the shower crosses
 	 *                   the sampling surface
@@ -88,7 +89,7 @@ protected:
 	virtual double GetGenerationProbability(double depth, double coszen, const BundleConfiguration &bundle) const = 0;
 
 private:
-	/** The total number of events that should be generated */
+	/** @brief The total number of events that should be generated */
 	size_t numEvents_;
 };
 
@@ -134,7 +135,7 @@ class Generator : public GenerationProbability {
 public:
 	virtual ~Generator();
 	/**
-	 * Generate a muon bundle.
+	 * @brief Generate a muon bundle.
 	 *
 	 * @param[in]  rng    A random number generator
 	 * @param[out] tree   An I3MCTree to fill the generated bundle in to.
@@ -146,7 +147,7 @@ public:
 	virtual void Generate(I3RandomService &rng, I3MCTree &tree, BundleConfiguration &bundle) const = 0;
 
 	/**
-	 * Place a muon at a given radial offset and rotation with respect
+	 * @brief Place a muon at a given radial offset and rotation with respect
 	 * to the shower axis.
 	 *
 	 * @param[in] radius  perpendicular distance from the shower axis
@@ -154,11 +155,6 @@ public:
 	 * @param[in] surface place the muon on this surface, with timing
 	 *                    adjusted so that it remains in the shower plane
 	 * @param[in] axis    the shower axis
-	 * @param[out] tree   An I3MCTree to fill the generated bundle in to.
-	 *                    The bundle axis should be used as the primary,
-	 *                    with its type set to I3Particle::unknown
-	 * @param[out] bundle the radial offset and energy of each muon
-	 *                    in the bundle
 	 */
 	static I3Particle CreateParallelTrack(double radius, double azimuth,
 	    const Surface &surface, const I3Particle &axis);

@@ -19,7 +19,7 @@ typedef I3Vector<I3MMCTrack> I3MMCTrackList;
 namespace I3MuonGun {
 
 /**
- * A particle that moves in a straight line, and loses energy as it does so.
+ * @brief A particle that moves in a straight line, and loses energy as it does so.
  */
 class Track : public I3Particle {
 public:
@@ -46,7 +46,7 @@ public:
 	using I3Particle::GetTime;
 	
 	/**
-	 * Extract energy losses from frame objects.
+	 * @brief Extract energy losses from frame objects.
 	 *
 	 * Find the stochastic energy losses associated with each I3MMCTrack
 	 * in the I3MCTree, and store them together in a Track.
@@ -55,7 +55,7 @@ public:
 
 private:
 	/**
-	 * A point at which the absolute energy of the particle is known
+	 * @brief A point at which the absolute energy of the particle is known
 	 */
 	struct Checkpoint {
 		double length, energy;
@@ -64,7 +64,7 @@ private:
 		    : length(l), energy(e), offset(o) {}
 	};
 	/**
-	 * The sum of stochastic energy losses since the last checkpoint
+	 * @brief The sum of stochastic energy losses since the last checkpoint
 	 */
 	struct LossSum {
 		double length, energy;

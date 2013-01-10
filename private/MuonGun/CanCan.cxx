@@ -47,12 +47,17 @@ StaticSurfaceInjector::StaticSurfaceInjector()
 	
 	energyGenerator_ = boost::make_shared<OffsetPowerLaw>(2, 500., 50, 1e6);
 	
-	// energySpectrum_ = boost::make_shared<SplineEnergyDistribution>(
-	//     GetTablePath("Hoerandel5_atmod12_SIBYLL.single_energy.fits"),
-	//     GetTablePath("Hoerandel5_atmod12_SIBYLL.bundle_energy.fits"));
-	
 	radialDistribution_ = boost::make_shared<SplineRadialDistribution>(
 	    GetTablePath("Hoerandel5_atmod12_SIBYLL.radius.fits"));
+}
+
+StaticSurfaceInjector::StaticSurfaceInjector(SamplingSurfacePtr surface, FluxPtr flux,
+    boost::shared_ptr<OffsetPowerLaw> edist, RadialDistributionPtr rdist)
+{
+	SetSurface(surface);
+	SetFlux(flux);
+	energyGenerator_ = edist;
+	radialDistribution_ = rdist;
 }
 
 GenerationProbabilityPtr

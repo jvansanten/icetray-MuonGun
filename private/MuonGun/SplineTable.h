@@ -21,7 +21,7 @@ public:
 	/**
 	 * @brief Read a spline table from a FITS file on disk
 	 *
-	 * @param path[in] The filesystem path to the FITS file
+	 * @param[in] path The filesystem path to the FITS file
 	 * @throws std::runtime_error if the file does not 
 	 *         exist or is corrupt.
 	 */
