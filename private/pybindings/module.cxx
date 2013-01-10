@@ -12,18 +12,25 @@
 namespace bp = boost::python;
 
 #define REGISTER_THESE_THINGS                                           \
-  (histogram)(TrackBinner)(MuonPropagator)(I3MuonGun)                   \
-  (CompactTrack)(RadialDistribution)(EnergyDistribution)                \
+  (I3MuonGun)(CompactTrack)(RadialDistribution)(EnergyDistribution)     \
   (Flux)(Generator)(Surface)(WeightCalculator)(CanCan)                  \
   (CORSIKAGenerationProbability)
+
+#define REGISTER_EXTRA (histogram)(TrackBinner)(MuonPropagator)
 
 #define I3_REGISTRATION_FN_DECL(r, data, t) void BOOST_PP_CAT(register_,t)();
 #define I3_REGISTER(r, data, t) BOOST_PP_CAT(register_,t)();
 BOOST_PP_SEQ_FOR_EACH(I3_REGISTRATION_FN_DECL, ~, REGISTER_THESE_THINGS)
+#ifdef USE_PROPSOAL
+BOOST_PP_SEQ_FOR_EACH(I3_REGISTRATION_FN_DECL, ~, REGISTER_EXTRA);
+#endif
 
 I3_PYTHON_MODULE(MuonGun)
 {
 	load_project("libMuonGun", false);
 	BOOST_PP_SEQ_FOR_EACH(I3_REGISTER, ~, REGISTER_THESE_THINGS);
+	#ifdef USE_PROPSOAL
+	BOOST_PP_SEQ_FOR_EACH(I3_REGISTER, ~, REGISTER_EXTRA);
+	#endif
 }
 

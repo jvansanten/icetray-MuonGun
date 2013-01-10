@@ -1,54 +1,51 @@
 i3_project(MuonGun PYTHON_DIR python)
 
-i3_add_library(MuonGun
-    # Support bits for making muon-flux parametrizations
-    private/MuonGun/Muonitron.cxx
-    private/MuonGun/CompactTrack.cxx
-    private/MuonGun/TrackBinner.cxx
-    private/MuonGun/MuonPropagator.cxx
-    private/MuonGun/histogram.cxx
+SET (LIB_${PROJECT_NAME}_SOURCEFILES
+    # Numerical integration
     private/cubature/cubature.c
     
     # Base classes and function implementations
     private/MuonGun/I3MuonGun.cxx
+    private/MuonGun/SplineTable.cxx
+    private/MuonGun/Track.cxx
     private/MuonGun/Generator.cxx
     private/MuonGun/WeightCalculator.cxx
     private/MuonGun/Surface.cxx
     private/MuonGun/Flux.cxx
     private/MuonGun/RadialDistribution.cxx
     private/MuonGun/EnergyDistribution.cxx
-
+    
     # Event generator implementations
     private/MuonGun/CanCan.cxx
     private/MuonGun/EnergyDependentSurfaceInjector.cxx
     private/MuonGun/CORSIKAGenerationProbability.cxx
-    
-    # private/boost/numpy/*.cpp
-    # private/MUSIC/I3MUSICService.cxx
-    USE_TOOLS log4cplus boost python gsl
-    USE_PROJECTS icetray dataclasses phys-services simclasses PROPOSAL photospline
-sim-services
+)
+SET (LIB_${PROJECT_NAME}_PROJECTS
+    icetray dataclasses phys-services simclasses photospline
 )
 
-# enable_language(Fortran)
-# 
-# i3_add_library(icemusic
-#     private/MUSIC/corgen.F
-#     private/MUSIC/corset.F
-#     private/MUSIC/ranlux.F
-#     private/MUSIC/rnorml.F
-#     private/MUSIC/ranmar.f
-#     private/MUSIC/music-ice-2004.f
-#     private/MUSIC/music-sr-2004.f
-# )
-# 
-# TARGET_LINK_LIBRARIES(MuonGun icemusic)
-# 
-# i3_executable(test-icemusic
-#     private/MUSIC/test-music-2004.f
-# )
-# 
-# TARGET_LINK_LIBRARIES(MuonGun-test-icemusic icemusic)
+IF (IS_DIRECTORY ${CMAKE_SOURCE_DIR}/PROPOSAL)
+    COLORMSG (GREEN "+-- Muonitron table-maker")
+    LIST (APPEND LIB_${PROJECT_NAME}_SOURCEFILES
+        # Support bits for making muon-flux parametrizations
+        private/MuonGun/Muonitron.cxx
+        private/MuonGun/CompactTrack.cxx
+        private/MuonGun/TrackBinner.cxx
+        private/MuonGun/MuonPropagator.cxx
+        private/MuonGun/histogram.cxx
+    )
+    LIST (APPEND LIB_${PROJECT_NAME}_PROJECTS
+        PROPOSAL sim-services
+    )
+ELSE (IS_DIRECTORY ${CMAKE_SOURCE_DIR}/PROPOSAL)
+    COLORMSG (CYAN "+-- PROPOSAL not found, disabling Muonitron table-maker")
+ENDIF (IS_DIRECTORY ${CMAKE_SOURCE_DIR}/PROPOSAL)
+
+i3_add_library(MuonGun
+    ${LIB_${PROJECT_NAME}_SOURCEFILES}
+    USE_TOOLS log4cplus boost python gsl
+    USE_PROJECTS ${LIB_${PROJECT_NAME}_PROJECTS}
+)
 
 add_subdirectory(private/pybindings)
 
