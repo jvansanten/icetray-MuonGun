@@ -19,6 +19,7 @@ register_MuonPropagator()
 	    arg("medium")="ice", arg("ecut")=-1, arg("vcut")=-1, arg("rho")=1.0)))
 	    .def("propagate", &MuonPropagator::propagate)
 	    .def("set_seed", &MuonPropagator::SetSeed)
+	    .staticmethod("set_seed")
 	;
 	
 	class_<Crust, boost::shared_ptr<Crust> >("Crust",
