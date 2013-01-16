@@ -56,7 +56,7 @@ void TrackBinner::Consume(boost::shared_ptr<const TrackBundle> tracks,
     double energy, double zenith, double weight)
 {
 	{
-		boost::array<double, 2> values = {{energy, zenith}};
+		boost::array<double, 2> values = {{zenith, energy}};
 		primary_->fill(values, weight);
 
 	}
