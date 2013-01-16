@@ -329,6 +329,87 @@ class Filler(icetray.I3ConditionalModule):
 			dashi.histsave(self.radius, hdf, self.where, 'radius')
 			dashi.histsave(self.energy, hdf, self.where, 'energy')
 
+class FillWorker(object):
+	def __init__(self, flux, binner, outfile, where='/'):
+		self.flux = flux
+		self.binner = binner
+		self.outfile = outfile
+		self.where = where
+		import os
+		with tables.openFile(self.outfile, 'a') as hdf:
+			if self.where != '/':
+				parent, node = os.path.split(self.where)
+				hdf.createGroup(parent, node, createparents=True)
+	def consume(self, primary, tracks, norm):
+		energy = primary.energy
+		zenith = primary.dir.zenith
+		weight = self.flux(energy)/norm
+		self.binner.consume(tracks, energy, zenith, weight)
+	def save(self, hdf, hist, where):
+		# save in single precision
+		hist._h_bincontent = hist._h_bincontent.astype(numpy.float32)
+		hist._h_squaredweights = hist._h_squaredweights.astype(numpy.float32)
+		dashi.histsave(hist, hdf, self.where, where)
+	def finish(self):
+		with tables.openFile(self.outfile, 'a') as hdf:
+			for label in ('primary', 'multiplicity', 'radius', 'energy'):
+				hist = getattr(self.binner, label).to_dashi()
+				self.save(hdf, hist, label)
+
+class MultiFiller(icetray.I3Module):
+	def __init__(self, ctx):
+		icetray.I3Module.__init__(self, ctx)
+		self.AddOutBox("OutBox")
+		self.AddParameter("Fluxes", "", None)
+		self.AddParameter("GenerationSpectra", "", None)
+		self.AddParameter("Outfile", "", None)
+		self.AddParameter("MinDepth", "", 1.)
+		self.AddParameter("MaxDepth", "", 5.)
+		self.AddParameter("DepthSteps", "", 9)
+	
+	def Configure(self):
+		
+		fluxes = self.GetParameter("Fluxes")
+		generators = self.GetParameter("GenerationSpectra")
+		outfile = self.GetParameter("Outfile")
+		import os
+		if os.path.exists(outfile):
+			os.unlink(outfile)
+			
+		self.nevents = 0
+		
+		def make_binner():
+			return MuonGun.TrackBinner(self.GetParameter("MinDepth"), self.GetParameter("MaxDepth"), self.GetParameter("DepthSteps"))
+		
+		self.workers = dict()
+		
+		for label, components in fluxes.iteritems():
+			for ptype, weight in components.iteritems():
+				worker = FillWorker(weight, make_binner(), outfile, '/%s/%s' % (label, ptype))
+				if not ptype in self.workers:
+					genprob = generators[ptype]
+					self.workers[ptype] = (genprob, [worker])
+				else:
+					self.workers[ptype][1].append(worker)
+	def DAQ(self, frame):
+		primary = frame['MCPrimary']
+		tracks = frame['Tracks']
+		generator, workers = self.workers[primary.type]
+		norm = generator(primary.energy, primary.dir.zenith)
+		for worker in workers:
+			worker.consume(primary, tracks, norm)
+		
+		self.nevents += 1
+		if self.nevents % 1000 == 0:
+			print '%d events' % self.nevents
+	
+	def Finish(self):
+		for workers in self.workers.itervalues():
+			for worker in workers[1]:
+				worker.finish()
+		
+
+
 class FastFiller(icetray.I3ConditionalModule):
 	"""
 	Tabulate tracks by depth, zenith angle, multiplicity, energy, and radius from shower axis
