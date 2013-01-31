@@ -29,9 +29,7 @@ namespace I3MuonGun {
 double
 WeightCalculator::GetWeight(const I3Particle &axis, const BundleConfiguration &bundlespec) const
 {
-	// Get the sampling surface for this bundle.
-	SamplingSurfaceConstPtr surface = generator_->GetInjectionSurface(axis, bundlespec);
-	std::pair<double, double> steps = surface->GetIntersection(axis.GetPos(), axis.GetDir());
+	std::pair<double, double> steps = surface_->GetIntersection(axis.GetPos(), axis.GetDir());
 	// This shower axis doesn't intersect the sampling surface. Bail.
 	if (!std::isfinite(steps.first))
 		return 0.;
@@ -40,8 +38,8 @@ WeightCalculator::GetWeight(const I3Particle &axis, const BundleConfiguration &b
 	double coszen = cos(axis.GetDir().GetZenith());
 	unsigned m = bundlespec.size();
 	
-	double norm = generator_->GetGeneratedEvents(h, coszen, bundlespec);
-	double rate = (*flux_)(h, coszen, m)*surface->GetDifferentialArea(coszen)/norm;
+	double norm = generator_->GetGeneratedEvents(axis, bundlespec);
+	double rate = (*flux_)(h, coszen, m)*surface_->GetDifferentialArea(coszen)/norm;
 	BOOST_FOREACH(const BundleConfiguration::value_type &pair, bundlespec) {
 		if (m > 1)
 			rate *= (*radius_)(h, coszen, m, pair.first);
@@ -130,6 +128,64 @@ GetRadius(const I3Particle &axis, const I3Position &pos)
 
 }
 
+MuonBundleConverter::MuonBundleConverter(size_t maxMultiplicity, SamplingSurfacePtr surface)
+    : maxMultiplicity_(maxMultiplicity),
+    surface_(surface ? surface : boost::make_shared<Cylinder>(1600, 800))
+{}
+
+I3TableRowDescriptionPtr
+MuonBundleConverter::CreateDescription(const I3MCTree&)
+{
+	I3TableRowDescriptionPtr desc(new I3TableRowDescription());
+	
+	desc->AddField<uint32_t>("multiplicity", "", "Number of muons in the bundle");
+	desc->AddField<float>("depth", "km", "Vertical depth of intersection with the sampling surface");
+	desc->AddField<float>("cos_theta", "", "Cosine of the shower zenith angle");
+	desc->AddField<float>("energy", "GeV", "Muon energy at sampling surface",
+	    maxMultiplicity_);
+	desc->AddField<float>("radius", "m", "Perpendicular distance from of track "
+	    "from the bundle axis at the sampling surface", maxMultiplicity_);
+	
+	return desc;
+}
+
+size_t
+MuonBundleConverter::FillRows(const I3MCTree &mctree, I3TableRowPtr rows)
+{
+	I3MMCTrackListConstPtr mmctracks = currentFrame_->Get<I3MMCTrackListConstPtr>("MMCTrackList");
+	if (!mmctracks)
+		log_fatal("I3MMCTrackList missing!");
+	
+	const I3MCTree::iterator primary = mctree.begin();
+	std::pair<double, double> steps =
+	    surface_->GetIntersection(primary->GetPos(), primary->GetDir());
+	if (steps.first > 0) {
+		rows->Set<float>("depth", GetDepth(primary->GetPos().GetZ() + steps.first*primary->GetDir().GetZ()));
+		rows->Set<float>("cos_theta", cos(primary->GetDir().GetZenith()));
+	}
+	
+	uint32_t m = 0;
+	float *energies = rows->GetPointer<float>("energy");
+	float *radii = rows->GetPointer<float>("radius");
+	
+	BOOST_FOREACH(const Track &track, Track::Harvest(mctree, *mmctracks)) {
+		std::pair<double, double> steps =
+		    surface_->GetIntersection(track.GetPos(), track.GetDir());
+		float energy = track.GetEnergy(steps.first);
+		if (energy > 0) {
+			if (m < maxMultiplicity_) {
+				energies[m] = energy;
+				radii[m] = GetRadius(*primary, track.GetPos(steps.first));
+			}
+			m++;
+		}
+	}
+	
+	rows->Set("multiplicity", m);
+	
+	return 1;
+}
+
 /**
  * @brief Interface between WeightCalculator and IceTray
  *
@@ -181,52 +237,8 @@ public:
 			bundlespec.push_back(std::make_pair(
 			    GetRadius(*primary, track.GetPos()), track.GetEnergy()));
 		
-		// Now, track the bundle to the innermost sampling surface, which may or may
-		// not be identical to the injection surface. Since we allow the surface to
-		// depend on the bundle configuration, we have to repeat this track/query
-		// loop until the surface is stable. 
-		
-		// We will accept tracks that are reasonably close to the proposed surface
-		double tol = 1*I3Units::m;
-		SamplingSurfaceConstPtr surface;
-		bool stable = false;
-		while (!stable) {
-			stable = true;
-			surface = generator_->GetInjectionSurface(*primary, bundlespec);
-			std::list<Track>::iterator track = tracks.begin();
-			BundleConfiguration::iterator bspec = bundlespec.begin();
-			for ( ; track != tracks.end() && bspec != bundlespec.end(); ) {
-				std::pair<double, double> steps =
-				    surface->GetIntersection(track->GetPos(), track->GetDir());
-				if (!std::isfinite(steps.first)) {
-					// This track misses the surface; drop it
-					track = tracks.erase(track);
-					bspec = bundlespec.erase(bspec);
-				} else if (steps.first > tol) {
-					// This track will pierce the newly-proposed
-					// surface, but is still outside. Track it to the
-					// new surface and update its energy and radius.
-					double energy = track->GetEnergy(steps.first);
-					if (energy > 0) {
-						bspec->first = GetRadius(*primary, track->GetPos(steps.first));
-						bspec->second = energy;
-						track++;
-						bspec++;
-					} else {
-						track = tracks.erase(track);
-						bspec = bundlespec.erase(bspec);
-					}
-					// We had to update the bundle and need to check
-					// that the proposed surface is stable in the
-					// next iteration.
-					stable = false;
-				} else {
-					// This track is at the proposed surface.
-					track++;
-					bspec++;
-				}
-			}
-		}
+		// This should be a fixed surface
+		SamplingSurfaceConstPtr surface = generator_->GetInjectionSurface(*primary, bundlespec);
 		
 		double rate = 0.;
 		std::pair<double, double> steps =
@@ -236,7 +248,7 @@ public:
 			double coszen = cos(primary->GetDir().GetZenith());
 			unsigned m = bundlespec.size();
 			
-			double norm = generator_->GetGeneratedEvents(h, coszen, bundlespec);
+			double norm = generator_->GetGeneratedEvents(*primary, bundlespec);
 			rate = (*flux_)(h, coszen, m)*surface->GetDifferentialArea(coszen)/norm;
 			BOOST_FOREACH(const BundleConfiguration::value_type &pair, bundlespec) {
 				if (m > 1)

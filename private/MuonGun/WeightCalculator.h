@@ -15,6 +15,9 @@
 // only for GetMuonsAtSurface
 #include <icetray/I3Frame.h>
 #include <dataclasses/physics/I3Particle.h>
+#include <dataclasses/physics/I3MCTree.h>
+
+#include <tableio/I3Converter.h>
 
 namespace I3MuonGun {
 
@@ -63,12 +66,25 @@ public:
 	 * @returns a weight in units of @f$ [s^{-1}] @f$
 	 */
 	double GetWeight(const I3Particle &axis, const BundleConfiguration &bundle) const;
+	 
+	SamplingSurfacePtr GetSurface() { return surface_; }
+	void SetSurface(SamplingSurfacePtr s) { surface_ = s; }
 private:
 	SamplingSurfacePtr surface_;
 	FluxPtr flux_;
 	RadialDistributionPtr radius_;
 	EnergyDistributionPtr energy_;
 	GenerationProbabilityPtr generator_;
+};
+
+class MuonBundleConverter : public I3ConverterImplementation<I3MCTree> {
+public:
+	MuonBundleConverter(size_t maxMultiplicity=25, SamplingSurfacePtr surface=SamplingSurfacePtr());
+	I3TableRowDescriptionPtr CreateDescription(const I3MCTree&);
+	size_t FillRows(const I3MCTree&, I3TableRowPtr);
+private:
+	size_t maxMultiplicity_;
+	SamplingSurfacePtr surface_;
 };
 
 }

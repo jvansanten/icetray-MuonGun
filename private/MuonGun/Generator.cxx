@@ -26,9 +26,9 @@ GenerationProbability::~GenerationProbability() {}
 Generator::~Generator() {}
 
 double
-GenerationProbability::GetGeneratedEvents(double depth, double coszen, const BundleConfiguration &bundle) const
+GenerationProbability::GetGeneratedEvents(const I3Particle &axis, const BundleConfiguration &bundle) const
 {
-	return numEvents_*GetGenerationProbability(depth, coszen, bundle);
+	return numEvents_*GetGenerationProbability(axis, bundle);
 }
 
 GenerationProbabilityCollection::GenerationProbabilityCollection(GenerationProbabilityPtr p1, GenerationProbabilityPtr p2)
@@ -38,13 +38,13 @@ GenerationProbabilityCollection::GenerationProbabilityCollection(GenerationProba
 }
 
 double
-GenerationProbabilityCollection::GetGenerationProbability(double depth,
-    double coszen, const BundleConfiguration &bundle) const
+GenerationProbabilityCollection::GetGenerationProbability(const I3Particle &axis,
+    const BundleConfiguration &bundle) const
 {
 	double prob = 0.;
 	BOOST_FOREACH(const value_type &p, *this)
 		if (p)
-			prob += p->GetGeneratedEvents(depth, coszen, bundle);
+			prob += p->GetGeneratedEvents(axis, bundle);
 	
 	return prob;
 }

@@ -32,22 +32,43 @@ GetTablePath(const std::string &subpath)
 	return tablePath.str();
 }
 
+SamplingSurfacePtr
+ScaleForIC79(double energy)
+{
+	// Distance to border of detector scales as (b*(a - log10(e)))**(1./alpha)
+	double a = 4.5;
+	double b = 1e5;
+	int alpha = 2;
+	
+	// Center of cylinder moves from barycenter of total IC79 geometry at high energies
+	// to the center of DeepCore (String 36) at low energies
+	double x[2] = { 46.29, 31.25};
+	double y[2] = {-34.88, 19.64};
+	
+	double d = log10(energy) >= a ? 0 : pow(b*(a - log10(energy)), 1./alpha);
+	double r = std::max(600. - d, 100.);
+	double l = std::max(1000. - d, 400.);
+	I3Position center(x[0] + (r/600)*(x[1]-x[0]), y[0] + (r/600)*(y[1]-y[0]), -500 + l/2.);
+	
+	return boost::make_shared<Cylinder>(l, r, center);
+}
+
 }
 
 EnergyDependentSurfaceInjector::EnergyDependentSurfaceInjector()
-{
-	surface_ = boost::make_shared<Cylinder>(1600, 800);
-	
-	flux_ = boost::make_shared<SplineFlux>(
-	    GetTablePath("Hoerandel5_atmod12_SIBYLL.single_flux.fits"),
-	    GetTablePath("Hoerandel5_atmod12_SIBYLL.bundle_flux.fits"));
-	flux_->SetMinMultiplicity(1);
-	flux_->SetMaxMultiplicity(1);
+{	
+	// flux_ = boost::make_shared<SplineFlux>(
+	//     GetTablePath("Hoerandel5_atmod12_SIBYLL.single_flux.fits"),
+	//     GetTablePath("Hoerandel5_atmod12_SIBYLL.bundle_flux.fits"));
+	// flux_->SetMinMultiplicity(1);
+	// flux_->SetMaxMultiplicity(1);
 	
 	energyGenerator_ = boost::make_shared<OffsetPowerLaw>(2, 500., 50, 1e6);
 	
-	radialDistribution_ = boost::make_shared<SplineRadialDistribution>(
-	    GetTablePath("Hoerandel5_atmod12_SIBYLL.radius.fits"));
+	// radialDistribution_ = boost::make_shared<SplineRadialDistribution>(
+	//     GetTablePath("Hoerandel5_atmod12_SIBYLL.radius.fits"));
+	
+	scalingFunction_ = &ScaleForIC79;
 }
 
 GenerationProbabilityPtr
@@ -123,32 +144,13 @@ EnergyDependentSurfaceInjector::Generate(I3RandomService &rng, I3MCTree &tree,
 SamplingSurfacePtr
 EnergyDependentSurfaceInjector::GetSurface(double energy) const
 {
-	// TODO implement realistic/configurable scaling
-	CylinderPtr surface = boost::make_shared<Cylinder>(*surface_);
-	
-	I3Position center = surface->GetCenter();
-	double ebounds[2] = {1e3, 1e4};
-	double rbounds[2] = {125, 800};
-	double tbounds[2] = {-100, 800};
-	if (energy < ebounds[0])
-		surface->SetRadius(rbounds[0]);
-	else if (energy > ebounds[1])
-		surface->SetRadius(rbounds[1]);
+	if (scalingFunction_)
+		return scalingFunction_(energy);
 	else
-		surface->SetRadius(rbounds[0] + (rbounds[1]-rbounds[0])*(energy - ebounds[0])/(ebounds[1]-ebounds[0]));
+		return boost::make_shared<Cylinder>(800, 1600);
+	// TODO implement configurable scaling
 	
-	double top;
-	if (energy < ebounds[0])
-		top = tbounds[0];
-	else if (energy > ebounds[1])
-		top = tbounds[1];
-	else
-		top = tbounds[0] + (tbounds[1]-tbounds[0])*(energy - ebounds[0])/(ebounds[1]-ebounds[0]);
-	surface->SetLength(top+800.);
-	center.SetZ(top-surface->GetLength()/2);
-	surface->SetCenter(center);
-	
-	return surface;
+
 }
 
 SamplingSurfaceConstPtr
@@ -164,17 +166,27 @@ EnergyDependentSurfaceInjector::GetInjectionSurface(const I3Particle &axis,
 }
 
 double
-EnergyDependentSurfaceInjector::GetTotalRate(double energy) const
+EnergyDependentSurfaceInjector::GetTotalRate(SamplingSurfaceConstPtr surface) const
 {
-	SamplingSurfaceConstPtr surface = GetSurface(energy);
-	
-	return surface->IntegrateFlux(boost::bind(boost::cref(*flux_), _1, _2, 1u));
+	double total_rate = 0.;
+	for (unsigned m = flux_->GetMinMultiplicity(); m <= flux_->GetMaxMultiplicity(); m++)
+		total_rate += surface->IntegrateFlux(boost::bind(boost::cref(*flux_), _1, _2, m));
+	return total_rate;
 }
 
 double
-EnergyDependentSurfaceInjector::GetGenerationProbability(double h,
-    double coszen, const BundleConfiguration &bundle) const
+EnergyDependentSurfaceInjector::GetGenerationProbability(const I3Particle &axis,
+    const BundleConfiguration &bundle) const
 {
+	SamplingSurfaceConstPtr surface = GetInjectionSurface(axis, bundle);
+	std::pair<double, double> steps =
+	    surface->GetIntersection(axis.GetPos(), axis.GetDir());
+	// This shower axis doesn't intersect the sampling surface. Bail.
+	if (!std::isfinite(steps.first))
+		return 0.;
+	
+	double h = GetDepth(axis.GetPos().GetZ() + steps.first*axis.GetDir().GetZ());
+	double coszen = cos(axis.GetDir().GetZenith());
 	unsigned m = bundle.size();
 	double prob = flux_->operator()(h, coszen, m);
 	double max_energy = 0.;
@@ -182,12 +194,10 @@ EnergyDependentSurfaceInjector::GetGenerationProbability(double h,
 		if (m > 1)
 			prob *= (*radialDistribution_)(h, coszen, m, pair.first);
 		prob *= (*energyGenerator_)(pair.second);
-		if (pair.second > max_energy)
-			max_energy = pair.second;
 	}
-	// FIXME: GetTotalRate() is potentially expensive, as are repeated heap
+	// FIXME: rate integration is potentially expensive, as are repeated heap
 	// allocations in GetSurface()
-	prob *= GetSurface(max_energy)->GetDifferentialArea(coszen)/GetTotalRate(max_energy);
+	prob *= surface->GetDifferentialArea(coszen)/GetTotalRate(surface);
 	
 	return prob;
 }

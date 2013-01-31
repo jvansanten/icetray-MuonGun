@@ -8,6 +8,8 @@
 
 #include <MuonGun/Generator.h>
 #include <dataclasses/physics/I3Particle.h>
+#include <icetray/python/dataclass_suite.hpp>
+#include <boost/serialization/list.hpp>
 
 void register_Generator()
 {
@@ -24,5 +26,12 @@ void register_Generator()
 	;
 	
 	class_<Generator, bases<GenerationProbability>, boost::noncopyable>("Generator", no_init)
+	;
+	
+	class_<BundleConfiguration::value_type>("BundleEntry", init<double, double>())
+	;
+	
+	class_<BundleConfiguration, boost::shared_ptr<BundleConfiguration> >("BundleConfiguration")
+	    .def(dataclass_suite<BundleConfiguration>())
 	;
 }

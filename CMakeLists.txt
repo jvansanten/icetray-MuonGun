@@ -21,7 +21,7 @@ SET (LIB_${PROJECT_NAME}_SOURCEFILES
     private/MuonGun/CORSIKAGenerationProbability.cxx
 )
 SET (LIB_${PROJECT_NAME}_PROJECTS
-    icetray dataclasses phys-services simclasses photospline
+    icetray dataclasses phys-services simclasses photospline tableio
 )
 
 IF (IS_DIRECTORY ${CMAKE_SOURCE_DIR}/PROPOSAL)

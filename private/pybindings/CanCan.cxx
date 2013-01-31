@@ -8,6 +8,7 @@
 
 #include <MuonGun/CanCan.h>
 #include <MuonGun/EnergyDependentSurfaceInjector.h>
+#include <icetray/python/function.hpp>
 
 void
 register_CanCan()
@@ -25,9 +26,13 @@ register_CanCan()
 	;
 
 #if 1
+	def_function<boost::function<SamplingSurfacePtr (double)> >("SurfaceScalingFunction");
 	class_<EnergyDependentSurfaceInjector, bases<Generator> >("EnergyDependentSurfaceInjector")
 		.def("total_rate", &EnergyDependentSurfaceInjector::GetTotalRate)
 		.def("get_surface", &EnergyDependentSurfaceInjector::GetSurface)
+		#define PROPS (Scaling)(Flux)(EnergyDistribution)(RadialDistribution)
+		BOOST_PP_SEQ_FOR_EACH(WRAP_PROP, EnergyDependentSurfaceInjector, PROPS)
+		#undef PROPS
 	;
 #endif
 }

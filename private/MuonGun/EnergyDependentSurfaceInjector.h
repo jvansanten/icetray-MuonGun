@@ -10,6 +10,7 @@
 #define I3MUONGUN_ENERGYDEPENDENTSURFACEINJECTOR_H_INCLUDED
 
 #include <MuonGun/Generator.h>
+#include <boost/function.hpp>
 
 namespace I3MuonGun {
 
@@ -25,7 +26,7 @@ I3_FORWARD_DECLARATION(RadialDistribution);
  * EnergyDependentSurfaceInjector samples bundle impact points, angles, multiplicities,
  * and radial distributions at their natural frequencies, but scales the sampling
  * surface based on the highest-energy muon in the bundle: dim, low-energy muons are
- * sampled only on a small inner surface, while the surface scales up to full size
+ * targeted only at a small inner surface, while the surface scales up to full size
  * for potentially bright muons. This technique can be used to efficiently simulate
  * background for an event selection that requires a thick veto for dim events
  * (where the rates are also highest) but becomes more accepting for bright events.
@@ -36,11 +37,23 @@ public:
 	
 	// GenerationProbability interface
 	SamplingSurfaceConstPtr GetInjectionSurface(const I3Particle &axis, const BundleConfiguration &bundle) const;
-	double GetGenerationProbability(double depth, double coszen, const BundleConfiguration &bundle) const;
+	double GetGenerationProbability(const I3Particle &axis, const BundleConfiguration &bundle) const;
 	GenerationProbabilityPtr Clone() const;
 	
 	// Generator interface
 	void Generate(I3RandomService &rng, I3MCTree &tree, BundleConfiguration &bundle) const;
+	
+	boost::function<SamplingSurfacePtr (double)> GetScaling() const { return scalingFunction_; }
+	void SetScaling(boost::function<SamplingSurfacePtr (double)> f) { scalingFunction_ = f; }
+	
+	FluxConstPtr GetFlux() const { return flux_; }
+	void SetFlux(FluxPtr f) { flux_ = f; }
+	
+	boost::shared_ptr<const OffsetPowerLaw> GetEnergyDistribution() const { return energyGenerator_; }
+	void SetEnergyDistribution(boost::shared_ptr<OffsetPowerLaw> f) { energyGenerator_ = f; }
+	
+	RadialDistributionConstPtr GetRadialDistribution() const { return radialDistribution_; }
+	void SetRadialDistribution(RadialDistributionPtr f) { radialDistribution_ = f; }
 	
 	/** 
 	 * Scale the sampling cylinder to a size appropriate for
@@ -49,12 +62,12 @@ public:
 	 */
 	SamplingSurfacePtr GetSurface(double energy) const;
 	/** 
-	 * Integrate the flux to get the total rate on the surface determined
-	 * by the given energy. This is not necessarily the fastest.
+	 * Integrate the flux to get the total rate on the surface.
+	 * This is not necessarily the fastest.
 	 */
-	double GetTotalRate(double energy) const;
+	double GetTotalRate(SamplingSurfaceConstPtr surface) const;
 private:
-	CylinderPtr surface_;
+	boost::function<SamplingSurfacePtr (double)> scalingFunction_;
 	FluxPtr flux_;
 	boost::shared_ptr<OffsetPowerLaw> energyGenerator_;
 	RadialDistributionPtr radialDistribution_;
