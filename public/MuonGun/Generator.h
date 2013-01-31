@@ -48,13 +48,11 @@ public:
 	 * @brief Calculate the number of events with the given configuration that
 	 * that should have been produced
 	 *
-	 * @param[in] depth  the vertical depth [km] where the shower crosses
-	 *                   the sampling surface
-	 * @param[in] coszen the cosine of the shower zenith angle
+	 * @param[in] axis   the bundle axis
 	 * @param[in] bundle the radial offset and energy of each muon
 	 *                   in the bundle
 	 */
-	double GetGeneratedEvents(double depth, double coszen, const BundleConfiguration &bundle) const;
+	double GetGeneratedEvents(const I3Particle &axis, const BundleConfiguration &bundle) const;
 public:
 	/**
 	 * @brief Propose an injection surface for the given bundle configuration.
@@ -80,13 +78,11 @@ protected:
 	/**
 	 * @brief Calculate the probability that the given configuration was generated
 	 *
-	 * @param[in] depth  the vertical depth [km] where the shower crosses
-	 *                   the sampling surface
-	 * @param[in] coszen the cosine of the shower zenith angle
+	 * @param[in] axis   the bundle axis
 	 * @param[in] bundle the radial offset and energy of each muon
 	 *                   in the bundle
 	 */
-	virtual double GetGenerationProbability(double depth, double coszen, const BundleConfiguration &bundle) const = 0;
+	virtual double GetGenerationProbability(const I3Particle &axis, const BundleConfiguration &bundle) const = 0;
 
 private:
 	/** @brief The total number of events that should be generated */
@@ -111,7 +107,7 @@ protected:
 	 * Calculate the *total* probability that the given configuration was generated
 	 * by any of the distributions in the colleciton.
 	 */
-	double GetGenerationProbability(double depth, double coszen, const BundleConfiguration &bundle) const;
+	double GetGenerationProbability(const I3Particle &axis, const BundleConfiguration &bundle) const;
 };
 
 /** Scale the distribution by the given number of events */

@@ -104,7 +104,7 @@ namespace I3MuonGun {
 		double GetRadius() const { return radius_; }
 		
 		void SetCenter(const I3Position &v) { center_ = v; }
-		const I3Position& GetCenter() const { return center_; }
+		I3Position GetCenter() const { return center_; }
 		
 	private:
 		double GetDifferentialTopArea(double cos_zenith) const;
