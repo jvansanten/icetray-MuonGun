@@ -12,11 +12,11 @@
 namespace bp = boost::python;
 
 #define REGISTER_THESE_THINGS                                           \
-  (I3MuonGun)(CompactTrack)(RadialDistribution)(EnergyDistribution)     \
+  (I3MuonGun)(RadialDistribution)(EnergyDistribution)                   \
   (Flux)(Generator)(Surface)(WeightCalculator)(CanCan)                  \
   (CORSIKAGenerationProbability)
 
-#define REGISTER_EXTRA (histogram)(TrackBinner)(MuonPropagator)
+#define REGISTER_EXTRA (histogram)(TrackBinner)(MuonPropagator)(CompactTrack)
 
 #define I3_REGISTRATION_FN_DECL(r, data, t) void BOOST_PP_CAT(register_,t)();
 #define I3_REGISTER(r, data, t) BOOST_PP_CAT(register_,t)();
