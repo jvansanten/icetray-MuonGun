@@ -23,6 +23,22 @@ SET (LIB_${PROJECT_NAME}_SOURCEFILES
 SET (LIB_${PROJECT_NAME}_PROJECTS
     icetray dataclasses phys-services simclasses photospline tableio
 )
+SET (LIB_${PROJECT_NAME}_TOOLS
+    log4cplus boost python gsl
+)
+
+SET (LIB_${PROJECT_NAME}_PYSOURCES 
+    private/pybindings/I3MuonGun.cxx
+    private/pybindings/CanCan.cxx
+    private/pybindings/Generator.cxx
+    private/pybindings/Surface.cxx
+    private/pybindings/Flux.cxx
+    private/pybindings/RadialDistribution.cxx
+    private/pybindings/EnergyDistribution.cxx
+    private/pybindings/WeightCalculator.cxx
+    private/pybindings/CORSIKAGenerationProbability.cxx
+    private/pybindings/module.cxx
+)
 
 IF (IS_DIRECTORY ${CMAKE_SOURCE_DIR}/PROPOSAL)
     COLORMSG (GREEN "+-- Muonitron table-maker")
@@ -33,6 +49,12 @@ IF (IS_DIRECTORY ${CMAKE_SOURCE_DIR}/PROPOSAL)
         private/MuonGun/TrackBinner.cxx
         private/MuonGun/MuonPropagator.cxx
         private/MuonGun/histogram.cxx
+    )
+    LIST (APPEND LIB_${PROJECT_NAME}_PYSOURCES
+        private/pybindings/CompactTrack.cxx
+        private/pybindings/TrackBinner.cxx
+        private/pybindings/MuonPropagator.cxx
+        private/pybindings/histogram.cxx
     )
     LIST (APPEND LIB_${PROJECT_NAME}_PROJECTS
         PROPOSAL sim-services
@@ -52,11 +74,29 @@ ENDIF (IS_DIRECTORY ${CMAKE_SOURCE_DIR}/sim-services AND IS_DIRECTORY ${CMAKE_SO
 
 i3_add_library(MuonGun
     ${LIB_${PROJECT_NAME}_SOURCEFILES}
-    USE_TOOLS log4cplus boost python gsl
+    USE_TOOLS ${LIB_${PROJECT_NAME}_TOOLS}
     USE_PROJECTS ${LIB_${PROJECT_NAME}_PROJECTS}
 )
 
-add_subdirectory(private/pybindings)
+IF (NUMPY_FOUND)
+    LIST (APPEND LIB_${PROJECT_NAME}_PYSOURCES
+        private/boost_numpy/dtype.cpp
+        private/boost_numpy/matrix.cpp
+        private/boost_numpy/ndarray.cpp
+        private/boost_numpy/numpy.cpp
+        private/boost_numpy/scalars.cpp
+        private/boost_numpy/ufunc.cpp
+    )
+    LIST (APPEND LIB_${PROJECT_NAME}_TOOLS numpy)
+    ADD_DEFINITIONS(-DUSE_NUMPY)
+    COLORMSG (CYAN "+-- boost::numpy")
+ENDIF (NUMPY_FOUND)
+
+i3_add_pybindings(MuonGun
+  ${LIB_${PROJECT_NAME}_PYSOURCES}
+  USE_TOOLS ${LIB_${PROJECT_NAME}_TOOLS}
+  USE_PROJECTS MuonGun
+  )
 
 i3_test_scripts(resources/test/test_StaticSurfaceInjector.py)
 
