@@ -30,13 +30,15 @@ I3_FORWARD_DECLARATION(EnergyDistribution);
 std::vector<I3Particle>
 GetMuonsAtSurface(I3FramePtr frame, SurfaceConstPtr surface);
 
+/**
+ * @brief Convenience struct to hold the components of a muon bundle flux model
+ */
 struct BundleModel {
-	// BundleModel() {}
-	BundleModel(FluxConstPtr f, RadialDistributionConstPtr r, EnergyDistributionConstPtr e)
+	BundleModel(FluxPtr f, RadialDistributionPtr r, EnergyDistributionPtr e)
 	    : flux(f), radius(r), energy(e) {}
-	FluxConstPtr flux;
-	RadialDistributionConstPtr radius;
-	EnergyDistributionConstPtr energy;
+	FluxPtr flux;
+	RadialDistributionPtr radius;
+	EnergyDistributionPtr energy;
 };
 
 /**
@@ -45,16 +47,14 @@ struct BundleModel {
 class WeightCalculator {
 public:
 	/**
-	 * @param[in] s      Surface at which to calculate the weights
-	 * @param[in] flux   Total flux in the desired model
-	 * @param[in] radius Radial distribution in the desired model
-	 * @param[in] energy Energy distribution in the desired model
-	 * @param[in] g      Generation scheme according by which the
-	 *                   events were generated.
+	 * @param[in] s Surface at which to calculate the weights
+	 * @param[in] m Target model of the muon flux as a function of
+	 *              angle, depth, multiplicity, radius, and energy
+	 * @param[in] g Generation scheme according by which the
+	 *              events were generated.
 	 */
-	WeightCalculator(SamplingSurfacePtr s, FluxPtr flux,
-	    RadialDistributionPtr radius, EnergyDistributionPtr energy, GenerationProbabilityPtr g)
-	    : surface_(s), flux_(flux), radius_(radius), energy_(energy), generator_(g) {}
+	WeightCalculator(SamplingSurfacePtr s, const BundleModel &m, GenerationProbabilityPtr g)
+	    : surface_(s), flux_(m.flux), radius_(m.radius), energy_(m.energy), generator_(g) {}
 	
 	/**
 	 * Calculate a weight corresponding to the frequency with which
@@ -71,10 +71,10 @@ public:
 	void SetSurface(SamplingSurfacePtr s) { surface_ = s; }
 private:
 	SamplingSurfacePtr surface_;
-	FluxPtr flux_;
-	RadialDistributionPtr radius_;
-	EnergyDistributionPtr energy_;
-	GenerationProbabilityPtr generator_;
+	FluxConstPtr flux_;
+	RadialDistributionConstPtr radius_;
+	EnergyDistributionConstPtr energy_;
+	GenerationProbabilityConstPtr generator_;
 };
 
 class MuonBundleConverter : public I3ConverterImplementation<I3MCTree> {

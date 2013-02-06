@@ -82,7 +82,7 @@ GetMuonsAtSurface(I3FramePtr frame, SurfaceConstPtr surface)
 namespace {
 
 namespace ublas = boost::numeric::ublas;
-typedef ublas::bounded_vector<float, 3> vector;
+typedef ublas::bounded_vector<double, 3> vector;
 
 vector
 make_vector(double x, double y, double z)
@@ -121,9 +121,9 @@ inline double
 GetRadius(const I3Particle &axis, const I3Position &pos)
 {
 	vector r = pos-axis.GetPos();
-	double l2 = ublas::inner_prod(make_vector(axis.GetDir()), r);
+	double l = ublas::inner_prod(make_vector(axis.GetDir()), r);
 	
-	return sqrt(ublas::inner_prod(r, r) - l2);
+	return sqrt(std::max(0., ublas::inner_prod(r, r) - l*l));
 }
 
 }
@@ -197,6 +197,7 @@ public:
 	WeightCalculatorModule(const I3Context &ctx) : I3Module(ctx)
 	{
 		AddOutBox("OutBox");
+		AddParameter("Surface", "", surface_);
 		AddParameter("Flux", "", flux_);
 		AddParameter("RadialDistribution", "", radius_);
 		AddParameter("EnergyDistribution", "", energy_);
@@ -205,11 +206,14 @@ public:
 	
 	void Configure()
 	{
+		GetParameter("Surface", surface_);
 		GetParameter("Flux", flux_);
 		GetParameter("RadialDistribution", radius_);
 		GetParameter("EnergyDistribution", energy_);
 		GetParameter("Generator", generator_);
 		
+		if (!surface_)
+			log_fatal("No surface configured!");
 		if (!flux_)
 			log_fatal("No flux configured!");
 		if (!radius_)
@@ -230,26 +234,24 @@ public:
 			log_fatal("I3MCTree missing!");
 		if (!mmctracks)
 			log_fatal("I3MMCTrackList missing!");
+		
 		const I3MCTree::iterator primary = mctree->begin();
+		std::pair<double, double> steps =
+		    surface_->GetIntersection(primary->GetPos(), primary->GetDir());
 		std::list<Track> tracks = Track::Harvest(*mctree, *mmctracks);
 		BundleConfiguration bundlespec;
 		BOOST_FOREACH(const Track &track, tracks)
 			bundlespec.push_back(std::make_pair(
-			    GetRadius(*primary, track.GetPos()), track.GetEnergy()));
-		
-		// This should be a fixed surface
-		SamplingSurfaceConstPtr surface = generator_->GetInjectionSurface(*primary, bundlespec);
+			    GetRadius(*primary, track.GetPos(steps.first)), track.GetEnergy(steps.first)));
 		
 		double rate = 0.;
-		std::pair<double, double> steps =
-		    surface->GetIntersection(primary->GetPos(), primary->GetDir());
 		if (bundlespec.size() > 0 && std::isfinite(steps.first)) {
 			double h = GetDepth(primary->GetPos().GetZ() + steps.first*primary->GetDir().GetZ());
 			double coszen = cos(primary->GetDir().GetZenith());
 			unsigned m = bundlespec.size();
 			
 			double norm = generator_->GetGeneratedEvents(*primary, bundlespec);
-			rate = (*flux_)(h, coszen, m)*surface->GetDifferentialArea(coszen)/norm;
+			rate = (*flux_)(h, coszen, m)*surface_->GetDifferentialArea(coszen)/norm;
 			BOOST_FOREACH(const BundleConfiguration::value_type &pair, bundlespec) {
 				if (m > 1)
 					rate *= (*radius_)(h, coszen, m, pair.first);
@@ -261,6 +263,7 @@ public:
 		PushFrame(frame);
 	}
 private:
+	SamplingSurfacePtr surface_;
 	FluxPtr flux_;
 	RadialDistributionPtr radius_;
 	EnergyDistributionPtr energy_;
