@@ -29,6 +29,8 @@ void register_Generator()
 	;
 	
 	class_<BundleConfiguration::value_type>("BundleEntry", init<double, double>())
+	    .def_readwrite("first", &BundleConfiguration::value_type::first)
+	    .def_readwrite("second", &BundleConfiguration::value_type::second)
 	;
 	
 	class_<BundleConfiguration, boost::shared_ptr<BundleConfiguration> >("BundleConfiguration")
