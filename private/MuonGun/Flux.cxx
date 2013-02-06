@@ -8,6 +8,7 @@
 
 #include <MuonGun/Flux.h>
 #include <icetray/I3Units.h>
+#include <limits>
 
 namespace I3MuonGun {
 
@@ -15,12 +16,18 @@ Flux::Flux() : minMultiplicity_(1), maxMultiplicity_(1) {};
 
 Flux::~Flux() {};
 
+double
+Flux::operator()(double depth, double cos_theta, unsigned multiplicity) const
+{
+	return std::exp(GetLog(depth, cos_theta, multiplicity));
+}
+
 BMSSFlux::BMSSFlux() : k0a_(7.2e-3), k0b_(-1.927), k1a_(-0.581), k1b_(0.034),
     v0a_(0.01041), v0b_(0.09912), v0c_(2.712), v1a_(0.01615), v1b_(0.6010)
 {}
 	
 double
-BMSSFlux::operator()(double depth, double cos_theta, unsigned multiplicity) const
+BMSSFlux::GetLog(double depth, double cos_theta, unsigned multiplicity) const
 {
 	// Convert to water-equivalent depth
 	double h = (200*I3Units::m/I3Units::km)*0.832 + (depth-(200*I3Units::m/I3Units::km))*0.917;
@@ -29,7 +36,8 @@ BMSSFlux::operator()(double depth, double cos_theta, unsigned multiplicity) cons
 		flux *= std::pow(multiplicity,
 		    -(v0a_*h*h + v0b_*h + v0c_)*std::exp(v1a_*std::exp(v1b_*h)/cos_theta));
 	
-	return flux;
+	// Not the most stable thing, but only for demo purposes
+	return std::log(flux);
 }
 
 SplineFlux::SplineFlux(const std::string &singles, const std::string &bundles)
@@ -40,17 +48,17 @@ SplineFlux::SplineFlux(const std::string &singles, const std::string &bundles)
 }
 
 double
-SplineFlux::operator()(double depth, double cos_theta, unsigned multiplicity) const
+SplineFlux::GetLog(double depth, double cos_theta, unsigned multiplicity) const
 {
 	double coords[3] = {cos_theta, depth, multiplicity};
 	double logflux;
 	
 	if (multiplicity < GetMinMultiplicity() || multiplicity > GetMaxMultiplicity())
-		return 0.;
+		return -std::numeric_limits<double>::infinity();
 	else if ((multiplicity > 1 ? bundles_ : singles_).Eval(coords, &logflux) != 0)
-		return 0.;
+		return -std::numeric_limits<double>::infinity();
 	else
-		return std::exp(logflux);
+		return logflux;
 }
 
 

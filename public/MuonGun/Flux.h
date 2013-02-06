@@ -26,8 +26,8 @@ public:
 	Flux();
 	virtual ~Flux();
 	typedef double result_type;
-	// TODO: short-circuit if multiplicity outside bounds
-	virtual double operator()(double depth, double cos_theta, unsigned multiplicity) const = 0;
+	double operator()(double depth, double cos_theta, unsigned multiplicity) const;
+	virtual double GetLog(double depth, double cos_theta, unsigned multiplicity) const = 0;
 
 	unsigned GetMaxMultiplicity() const { return maxMultiplicity_; }
 	unsigned GetMinMultiplicity() const { return minMultiplicity_; }
@@ -47,7 +47,7 @@ I3_POINTER_TYPEDEFS(Flux);
 class BMSSFlux : public Flux {
 public:
 	BMSSFlux();
-	double operator()(double depth, double cos_theta, unsigned multiplicity) const;
+	double GetLog(double depth, double cos_theta, unsigned multiplicity) const;
 private:
 	double k0a_, k0b_, k1a_, k1b_;
 	double v0a_, v0b_, v0c_, v1a_, v1b_;
@@ -59,7 +59,7 @@ private:
 class SplineFlux : public Flux {
 public:
 	SplineFlux(const std::string &singles, const std::string &bundles);
-	double operator()(double depth, double cos_theta, unsigned multiplicity) const;
+	double GetLog(double depth, double cos_theta, unsigned multiplicity) const;
 private:
 	I3SplineTable singles_;
 	I3SplineTable bundles_;

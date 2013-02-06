@@ -175,7 +175,7 @@ EnergyDependentSurfaceInjector::GetTotalRate(SamplingSurfaceConstPtr surface) co
 }
 
 double
-EnergyDependentSurfaceInjector::GetGenerationProbability(const I3Particle &axis,
+EnergyDependentSurfaceInjector::GetLogGenerationProbability(const I3Particle &axis,
     const BundleConfiguration &bundle) const
 {
 	SamplingSurfaceConstPtr surface = GetInjectionSurface(axis, bundle);
@@ -188,18 +188,18 @@ EnergyDependentSurfaceInjector::GetGenerationProbability(const I3Particle &axis,
 	double h = GetDepth(axis.GetPos().GetZ() + steps.first*axis.GetDir().GetZ());
 	double coszen = cos(axis.GetDir().GetZenith());
 	unsigned m = bundle.size();
-	double prob = flux_->operator()(h, coszen, m);
+	double logprob = flux_->GetLog(h, coszen, m);
 	double max_energy = 0.;
 	BOOST_FOREACH(const BundleConfiguration::value_type &pair, bundle) {
 		if (m > 1)
-			prob *= (*radialDistribution_)(h, coszen, m, pair.first);
-		prob *= (*energyGenerator_)(pair.second);
+			logprob += radialDistribution_->GetLog(h, coszen, m, pair.first);
+		logprob += energyGenerator_->GetLog(pair.second);
 	}
 	// FIXME: rate integration is potentially expensive, as are repeated heap
 	// allocations in GetSurface()
-	prob *= surface->GetDifferentialArea(coszen)/GetTotalRate(surface);
+	logprob += std::log(surface->GetDifferentialArea(coszen)) - std::log(GetTotalRate(surface));
 	
-	return prob;
+	return logprob;
 }
 
 }

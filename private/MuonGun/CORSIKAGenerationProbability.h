@@ -36,7 +36,7 @@ public:
 	GenerationProbabilityPtr Clone() const;
 	
 protected:
-	double GetGenerationProbability(const I3Particle &axis, const BundleConfiguration &bundle) const;
+	double GetLogGenerationProbability(const I3Particle &axis, const BundleConfiguration &bundle) const;
 private:
 	SamplingSurfacePtr surface_;
 	FluxPtr flux_;

@@ -164,25 +164,25 @@ StaticSurfaceInjector::Generate(I3RandomService &rng, I3MCTree &mctree, BundleCo
 }
 
 double
-StaticSurfaceInjector::GetGenerationProbability(const I3Particle &axis,
+StaticSurfaceInjector::GetLogGenerationProbability(const I3Particle &axis,
     const BundleConfiguration &bundlespec) const
 {
 	std::pair<double, double> steps = surface_->GetIntersection(axis.GetPos(), axis.GetDir());
 	// This shower axis doesn't intersect the sampling surface. Bail.
 	if (!std::isfinite(steps.first))
-		return 0.;
+		return -std::numeric_limits<double>::infinity();
 	
 	double h = GetDepth(axis.GetPos().GetZ() + steps.first*axis.GetDir().GetZ());
 	double coszen = cos(axis.GetDir().GetZenith());
 	unsigned m = bundlespec.size();
-	double prob = flux_->operator()(h, coszen, m)*surface_->GetDifferentialArea(coszen)/GetTotalRate();
+	double logprob = flux_->GetLog(h, coszen, m) + std::log(surface_->GetDifferentialArea(coszen));
 	BOOST_FOREACH(const BundleConfiguration::value_type &pair, bundlespec) {
 		if (m > 1)
-			prob *= (*radialDistribution_)(h, coszen, m, pair.first);
-		prob *= (*energyGenerator_)(pair.second);
+			logprob += radialDistribution_->GetLog(h, coszen, m, pair.first);
+		logprob += energyGenerator_->GetLog(pair.second);
 	}
 	
-	return prob;
+	return logprob - std::log(GetTotalRate());
 }
 
 }

@@ -32,7 +32,9 @@ public:
 	EnergyDistribution() : min_(I3Units::GeV), max_(I3Units::PeV) {}
 	virtual ~EnergyDistribution();
 	typedef double result_type;
-	virtual double operator()(double depth, double cos_theta,
+	double operator()(double depth, double cos_theta,
+	    unsigned multiplicity, double radius, double energy) const;
+	virtual double GetLog(double depth, double cos_theta,
 	    unsigned multiplicity, double radius, double energy) const = 0;
 	virtual double Generate(I3RandomService &rng, double depth, double cos_theta,
 	    unsigned multiplicity, double radius) const = 0;
@@ -57,7 +59,7 @@ I3_POINTER_TYPEDEFS(EnergyDistribution);
 class SplineEnergyDistribution : public EnergyDistribution {
 public:
 	SplineEnergyDistribution(const std::string &singles, const std::string &bundles);
-	double operator()(double depth, double cos_theta, 
+	double GetLog(double depth, double cos_theta, 
 	    unsigned multiplicity, double radius, double energy) const;
 	double Generate(I3RandomService &rng, double depth, double cos_theta,
 	    unsigned multiplicity, double radius) const;
@@ -70,7 +72,7 @@ private:
 class BMSSEnergyDistribution : public EnergyDistribution {
 public:
 	BMSSEnergyDistribution();
-	double operator()(double depth, double cos_theta, 
+	double GetLog(double depth, double cos_theta, 
 	    unsigned multiplicity, double radius, double energy) const;
 	double Generate(I3RandomService &rng, double depth, double cos_theta,
 	    unsigned multiplicity, double radius) const;
@@ -107,6 +109,7 @@ public:
 	typedef double result_type;
 	/** Calculate the probability that the given energy was generated */
 	double operator()(double energy) const;
+	double GetLog(double energy) const;
 	/** Draw an energy from the distribution */
 	double Generate(I3RandomService &rng) const;
 	
@@ -115,7 +118,7 @@ public:
 private:
 	double gamma_, offset_;
 	double emin_, emax_;
-	double nmin_, nmax_, norm_;
+	double nmin_, nmax_, norm_, lognorm_;
 };
 
 }

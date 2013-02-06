@@ -26,9 +26,15 @@ GenerationProbability::~GenerationProbability() {}
 Generator::~Generator() {}
 
 double
+GenerationProbability::GetLogGeneratedEvents(const I3Particle &axis, const BundleConfiguration &bundle) const
+{
+	return std::log(double(numEvents_)) + GetLogGenerationProbability(axis, bundle);
+}
+
+double
 GenerationProbability::GetGeneratedEvents(const I3Particle &axis, const BundleConfiguration &bundle) const
 {
-	return numEvents_*GetGenerationProbability(axis, bundle);
+	return numEvents_*std::exp(GetLogGenerationProbability(axis, bundle));
 }
 
 GenerationProbabilityCollection::GenerationProbabilityCollection(GenerationProbabilityPtr p1, GenerationProbabilityPtr p2)
@@ -38,15 +44,22 @@ GenerationProbabilityCollection::GenerationProbabilityCollection(GenerationProba
 }
 
 double
-GenerationProbabilityCollection::GetGenerationProbability(const I3Particle &axis,
+GenerationProbabilityCollection::GetLogGenerationProbability(const I3Particle &axis,
     const BundleConfiguration &bundle) const
 {
-	double prob = 0.;
+	// Collect log probabilities from members
+	std::vector<double> values(this->size(), -std::numeric_limits<double>::infinity());
 	BOOST_FOREACH(const value_type &p, *this)
 		if (p)
-			prob += p->GetGeneratedEvents(axis, bundle);
+			values.push_back(p->GetLogGeneratedEvents(axis, bundle));
 	
-	return prob;
+	// Calculate log(sum(exp)) in a numerically stable way
+	double bias = *std::max_element(values.begin(), values.end());
+	double prob = 0.;
+	BOOST_FOREACH(double v, values)
+		prob += std::exp(v-bias);
+	
+	return bias + std::log(prob);
 }
 
 /**

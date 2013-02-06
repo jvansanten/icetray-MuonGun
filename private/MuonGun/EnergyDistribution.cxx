@@ -13,6 +13,13 @@ namespace I3MuonGun {
 
 EnergyDistribution::~EnergyDistribution() {};
 
+double
+EnergyDistribution::operator()(double d, double ct, 
+    unsigned m, double r, double e) const
+{
+	return std::exp(GetLog(d, ct, m, r, e));
+}
+
 SplineEnergyDistribution::SplineEnergyDistribution(const std::string &singles, const std::string &bundles)
     : singles_(singles), bundles_(bundles)
 {
@@ -25,7 +32,7 @@ SplineEnergyDistribution::SplineEnergyDistribution(const std::string &singles, c
 }
 
 double
-SplineEnergyDistribution::operator()(double depth, double cos_theta, 
+SplineEnergyDistribution::GetLog(double depth, double cos_theta, 
     unsigned multiplicity, double radius, double energy) const
 {
 	double coords[5] = {cos_theta, depth, multiplicity, radius, std::max(minLogEnergy_, std::log(energy))};
@@ -34,11 +41,11 @@ SplineEnergyDistribution::operator()(double depth, double cos_theta,
 	if (multiplicity < 2) {
 		coords[2] = coords[4];
 		if (singles_.Eval(coords, &logprob) != 0)
-			return 0.;
+			return -std::numeric_limits<double>::infinity();
 	} else if (bundles_.Eval(coords, &logprob) != 0)
-		return 0.;
+		return -std::numeric_limits<double>::infinity();
 	
-	return std::exp(logprob);
+	return logprob;
 }
 
 double
@@ -57,7 +64,7 @@ BMSSEnergyDistribution::BMSSEnergyDistribution() :
 {}
 
 double
-BMSSEnergyDistribution::operator()(double depth, double cos_theta, 
+BMSSEnergyDistribution::GetLog(double depth, double cos_theta, 
     unsigned m, double r, double energy) const
 {
 	// Convert to water-equivalent depth
@@ -78,7 +85,7 @@ BMSSEnergyDistribution::operator()(double depth, double cos_theta,
 		eps = c*acos(cos_theta) + d;
 	}
 	double norm = (g-1)*pow(eps, g-1)*exp((g-1)*bX)*pow(1-exp(-bX), g-1);
-	return norm*exp((1-g)*bX)*pow(energy + eps*(1-exp(-bX)), -g);
+	return std::log(norm*exp((1-g)*bX)*pow(energy + eps*(1-exp(-bX)), -g));
 }
 
 double
@@ -97,6 +104,7 @@ OffsetPowerLaw::OffsetPowerLaw(double gamma, double offset, double emin, double 
 	nmin_ = std::pow(emin + offset, 1-gamma);
 	nmax_ = std::pow(emax + offset, 1-gamma);
 	norm_ = (1-gamma)/(nmax_ - nmin_);
+	lognorm_ = std::log(norm_);
 }
 
 double
@@ -104,6 +112,15 @@ OffsetPowerLaw::operator()(double energy) const
 {
 	if (energy <= emax_ && energy >= emin_)
 		return norm_*std::pow(energy + offset_, -gamma_);
+	else
+		return 0.;
+}
+
+double
+OffsetPowerLaw::GetLog(double energy) const
+{
+	if (energy <= emax_ && energy >= emin_)
+		return lognorm_ - gamma_*std::log(energy);
 	else
 		return 0.;
 }

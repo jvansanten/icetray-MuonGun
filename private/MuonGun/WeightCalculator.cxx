@@ -38,15 +38,15 @@ WeightCalculator::GetWeight(const I3Particle &axis, const BundleConfiguration &b
 	double coszen = cos(axis.GetDir().GetZenith());
 	unsigned m = bundlespec.size();
 	
-	double norm = generator_->GetGeneratedEvents(axis, bundlespec);
-	double rate = (*flux_)(h, coszen, m)*surface_->GetDifferentialArea(coszen)/norm;
+	double lograte = flux_->GetLog(h, coszen, m) +
+	    std::log(surface_->GetDifferentialArea(coszen));
 	BOOST_FOREACH(const BundleConfiguration::value_type &pair, bundlespec) {
 		if (m > 1)
-			rate *= (*radius_)(h, coszen, m, pair.first);
-		rate *= (*energy_)(h, coszen, m, pair.first, pair.second);
+			lograte += radius_->GetLog(h, coszen, m, pair.first);
+		lograte += energy_->GetLog(h, coszen, m, pair.first, pair.second);
 	}
 	
-	return rate;
+	return std::exp(lograte - generator_->GetLogGeneratedEvents(axis, bundlespec));
 }
 
 // Possibly throw-away utility function: "track" muons to a fixed surface using the
@@ -244,22 +244,22 @@ public:
 			bundlespec.push_back(std::make_pair(
 			    GetRadius(*primary, track.GetPos(steps.first)), track.GetEnergy(steps.first)));
 		
-		double rate = 0.;
+		double lograte = -std::numeric_limits<double>::infinity();
 		if (bundlespec.size() > 0 && std::isfinite(steps.first)) {
 			double h = GetDepth(primary->GetPos().GetZ() + steps.first*primary->GetDir().GetZ());
 			double coszen = cos(primary->GetDir().GetZenith());
 			unsigned m = bundlespec.size();
 			
-			double norm = generator_->GetGeneratedEvents(*primary, bundlespec);
-			rate = (*flux_)(h, coszen, m)*surface_->GetDifferentialArea(coszen)/norm;
+			lograte = flux_->GetLog(h, coszen, m) + std::log(surface_->GetDifferentialArea(coszen));
 			BOOST_FOREACH(const BundleConfiguration::value_type &pair, bundlespec) {
 				if (m > 1)
-					rate *= (*radius_)(h, coszen, m, pair.first);
-				rate *= (*energy_)(h, coszen, m, pair.first, pair.second);
+					lograte += radius_->GetLog(h, coszen, m, pair.first);
+				lograte += energy_->GetLog(h, coszen, m, pair.first, pair.second);
 			}
+			lograte -= generator_->GetLogGeneratedEvents(*primary, bundlespec);
 		}
 		
-		frame->Put(GetName(), boost::make_shared<I3Double>(rate));
+		frame->Put(GetName(), boost::make_shared<I3Double>(std::exp(lograte)));
 		PushFrame(frame);
 	}
 private:

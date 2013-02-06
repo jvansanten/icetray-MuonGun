@@ -39,7 +39,7 @@ public:
 	// Generator Interface
 	void Generate(I3RandomService &rng, I3MCTree &tree, BundleConfiguration &bundle) const;
 	GenerationProbabilityPtr Clone() const;
-	double GetGenerationProbability(const I3Particle &axis, const BundleConfiguration &bundle) const;
+	double GetLogGenerationProbability(const I3Particle &axis, const BundleConfiguration &bundle) const;
 	SamplingSurfaceConstPtr GetInjectionSurface(const I3Particle &axis, const BundleConfiguration &bundle) const { return surface_; }
 	
 	void SetSurface(SamplingSurfacePtr p);

@@ -23,7 +23,6 @@ namespace I3MuonGun {
 class RadialDistribution {
 public:
 	virtual ~RadialDistribution();
-	// TODO: short-circuit for multiplicity == 1
 	/**
 	 * @brief Calculate the probability of obtaining the given radial offset
 	 *
@@ -33,8 +32,18 @@ public:
 	 * @param[in] radius       distance to bundle axis
 	 * @returns a properly normalized propability @f$ dP/dr \,\, [m^{-1}] @f$
 	 */
-	virtual double operator()(double depth, double cos_theta,
+	double operator()(double depth, double cos_theta,
+	    unsigned multiplicity, double radius) const;
+	
+	/**
+	 * @brief Calculate the logarithm of the probability of obtaining
+	 * the given radial offset
+	 *
+	 * @see operator()
+	 */
+	virtual double GetLog(double depth, double cos_theta,
 	    unsigned multiplicity, double radius) const = 0;
+	
 	/**
 	 * @brief Draw a sample from the distribution of radii
 	 *
@@ -56,7 +65,7 @@ I3_POINTER_TYPEDEFS(RadialDistribution);
 class BMSSRadialDistribution : public RadialDistribution {
 public:
 	BMSSRadialDistribution();
-	double operator()(double depth, double cos_theta,
+	double GetLog(double depth, double cos_theta,
 	    unsigned multiplicity, double radius) const;
 	double Generate(I3RandomService &rng, double depth, double cos_theta,
 	    unsigned multiplicity) const;
@@ -79,13 +88,10 @@ I3_POINTER_TYPEDEFS(BMSSRadialDistribution);
 class SplineRadialDistribution : public RadialDistribution, private I3SplineTable {
 public:
 	SplineRadialDistribution(const std::string&);
-	double operator()(double depth, double cos_theta,
+	double GetLog(double depth, double cos_theta,
 	    unsigned multiplicity, double radius) const;
 	double Generate(I3RandomService &rng, double depth, double cos_theta,
 	    unsigned multiplicity) const;
-private:
-	double RawProbability(double depth, double cos_theta,
-	    unsigned multiplicity, double radius) const;
 };
 
 }

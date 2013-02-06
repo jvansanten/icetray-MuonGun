@@ -37,7 +37,7 @@ public:
 	
 	// GenerationProbability interface
 	SamplingSurfaceConstPtr GetInjectionSurface(const I3Particle &axis, const BundleConfiguration &bundle) const;
-	double GetGenerationProbability(const I3Particle &axis, const BundleConfiguration &bundle) const;
+	double GetLogGenerationProbability(const I3Particle &axis, const BundleConfiguration &bundle) const;
 	GenerationProbabilityPtr Clone() const;
 	
 	// Generator interface
