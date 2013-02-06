@@ -23,7 +23,7 @@ Track::Track(const I3MMCTrack &mmctrack,
 		// Track started outside the MMC volume; we get an extra
 		// measurement point (but no stochastics)
 		losses_.push_back(LossSum(checkpoints_.back().length, 0.));
-		checkpoints_.push_back(Checkpoint((mmctrack.GetTi()-I3Particle::GetTime())/I3Particle::GetSpeed(),
+		checkpoints_.push_back(Checkpoint((mmctrack.GetTi()-I3Particle::GetTime())*I3Particle::GetSpeed(),
 		    mmctrack.GetEi(), losses_.size()));
 	}
 	
@@ -31,14 +31,14 @@ Track::Track(const I3MMCTrack &mmctrack,
 	double elost = 0;
 	BOOST_FOREACH(const I3Particle &p, std::make_pair(sbegin, send)) {
 		elost += p.GetEnergy();
-		losses_.push_back(LossSum((p.GetTime()-I3Particle::GetTime())/GetSpeed(),
+		losses_.push_back(LossSum((p.GetTime()-I3Particle::GetTime())*GetSpeed(),
 		    elost));
 	}
 	
 	if (mmctrack.GetEf() > 0) {
 		// Track made it to the edge of the MMC volume
 		losses_.push_back(LossSum(checkpoints_.back().length, elost));
-		checkpoints_.push_back(Checkpoint((mmctrack.GetTf()-I3Particle::GetTime())/I3Particle::GetSpeed(),
+		checkpoints_.push_back(Checkpoint((mmctrack.GetTf()-I3Particle::GetTime())*I3Particle::GetSpeed(),
 		    mmctrack.GetEf(), losses_.size()));
 		elost = 0.;
 	}
@@ -67,6 +67,8 @@ Track::GetEnergy(double length) const
 	std::vector<Checkpoint>::const_iterator cp =
 	    std::lower_bound(checkpoints_.begin(), checkpoints_.end(),
 	    Checkpoint(length), Sort<Checkpoint>);
+	if (cp > checkpoints_.begin())
+		cp -= 1;
 	// Store iterators the mark the records of stochastic losses
 	// between the checkpoints
 	std::vector<LossSum>::const_iterator l1(losses_.begin()+cp->offset),
@@ -74,10 +76,13 @@ Track::GetEnergy(double length) const
 	// Find the cumulative energy loss since the last checkpoint
 	std::vector<LossSum>::const_iterator ls = std::lower_bound(l1, l2,
 	    LossSum(length), Sort<LossSum>);
+	if (ls > l1)
+		ls -= 1;
 	
 	// Estimate continuous loss rate
-	double conti_rate = ((cp+1)->energy - cp->energy - (l2-1)->energy)
+	double conti_rate = (cp->energy - (cp+1)->energy - (l2-1)->energy)
 	    /((cp+1)->length - cp->length);
+	
 	return cp->energy - ls->energy - conti_rate*(length-cp->length);
 	
 	return 0.;
