@@ -28,12 +28,12 @@ void register_Generator()
 	class_<Generator, bases<GenerationProbability>, boost::noncopyable>("Generator", no_init)
 	;
 	
-	class_<BundleConfiguration::value_type>("BundleEntry", init<double, double>())
-	    .def_readwrite("first", &BundleConfiguration::value_type::first)
-	    .def_readwrite("second", &BundleConfiguration::value_type::second)
+	class_<BundleEntry>("BundleEntry", init<double, double>())
+	    .def_readwrite("radius", &BundleEntry::radius)
+	    .def_readwrite("energy", &BundleEntry::energy)
 	;
 	
 	class_<BundleConfiguration, boost::shared_ptr<BundleConfiguration> >("BundleConfiguration")
-	    .def(dataclass_suite<BundleConfiguration>())
+	    .def(list_indexing_suite<BundleConfiguration>())
 	;
 }

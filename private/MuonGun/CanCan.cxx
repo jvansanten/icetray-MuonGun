@@ -151,7 +151,7 @@ StaticSurfaceInjector::FillMCTree(I3RandomService &rng,
 		
 		track.SetEnergy(energyGenerator_->Generate(rng));
 		I3MCTreeUtils::AppendChild(mctree, primary, track);
-		bundlespec.push_back(std::make_pair(radius, track.GetEnergy()));
+		bundlespec.push_back(BundleEntry(radius, track.GetEnergy()));
 	}
 }
 
@@ -176,10 +176,10 @@ StaticSurfaceInjector::GetLogGenerationProbability(const I3Particle &axis,
 	double coszen = cos(axis.GetDir().GetZenith());
 	unsigned m = bundlespec.size();
 	double logprob = flux_->GetLog(h, coszen, m) + std::log(surface_->GetDifferentialArea(coszen));
-	BOOST_FOREACH(const BundleConfiguration::value_type &pair, bundlespec) {
+	BOOST_FOREACH(const BundleEntry &track, bundlespec) {
 		if (m > 1)
-			logprob += radialDistribution_->GetLog(h, coszen, m, pair.first);
-		logprob += energyGenerator_->GetLog(pair.second);
+			logprob += radialDistribution_->GetLog(h, coszen, m, track.radius);
+		logprob += energyGenerator_->GetLog(track.energy);
 	}
 	
 	return logprob - std::log(GetTotalRate());

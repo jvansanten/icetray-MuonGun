@@ -69,6 +69,8 @@ EnergyDependentSurfaceInjector::EnergyDependentSurfaceInjector()
 	//     GetTablePath("Hoerandel5_atmod12_SIBYLL.radius.fits"));
 	
 	scalingFunction_ = &ScaleForIC79;
+	
+	injectionSurface_ = boost::make_shared<Cylinder>(1600, 800);
 }
 
 GenerationProbabilityPtr
@@ -85,7 +87,6 @@ EnergyDependentSurfaceInjector::Generate(I3RandomService &rng, I3MCTree &tree,
 	I3Position pos;
 	unsigned m;
 	double flux, max_flux;
-	double max_energy;
 	double h, coszen;
 	SamplingSurfaceConstPtr surface;
 	do {
@@ -94,16 +95,20 @@ EnergyDependentSurfaceInjector::Generate(I3RandomService &rng, I3MCTree &tree,
 		m = rng.Integer(flux_->GetMaxMultiplicity() - flux_->GetMinMultiplicity())
 		    + flux_->GetMinMultiplicity();
 		// Choose an ensemble of energies
-		max_energy = 0.;
-		for (unsigned i=0; i < m; i++) {
-			bundle.push_back(std::make_pair(0., energyGenerator_->Generate(rng)));
-			if (bundle.back().second > max_energy)
-				max_energy = bundle.back().second;
-		}
-		// Choose sampling surface based on highest-energy muon
-		surface = GetSurface(max_energy);
-		// Sample from energy-dependent surface
+		for (unsigned i=0; i < m; i++)
+			bundle.push_back(BundleEntry(0., energyGenerator_->Generate(rng)));
+		bundle.sort();
+		// Choose target surface based on highest-energy muon
+		surface = GetTargetSurface(bundle.front().energy);
+		// Sample an impact point on the target surface
 		surface->SampleImpactRay(pos, dir, rng);
+		// Snap the impact point back to the injection surface
+		std::pair<double, double> steps = injectionSurface_->GetIntersection(pos, dir);
+		if (!(steps.first <= 0))
+			log_fatal("The target point is outside the injection surface!");
+		pos.SetX(pos.GetX() + steps.first*dir.GetX());
+		pos.SetY(pos.GetY() + steps.first*dir.GetY());
+		pos.SetZ(pos.GetZ() + steps.first*dir.GetZ());
 		// Calculate the differential flux expectation for
 		// this surface at the chosen angle, depth, and
 		// multiplicity, and compare to the maximum differential
@@ -112,7 +117,7 @@ EnergyDependentSurfaceInjector::Generate(I3RandomService &rng, I3MCTree &tree,
 		coszen = cos(dir.GetZenith());
 		flux = (*flux_)(h, coszen, m)
 		    * surface->GetDifferentialArea(coszen);
-		max_flux = (*flux_)(surface->GetMinDepth(),
+		max_flux = (*flux_)(injectionSurface_->GetMinDepth(),
 		    1., 1u)*surface->GetMaxDifferentialArea();
 	} while (flux <= rng.Uniform(0., max_flux));
 	
@@ -135,34 +140,26 @@ EnergyDependentSurfaceInjector::Generate(I3RandomService &rng, I3MCTree &tree,
 		}
 		
 		I3Particle track = CreateParallelTrack(radius, azimuth, *surface, primary);
-		track.SetEnergy(bspec.second);
-		bspec.first = radius;
+		track.SetEnergy(bspec.energy);
+		bspec.radius = radius;
 		I3MCTreeUtils::AppendChild(tree, primary, track);
 	}
 }
 
 SamplingSurfacePtr
-EnergyDependentSurfaceInjector::GetSurface(double energy) const
+EnergyDependentSurfaceInjector::GetTargetSurface(double energy) const
 {
 	if (scalingFunction_)
 		return scalingFunction_(energy);
 	else
-		return boost::make_shared<Cylinder>(800, 1600);
-	// TODO implement configurable scaling
-	
-
+		return boost::make_shared<Cylinder>(1600, 800);
 }
 
 SamplingSurfaceConstPtr
 EnergyDependentSurfaceInjector::GetInjectionSurface(const I3Particle &axis,
     const BundleConfiguration &bundle) const
 {
-	double energy = 0.;
-	BOOST_FOREACH(const BundleConfiguration::value_type &bspec, bundle)
-		if (bspec.second > energy)
-			energy = bspec.second;
-	
-	return GetSurface(energy);
+	return injectionSurface_;
 }
 
 double
@@ -178,7 +175,10 @@ double
 EnergyDependentSurfaceInjector::GetLogGenerationProbability(const I3Particle &axis,
     const BundleConfiguration &bundle) const
 {
-	SamplingSurfaceConstPtr surface = GetInjectionSurface(axis, bundle);
+	// Entries are sorted in descending order of energy, so the
+	// "minimum" entry has the maximum energy
+	SamplingSurfaceConstPtr surface =
+	    GetTargetSurface(std::min_element(bundle.begin(), bundle.end())->energy);
 	std::pair<double, double> steps =
 	    surface->GetIntersection(axis.GetPos(), axis.GetDir());
 	// This shower axis doesn't intersect the sampling surface. Bail.
@@ -190,10 +190,10 @@ EnergyDependentSurfaceInjector::GetLogGenerationProbability(const I3Particle &ax
 	unsigned m = bundle.size();
 	double logprob = flux_->GetLog(h, coszen, m);
 	double max_energy = 0.;
-	BOOST_FOREACH(const BundleConfiguration::value_type &pair, bundle) {
+	BOOST_FOREACH(const BundleEntry &track, bundle) {
 		if (m > 1)
-			logprob += radialDistribution_->GetLog(h, coszen, m, pair.first);
-		logprob += energyGenerator_->GetLog(pair.second);
+			logprob += radialDistribution_->GetLog(h, coszen, m, track.radius);
+		logprob += energyGenerator_->GetLog(track.energy);
 	}
 	// FIXME: rate integration is potentially expensive, as are repeated heap
 	// allocations in GetSurface()

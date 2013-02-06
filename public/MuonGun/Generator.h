@@ -25,7 +25,19 @@ namespace I3MuonGun {
 /**
  * The radial offset and energy of each muon in a bundle
  */
-typedef std::list<std::pair<double, double> > BundleConfiguration;
+struct BundleEntry {
+	BundleEntry(double r=0., double e=0.) : radius(r), energy(e) {}
+	double radius, energy;
+	bool operator<(const BundleEntry &other) const
+	{
+		return other.energy < this->energy;
+	}
+	bool operator==(const BundleEntry &other) const
+	{
+		return (this->radius == other.radius) && (this->energy == other.energy);
+	}
+};
+typedef std::list<BundleEntry> BundleConfiguration;
 
 I3_FORWARD_DECLARATION(Surface);
 I3_FORWARD_DECLARATION(SamplingSurface);

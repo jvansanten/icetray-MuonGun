@@ -60,7 +60,7 @@ public:
 	 * the given maximum muon energy
 	 * by the given energy. This is not necessarily the fastest.
 	 */
-	SamplingSurfacePtr GetSurface(double energy) const;
+	SamplingSurfacePtr GetTargetSurface(double energy) const;
 	/** 
 	 * Integrate the flux to get the total rate on the surface.
 	 * This is not necessarily the fastest.
@@ -68,6 +68,7 @@ public:
 	double GetTotalRate(SamplingSurfaceConstPtr surface) const;
 private:
 	boost::function<SamplingSurfacePtr (double)> scalingFunction_;
+	SamplingSurfacePtr injectionSurface_;
 	FluxPtr flux_;
 	boost::shared_ptr<OffsetPowerLaw> energyGenerator_;
 	RadialDistributionPtr radialDistribution_;

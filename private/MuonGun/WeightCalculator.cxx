@@ -40,10 +40,10 @@ WeightCalculator::GetWeight(const I3Particle &axis, const BundleConfiguration &b
 	
 	double lograte = flux_->GetLog(h, coszen, m) +
 	    std::log(surface_->GetDifferentialArea(coszen));
-	BOOST_FOREACH(const BundleConfiguration::value_type &pair, bundlespec) {
+	BOOST_FOREACH(const BundleEntry &track, bundlespec) {
 		if (m > 1)
-			lograte += radius_->GetLog(h, coszen, m, pair.first);
-		lograte += energy_->GetLog(h, coszen, m, pair.first, pair.second);
+			lograte += radius_->GetLog(h, coszen, m, track.radius);
+		lograte += energy_->GetLog(h, coszen, m, track.radius, track.energy);
 	}
 	
 	return std::exp(lograte - generator_->GetLogGeneratedEvents(axis, bundlespec));
@@ -241,7 +241,7 @@ public:
 		std::list<Track> tracks = Track::Harvest(*mctree, *mmctracks);
 		BundleConfiguration bundlespec;
 		BOOST_FOREACH(const Track &track, tracks)
-			bundlespec.push_back(std::make_pair(
+			bundlespec.push_back(BundleEntry(
 			    GetRadius(*primary, track.GetPos(steps.first)), track.GetEnergy(steps.first)));
 		
 		double lograte = -std::numeric_limits<double>::infinity();
@@ -251,10 +251,10 @@ public:
 			unsigned m = bundlespec.size();
 			
 			lograte = flux_->GetLog(h, coszen, m) + std::log(surface_->GetDifferentialArea(coszen));
-			BOOST_FOREACH(const BundleConfiguration::value_type &pair, bundlespec) {
+			BOOST_FOREACH(const BundleEntry &track, bundlespec) {
 				if (m > 1)
-					lograte += radius_->GetLog(h, coszen, m, pair.first);
-				lograte += energy_->GetLog(h, coszen, m, pair.first, pair.second);
+					lograte += radius_->GetLog(h, coszen, m, track.radius);
+				lograte += energy_->GetLog(h, coszen, m, track.radius, track.energy);
 			}
 			lograte -= generator_->GetLogGeneratedEvents(*primary, bundlespec);
 		}

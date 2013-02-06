@@ -82,7 +82,7 @@ GetWeight(const WeightCalculator& weighter, object &xo, object &yo, object &zo,
 		int m = get<uint32_t>(mult, i);
 		BundleConfiguration spec;
 		for (int j=0; j < std::min(ncols, m); j++) {
-			spec.push_back(std::pair<double, double>(
+			spec.push_back(BundleEntry(
 			    get<float>(radii, i, j), get<float>(energies, i, j)));
 		}
 		axis.SetPos(get<double>(x, i), get<double>(y, i), get<double>(z, i));
