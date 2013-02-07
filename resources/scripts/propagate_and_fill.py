@@ -8,7 +8,8 @@ from icecube import MuonGun
 from I3Tray import I3Tray
 from cubicle.weighting import GenerationProbability, PowerLaw, EnergyWeight
 from cubicle import fluxes
-import numpy, os, subprocess
+import numpy
+import os, subprocess, operator
 from optparse import OptionParser
 parser = OptionParser(option_class=GenerationProbability.option())
 parser.add_option("--flux", dest="flux", default="Hoerandel5", choices=("GaisserH3a", "GaisserH4a", "Hoerandel5", "CascadeOptimized", "5Comp"), help="CR flux model to weight to")
@@ -28,11 +29,12 @@ if len(args) < 2:
 infiles, outfile = args[:-1], args[-1]
 
 # If running in Condor, stage files in and out with block copies
-if '_CONDOR_SCRATCH_DIR' in os.environ and os.getcwd() == os.environ['_CONDOR_SCRATCH_DIR']:
-	subprocess.call(['cp'] + infiles + ['.'])
-	infiles = map(os.path.basename, infiles)
+if '_CONDOR_SCRATCH_DIR' in os.environ:
+	cwd = os.environ['_CONDOR_SCRATCH_DIR']
+	subprocess.call(['cp'] + infiles + [cwd])
+	infiles = [os.path.join(cwd, os.path.basename(f)) for f in infiles]
 	outdir = os.path.dirname(outfile)
-	outfile = os.path.basename(outfile)
+	outfile = os.path.join(cwd, os.path.basename(outfile))
 
 ptype = dataclasses.I3Particle.ParticleType
 elements = [('H', ptype.PPlus), ('He', ptype.He4Nucleus), ('N', ptype.N14Nucleus), ('Al', ptype.Al27Nucleus), ('Fe', ptype.Fe56Nucleus)]
@@ -42,7 +44,6 @@ from utils import dcorsika_spectra, IsotropicWeight, VolumeCorrWeight, MultiFill
 # Set up (common) normalization term
 standard = dcorsika_spectra(nevents=opts.n_standard*2.5e6)
 he = dcorsika_spectra([-2.6]*5, [3., 2., 1., 1., 1.], 5e4, 1e11, nevents=opts.n_he*1e6)
-import operator
 generated_components = [reduce(operator.add, comps) for comps in zip(standard, he)]
 
 spectra = dict()
@@ -90,6 +91,7 @@ ucr_opts = expandvars('$I3_BUILD/bin/ucr-icetray-ucr ')
 for fn in infiles:
 	ucr_opts += fn + ' '
 ucr_opts += ("-DEPTH=1950 -LENGTH=1600 -RADIUS=800 -over=%d" % (opts.oversample))
+print 'ucr_opts: "%s"' % ucr_opts
 tray.AddModule('I3InfiniteSource', 'driver')
 tray.AddModule('I3GeneratorUCR', 'reader', EventsToIssue=int(1e9), UCROpts=ucr_opts)
 
@@ -121,6 +123,6 @@ tray.Finish()
 from subprocess import call
 call(['h5repack', '-f', 'GZIP=9', outfile, outfile+'.z'])
 call(['mv', outfile+'.z', outfile])
-if '_CONDOR_SCRATCH_DIR' in os.environ and os.getcwd() == os.environ['_CONDOR_SCRATCH_DIR']:
-	subprocess.call(['cp', outfile, outdir+'/'+outfile])
+if '_CONDOR_SCRATCH_DIR' in os.environ:
+	subprocess.call(['cp', outfile, outdir+'/'+os.path.basename(outfile)])
 	
