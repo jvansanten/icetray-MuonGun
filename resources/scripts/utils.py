@@ -69,15 +69,15 @@ class EnergyWeightCollection(object):
 class IsotropicWeight(object):
 	def __init__(self, f):
 		self.f = f
-	def __call__(self, E, theta):
-		return self.f(E)
+	def __call__(self, E, ptype, theta):
+		return self.f(E, ptype)
 
 class VolumeCorrWeight(object):
 	def __init__(self, detcfg, energy_spectrum):
 		self.chi = detcfg*4./numpy.pi
 		self.energy_spectrum = energy_spectrum
-	def __call__(self, E, theta):
-		return self.energy_spectrum(E)*(numpy.cos(theta) + self.chi*numpy.sin(theta))/(1/2. + numpy.pi*self.chi/4.)
+	def __call__(self, E, ptype, theta):
+		return self.energy_spectrum(E, ptype)*(numpy.cos(theta) + self.chi*numpy.sin(theta))/(1/2. + numpy.pi*self.chi/4.)
 
 
 from os.path import expandvars
@@ -343,7 +343,7 @@ class FillWorker(object):
 	def consume(self, primary, tracks, norm):
 		energy = primary.energy
 		zenith = primary.dir.zenith
-		weight = self.flux(energy)/norm
+		weight = self.flux(energy, primary.type)/norm
 		self.binner.consume(tracks, energy, zenith, weight)
 	def save(self, hdf, hist, where):
 		# save in single precision
@@ -370,7 +370,7 @@ class MultiFiller(icetray.I3Module):
 	def Configure(self):
 		
 		fluxes = self.GetParameter("Fluxes")
-		generators = self.GetParameter("GenerationSpectra")
+		self.generator = self.GetParameter("GenerationSpectra")
 		outfile = self.GetParameter("Outfile")
 		import os
 		if os.path.exists(outfile):
@@ -383,30 +383,24 @@ class MultiFiller(icetray.I3Module):
 		
 		self.workers = dict()
 		
-		for label, components in fluxes.iteritems():
-			for ptype, weight in components.iteritems():
-				worker = FillWorker(weight, make_binner(), outfile, '/%s/%s' % (label, ptype))
-				if not ptype in self.workers:
-					genprob = generators[ptype]
-					self.workers[ptype] = (genprob, [worker])
-				else:
-					self.workers[ptype][1].append(worker)
+		for label, weight in fluxes.iteritems():
+			worker = FillWorker(weight, make_binner(), outfile, '/%s' % label)
+			self.workers[label] = worker
+		
 	def DAQ(self, frame):
 		primary = frame['MCPrimary']
 		tracks = frame['Tracks']
-		generator, workers = self.workers[primary.type]
-		norm = generator(primary.energy, primary.dir.zenith)
-		for worker in workers:
+		norm = self.generator(primary.energy, primary.type, primary.dir.zenith)
+		for worker in self.workers.itervalues():
 			worker.consume(primary, tracks, norm)
 		
 		self.nevents += 1
-		if self.nevents % 1000 == 0:
+		if self.nevents % 10000 == 0:
 			sys.stderr.write('%d events\n' % self.nevents)
 	
 	def Finish(self):
-		for workers in self.workers.itervalues():
-			for worker in workers[1]:
-				worker.finish()
+		for worker in self.workers.itervalues():
+			worker.finish()
 		
 
 

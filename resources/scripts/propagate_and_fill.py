@@ -6,8 +6,8 @@ from icecube import icetray, dataclasses, dataio
 from icecube.icetray import I3Units
 from icecube import MuonGun
 from I3Tray import I3Tray
-from cubicle.weighting import GenerationProbability, PowerLaw, EnergyWeight
-from cubicle import fluxes
+from icecube.MuonGun.weighting import GenerationProbability, PowerLaw, EnergyWeight, FiveComponent
+from icecube.MuonGun import fluxes
 import numpy
 import os, subprocess, operator
 from optparse import OptionParser
@@ -39,19 +39,16 @@ if '_CONDOR_SCRATCH_DIR' in os.environ:
 ptype = dataclasses.I3Particle.ParticleType
 elements = [('H', ptype.PPlus), ('He', ptype.He4Nucleus), ('N', ptype.N14Nucleus), ('Al', ptype.Al27Nucleus), ('Fe', ptype.Fe56Nucleus)]
 
-from utils import dcorsika_spectra, IsotropicWeight, VolumeCorrWeight, MultiFiller
+from utils import IsotropicWeight, VolumeCorrWeight, MultiFiller
 
 # Set up (common) normalization term
-standard = dcorsika_spectra(nevents=opts.n_standard*2.5e6)
-he = dcorsika_spectra([-2.6]*5, [3., 2., 1., 1., 1.], 5e4, 1e11, nevents=opts.n_he*1e6)
-generated_components = [reduce(operator.add, comps) for comps in zip(standard, he)]
-
-spectra = dict()
-for (label, ptype), spectrum in zip(elements, generated_components):
-	if opts.detcfg:
-		spectra[ptype] = (VolumeCorrWeight(opts.detcfg, spectrum))
-	else:
-		spectra[ptype] = (IsotropicWeight(spectrum))
+standard = FiveComponent(nevents=opts.n_standard*2.5e6, emin=6e2, emax=1e11)
+he = FiveComponent(nevents=opts.n_he*1e6, emin=5e4, emax=1e11, normalization=[3., 2., 1., 1., 1.], gamma=[-2.6]*5)
+generator = standard + he
+if opts.detcfg:
+	spectrum = VolumeCorrWeight(opts.detcfg, generator)
+else:
+	spectrum = IsotropicWeight(generator)
 
 def make_pseudoflux(kind):
 	# Weight to a pseudo-flux that integrates to NEvents/(Area*SolidAngle)
@@ -60,28 +57,17 @@ def make_pseudoflux(kind):
 	area = numpy.pi**2*r*(r+l)
 	nevents = 1./area
 	if kind == "CascadeOptimized":
-		flux_components = dcorsika_spectra([-2.6]*5, [3., 2., 1., 1., 1.], 3e4, 1e9, nevents=nevents)
+		flux_components = FiveComponent(gamma=[-2.6]*5, normalization=[3., 2., 1., 1., 1.], emin=3e4, emax=1e9, nevents=nevents)
 	elif kind == "Standard":
-		flux_components = dcorsika_spectra(nevents=nevents)
+		flux_components = FiveComponent(nevents=nevents, emin=6e2, emax=1e11)
 	return flux_components
 
 # Set up fluxes to weight to
 target_fluxes = dict()
 for k in "GaisserH3a", "GaisserH4a", "Hoerandel5":
-	components = dict()
-	for label, primary in elements:
-		if primary == ptype.PPlus:
-			z = 1
-		else:
-			z = int(primary)%100
-		flux = getattr(fluxes, k)(z)
-		components[primary] = flux
-	target_fluxes[k] = components
+	target_fluxes[k] = getattr(fluxes, k)()
 for k in "CascadeOptimized", "Standard":
-	components = dict()
-	for (label, primary), flux in zip(elements, make_pseudoflux(k)):
-		components[primary] = flux
-	target_fluxes[k+"5Comp"] = components
+	target_fluxes[k+"5Comp"] = make_pseudoflux(k)
 
 tray = I3Tray()
 
@@ -113,7 +99,7 @@ tray.AddModule('Muonitron', 'propagator',
 )
 
 tray.AddModule(MultiFiller, 'filler',
-    Outfile=outfile, Fluxes=target_fluxes, GenerationSpectra=spectra,
+    Outfile=outfile, Fluxes=target_fluxes, GenerationSpectra=spectrum,
     MinDepth=opts.mindepth, MaxDepth=opts.maxdepth, DepthSteps=opts.steps)
 tray.AddModule('TrashCan', 'YesWeCan')	
 
