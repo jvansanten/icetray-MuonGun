@@ -1,7 +1,7 @@
 
 from icecube.icetray import I3Units
 from icecube import icetray
-import random
+import random, sys
 
 import dashi
 class buffering_histogram(dashi.histogram.histogram):
@@ -401,7 +401,7 @@ class MultiFiller(icetray.I3Module):
 		
 		self.nevents += 1
 		if self.nevents % 1000 == 0:
-			print '%d events' % self.nevents
+			sys.stderr.write('%d events\n' % self.nevents)
 	
 	def Finish(self):
 		for workers in self.workers.itervalues():
