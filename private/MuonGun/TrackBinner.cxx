@@ -15,11 +15,10 @@ namespace I3MuonGun {
 
 TrackBinner::TrackBinner(double mindepth, double maxdepth, unsigned steps)
 {	
-	std::vector<double> multbins, rbins;
+	std::vector<double> multbins;
 	{
 		using namespace boost::assign;
 		multbins += 0.5, 1.5, 2.5, 3.5, 9.5, 19.5, 39.5, 99.5;
-		rbins += 0, 5, 10, 15, 25, 45;
 	}
 	
 	using namespace histogram::binning;
@@ -28,7 +27,7 @@ TrackBinner::TrackBinner(double mindepth, double maxdepth, unsigned steps)
 	double dh = (maxdepth-mindepth)/(2*(steps-1));
 	mspecs[1] = uniform<>::create(mindepth-dh, maxdepth-dh, steps);
 	mspecs[2] = multbins;
-	mspecs[3] = rbins;
+	mspecs[3] = uniform<power<2> >::create(0, 250, 31);
 	mspecs[4] = uniform<histogram::binning::log10>::create(1, 1e7, 101);
 	
 	{
