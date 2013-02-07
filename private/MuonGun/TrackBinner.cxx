@@ -18,7 +18,7 @@ TrackBinner::TrackBinner(double mindepth, double maxdepth, unsigned steps)
 	std::vector<double> multbins, rbins;
 	{
 		using namespace boost::assign;
-		multbins += 1, 2, 3, 4, 10, 20, 40, 100;
+		multbins += 0.5, 1.5, 2.5, 3.5, 9.5, 19.5, 39.5, 99.5;
 		rbins += 0, 5, 10, 15, 25, 45;
 	}
 	
@@ -29,7 +29,7 @@ TrackBinner::TrackBinner(double mindepth, double maxdepth, unsigned steps)
 	mspecs[1] = uniform<>::create(mindepth-dh, maxdepth-dh, steps);
 	mspecs[2] = multbins;
 	mspecs[3] = rbins;
-	mspecs[4] = uniform<histogram::binning::log10>::create(1, 1e6, 101);
+	mspecs[4] = uniform<histogram::binning::log10>::create(1, 1e7, 101);
 	
 	{
 		histogram::histogram<2>::bin_specification specs = {{mspecs[0], uniform<histogram::binning::log10>::create(1e2, 1e11, 101)}};
@@ -38,7 +38,7 @@ TrackBinner::TrackBinner(double mindepth, double maxdepth, unsigned steps)
 	
 	{
 		histogram::histogram<3>::bin_specification specs = {{
-		    uniform<cosine>::create(0, M_PI/2, 101), mspecs[1], uniform<>::create(1, 100, 100)}};
+		    uniform<cosine>::create(0, M_PI/2, 101), mspecs[1], uniform<>::create(0.5, 99.5, 100)}};
 		multiplicity_ = boost::make_shared<histogram::histogram<3> >(specs);
 	}
 	
