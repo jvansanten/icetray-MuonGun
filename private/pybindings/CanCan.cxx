@@ -27,7 +27,10 @@ register_CanCan()
 
 #if 1
 	def_function<boost::function<SamplingSurfacePtr (double)> >("SurfaceScalingFunction");
-	class_<EnergyDependentSurfaceInjector, bases<Generator> >("EnergyDependentSurfaceInjector")
+	class_<EnergyDependentSurfaceInjector, bases<Generator> >("EnergyDependentSurfaceInjector",
+	    init<FluxPtr, RadialDistributionPtr, boost::shared_ptr<OffsetPowerLaw>, boost::function<SamplingSurfacePtr (double)> >
+	    ((arg("flux")=FluxPtr(), arg("radius")=RadialDistributionPtr(),
+	    arg("energy")=boost::shared_ptr<OffsetPowerLaw>(), arg("scaling")=boost::function<SamplingSurfacePtr (double)>())))
 		.def("total_rate", &EnergyDependentSurfaceInjector::GetTotalRate)
 		.def("target_surface", &EnergyDependentSurfaceInjector::GetTargetSurface)
 		#define PROPS (Scaling)(Flux)(EnergyDistribution)(RadialDistribution)

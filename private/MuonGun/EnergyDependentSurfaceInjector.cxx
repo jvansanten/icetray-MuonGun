@@ -55,20 +55,24 @@ ScaleForIC79(double energy)
 
 }
 
-EnergyDependentSurfaceInjector::EnergyDependentSurfaceInjector()
-{	
-	// flux_ = boost::make_shared<SplineFlux>(
-	//     GetTablePath("Hoerandel5_atmod12_SIBYLL.single_flux.fits"),
-	//     GetTablePath("Hoerandel5_atmod12_SIBYLL.bundle_flux.fits"));
-	// flux_->SetMinMultiplicity(1);
-	// flux_->SetMaxMultiplicity(1);
-	
-	energyGenerator_ = boost::make_shared<OffsetPowerLaw>(2, 500., 50, 1e6);
-	
-	// radialDistribution_ = boost::make_shared<SplineRadialDistribution>(
-	//     GetTablePath("Hoerandel5_atmod12_SIBYLL.radius.fits"));
-	
-	scalingFunction_ = &ScaleForIC79;
+EnergyDependentSurfaceInjector::EnergyDependentSurfaceInjector(FluxPtr flux, RadialDistributionPtr radius,
+    boost::shared_ptr<OffsetPowerLaw> energies, boost::function<SamplingSurfacePtr (double)> scaling)
+    : scalingFunction_(scaling), flux_(flux), energyGenerator_(energies), radialDistribution_(radius)
+{
+	if (!flux_) {
+		flux_ = boost::make_shared<SplineFlux>(
+		    GetTablePath("Hoerandel5_atmod12_SIBYLL.single_flux.fits"),
+		    GetTablePath("Hoerandel5_atmod12_SIBYLL.bundle_flux.fits"));
+		flux_->SetMinMultiplicity(1);
+		flux_->SetMaxMultiplicity(1);
+	}
+	if (!radialDistribution_)
+		radialDistribution_ = boost::make_shared<SplineRadialDistribution>(
+		    GetTablePath("Hoerandel5_atmod12_SIBYLL.radius.fits"));
+	if (!energyGenerator_)
+		energyGenerator_ = boost::make_shared<OffsetPowerLaw>(2, 500., 50, 1e6);
+	if (!scalingFunction_)
+		scalingFunction_ = &ScaleForIC79;
 	
 	injectionSurface_ = boost::make_shared<Cylinder>(1600, 800);
 }

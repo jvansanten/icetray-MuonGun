@@ -33,7 +33,9 @@ I3_FORWARD_DECLARATION(RadialDistribution);
  */
 class EnergyDependentSurfaceInjector : public Generator {
 public:
-	EnergyDependentSurfaceInjector();
+	EnergyDependentSurfaceInjector(FluxPtr flux=FluxPtr(), RadialDistributionPtr radius=RadialDistributionPtr(),
+	    boost::shared_ptr<OffsetPowerLaw> energies=boost::shared_ptr<OffsetPowerLaw>(),
+	    boost::function<SamplingSurfacePtr (double)> scaling=boost::function<SamplingSurfacePtr (double)>());
 	
 	// GenerationProbability interface
 	SamplingSurfaceConstPtr GetInjectionSurface(const I3Particle &axis, const BundleConfiguration &bundle) const;
