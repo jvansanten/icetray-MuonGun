@@ -37,6 +37,12 @@ GenerationProbability::GetGeneratedEvents(const I3Particle &axis, const BundleCo
 	return numEvents_*std::exp(GetLogGenerationProbability(axis, bundle));
 }
 
+double
+GenerationProbability::GetLogGeneratedBundles(const I3Particle &axis, unsigned multiplicity) const
+{
+	return std::log(double(numEvents_)) + GetLogBundleGenerationProbability(axis, multiplicity);
+}
+
 GenerationProbabilityCollection::GenerationProbabilityCollection(GenerationProbabilityPtr p1, GenerationProbabilityPtr p2)
 {
 	push_back(p1);

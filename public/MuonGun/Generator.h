@@ -65,7 +65,16 @@ public:
 	 *                   in the bundle
 	 */
 	double GetLogGeneratedEvents(const I3Particle &axis, const BundleConfiguration &bundle) const;
- 	double GetGeneratedEvents(const I3Particle &axis, const BundleConfiguration &bundle) const; 
+	double GetGeneratedEvents(const I3Particle &axis, const BundleConfiguration &bundle) const;
+	
+	/**
+	 * @brief Calculate the number of bundles with the given multiplicity
+	 *        should have been generated along the given axis
+	 *
+	 * @param[in] axis         the bundle axis
+	 * @param[in] multiplicity number of muons in the bundle
+	 */
+	double GetLogGeneratedBundles(const I3Particle &axis, unsigned multiplicity) const;
 public:
 	/**
 	 * @brief Propose an injection surface for the given bundle configuration.
@@ -87,6 +96,8 @@ public:
 	 
 	/** Copy self into a shared pointer */
 	virtual GenerationProbabilityPtr Clone() const = 0;
+	// FIXME mark pure virtual
+	virtual double GetLogGenerationProbability(double depth, double cos_theta, unsigned multiplicity, double radius, double energy) const { return 0.; };
 protected:
 	/**
 	 * @brief Calculate the differential probability per event that the
@@ -97,6 +108,11 @@ protected:
 	 *                   in the bundle
 	 */
 	virtual double GetLogGenerationProbability(const I3Particle &axis, const BundleConfiguration &bundle) const = 0;
+	 
+	virtual double GetLogBundleGenerationProbability(const I3Particle &axis, unsigned multiplicity) const { return 0.; };
+	
+
+	
 
 private:
 	/** @brief The total number of events that should be generated */

@@ -35,8 +35,10 @@ public:
 	SamplingSurfaceConstPtr GetInjectionSurface(const I3Particle&, const BundleConfiguration&) const { return surface_; }
 	GenerationProbabilityPtr Clone() const;
 	
+	double GetLogGenerationProbability(double depth, double cos_theta, unsigned multiplicity, double radius, double energy) const;
 protected:
 	double GetLogGenerationProbability(const I3Particle &axis, const BundleConfiguration &bundle) const;
+	double GetLogBundleGenerationProbability(const I3Particle &axis, unsigned multiplicity) const;
 private:
 	SamplingSurfacePtr surface_;
 	FluxPtr flux_;
