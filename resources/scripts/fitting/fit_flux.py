@@ -24,7 +24,8 @@ extents = [(e[1], e[-2]) for e in h._h_binedges]
 weights = 1./(numpy.log(numpy.exp(h.bincontent - bias) + numpy.sqrt(h._h_squaredweights[h._h_visiblerange])) - (h.bincontent - bias))
 weights[numpy.logical_not(numpy.isfinite(weights))] = 0
 if opts.single:
-	weights[:,:3] = 0 # ingore shallowest depths: edge effects from energy cut
+	pass
+	# weights[:,:3] = 0 # ingore shallowest depths: edge effects from energy cut
 else:
 	weights[:,:,0] = 0 # ignore single-muon bin (fit separately)
 	# weights[85:,:,:] = 0 # ignore the horizon bin

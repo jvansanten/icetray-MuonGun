@@ -25,17 +25,17 @@ extents = [(e[1], e[-2]) for e in h._h_binedges]
 weights = 1./(numpy.log(numpy.exp(h.bincontent - bias) + numpy.sqrt(h._h_squaredweights[h._h_visiblerange])) - (h.bincontent - bias))
 weights[numpy.logical_not(numpy.isfinite(weights))] = 0
 weights[:,:,0,:] = 0 # ignore the single-track bin
-weights[0,:,4,:] = 0 # ignore high-multiplicity bin at the horizon
+# weights[0,:,6,:] = 0 # ignore high-multiplicity bin at the horizon
 
 knots = [
-	pad_knots(numpy.linspace(0, 1, 5), 2),  # cos(theta)
-	pad_knots(numpy.linspace(1, 3, 5), 2),  # vertical depth [km]
-	pad_knots(numpy.linspace(0, numpy.sqrt(100), 6)**2, 2), # bundle multiplicity
-	pad_knots(numpy.linspace(0, numpy.sqrt(250), 11)**2, 2), # radius^2 [m^2]
+	pad_knots(numpy.linspace(0, 1, 11), 2),  # cos(theta)
+	pad_knots(numpy.linspace(1, 3, 11), 2),  # vertical depth [km]
+	pad_knots(numpy.linspace(0, numpy.sqrt(100), 15)**2, 2), # bundle multiplicity
+	pad_knots(numpy.linspace(0, numpy.sqrt(250), 25)**2, 2), # radius [m]	
 ]
 smooth = weights[weights > 0].mean() # make the smoothing term proportional to the weights
 order = [2,2,2,2]
-penalties = {2:[smooth/1e4, smooth/1e4, smooth/1e4, smooth*10]} # Penalize curvature 
+penalties = {2:[smooth/1e5, smooth/1e5, smooth/1e4, smooth/10]} # Penalize curvature
 
 spline = glam.fit(h.bincontent,weights,h._h_bincenters,knots,order,smooth,penalties=penalties)
 spline.bias = bias

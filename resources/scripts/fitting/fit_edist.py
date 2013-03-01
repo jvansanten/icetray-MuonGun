@@ -35,17 +35,39 @@ smooth = weights[weights > 0].mean() # make the smoothing term proportional to t
 order = [2,2,2]
 penalties = {2:[smooth/1e3, smooth/1e4, smooth/1e2]}    # Penalize curvature 
 
-if not opts.single:
+if opts.single:
+	spline = glam.fit(hes.bincontent,weights,hes._h_bincenters,knots,order,smooth,penalties=penalties)
+	spline.bias = bias
+else:
+	# The depth structure in the energy spectrum is mostly a function of
+	# attenuation at the bundle rim, which we now have an extra dimension for.
+	# Reduce the knot density in depth accordingly.
+	knots[1] = pad_knots(numpy.linspace(1, 3, 7), 2)
 	knots = knots[0:2] + [
-		pad_knots(numpy.linspace(0, numpy.sqrt(100), 3)**2), # bundle multiplicity
-		pad_knots(numpy.linspace(0, numpy.sqrt(100), 3)**2), # distance to shower axis
+		pad_knots(numpy.linspace(numpy.sqrt(2), numpy.sqrt(100), 5)**2), # bundle multiplicity
+		pad_knots(numpy.linspace(0, numpy.sqrt(250), 11)**2), # distance to shower axis
 		
 	] + [knots[-1]]
-	order = order[0:2] + [2,2] + [order[-1]]
-	penalties[2] = penalties[2][0:2] + [smooth/1e4, smooth/1e4] + [penalties[2][-1]]
+	
+	knots = [
+		pad_knots(numpy.linspace(0, 1, 7), 2),  # cos(theta)
+		pad_knots(numpy.linspace(1, 3, 7), 2),  # vertical depth [km]
+		pad_knots(numpy.linspace(0, numpy.sqrt(100), 5)**2, 2), # bundle multiplicity
+		pad_knots(numpy.linspace(0, 250**(1./2), 11)**2), # distance to shower axis
+		pad_knots(numpy.linspace(0, 20, 11), 2), # log(energy) [log(E/GeV)]
 
-spline = glam.fit(hes.bincontent,weights,hes._h_bincenters,knots,order,smooth,penalties=penalties)
-spline.bias = bias
+	]
+	
+	order = order[0:2] + [2,2] + [order[-1]]
+	penalties[2] = penalties[2][0:2] + [smooth/1e4, smooth/1e1] + [penalties[2][-1]]
+	penalties = {2:[smooth/1e5, smooth/1e5, smooth*1e4, smooth/1e3, smooth/1e1]} # Penalize curvature
+	# penalties[2][0] *= 1e1
+	# penalties[2][1] *= 1e4
+	# penalties[2][-1] *= 1e1
+
+	spline = glam.fit(hes.bincontent,weights,hes._h_bincenters,knots,order,smooth,penalties=penalties)
+	spline.bias = bias
+
 
 if os.path.exists(outfile):
 	os.unlink(outfile)

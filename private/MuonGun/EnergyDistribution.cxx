@@ -45,6 +45,10 @@ SplineEnergyDistribution::GetLog(double depth, double cos_theta,
 	} else if (bundles_.Eval(coords, &logprob) != 0)
 		return -std::numeric_limits<double>::infinity();
 	
+	// Bundle spline is fit to log(dP/dr^2 dlogE)
+	if (multiplicity > 1)
+		logprob += std::log(2*radius);
+	
 	return logprob;
 }
 

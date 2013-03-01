@@ -9,7 +9,7 @@ def histload(hdf, where):
 	node = hdf.getNode(where)
 	if 'count' in node._v_attrs:
 		h /= node._v_attrs['count']
-	print 'norm: %.1f' % node._v_attrs['count']
+		print 'norm: %.1f' % node._v_attrs['count']
 	return h
 
 # Monkey-patch some handy features into dashi
@@ -82,18 +82,25 @@ def multi_empty_like(self):
 dashi.histogram.histogram.empty_like = multi_empty_like
 
 def load_group(fname, group='energy'):
+	import os
+	dirname, groupname = os.path.split(fname)
+	if os.path.isfile(dirname):
+		fname = dirname
+		root = '/'+groupname
+	else:
+		root = ''
 	with tables.openFile(fname) as hdf:
 		import operator
 		try:
-			# For real fluxes, elements are stored individually
-			hdf.getNode('/PPlus/%s' % group)
+			# For real fluxes, elements are stored individually 
+			hdf.getNode('%s/PPlus/%s' % (root, group))
 			elements = 'PPlus', 'He4Nucleus', 'Fe56Nucleus', 'N14Nucleus', 'Al27Nucleus'
-			h = histload(hdf, '/%s/%s' % (elements[0], group))
+			h = histload(hdf, '%s/%s/%s' % (root, elements[0], group))
 			for e in elements[1:]:
-			    h += histload(hdf, '/%s/%s' % (e, group))
+			    h += histload(hdf, '%s/%s/%s' % (root, e, group))
 		except tables.NoSuchNodeError:
 			# For pseudo-fluxes, there is only one group
-			h = histload(hdf, '/'+group)
+			h = histload(hdf, root+'/'+group)
 	return h
 
 def load_espec(fname, single=True, bias=50, transform=True):
@@ -105,14 +112,27 @@ def load_espec(fname, single=True, bias=50, transform=True):
 		eaxis = 2
 	else:
 		eaxis = 4
-		
-	# normalize
+	
+	# normalize w.r.t. E
 	norm = he._h_bincontent.sum(axis=eaxis).reshape(he._h_bincontent.shape[:-1] + (1,))
+	if not single:
+		# normalize w.r.t. r
+		norm = norm.sum(axis=eaxis-1).reshape(norm.shape[:-2] + (1,1))
 	he._h_bincontent /= norm
 	he._h_squaredweights /= norm*norm
 	# convert to differential
-	shape = (1,)*(he.bincontent.ndim-1) + (he.bincontent.shape[-1],)
+	shape = (1,)*(eaxis) + (he.bincontent.shape[eaxis],)
 	norm = numpy.diff(he._h_binedges[-1][1:-1]).reshape(shape)
+	# also convert to differential in r
+	if not single:
+		shape = [1]*he.ndim
+		shape[eaxis-1] = he.bincontent.shape[eaxis-1]
+		shape = tuple(shape)
+		norm = norm.repeat(shape[eaxis-1], axis=eaxis-1)
+		if transform:
+			norm *= numpy.diff(he._h_binedges[eaxis-1][1:-1]**2).reshape(shape)
+		else:
+			norm *= numpy.diff(he._h_binedges[eaxis-1][1:-1]).reshape(shape)
 	vrange = he._h_visiblerange
 	he._h_bincontent[vrange] /= norm
 	he._h_squaredweights[vrange] /= norm*norm
