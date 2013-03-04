@@ -24,7 +24,7 @@ SET (LIB_${PROJECT_NAME}_PROJECTS
     icetray dataclasses phys-services simclasses photospline tableio
 )
 SET (LIB_${PROJECT_NAME}_TOOLS
-    log4cplus boost python gsl
+    boost python gsl
 )
 
 SET (LIB_${PROJECT_NAME}_PYSOURCES 
