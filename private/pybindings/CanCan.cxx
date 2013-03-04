@@ -7,6 +7,7 @@
  */
 
 #include <MuonGun/CanCan.h>
+#include <MuonGun/Floodlight.h>
 #include <MuonGun/EnergyDependentSurfaceInjector.h>
 #include <icetray/python/function.hpp>
 
@@ -38,4 +39,6 @@ register_CanCan()
 		#undef PROPS
 	;
 #endif
+	class_<Floodlight, boost::shared_ptr<Floodlight>, bases<Generator> >("Floodlight")
+	;
 }

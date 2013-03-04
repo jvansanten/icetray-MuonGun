@@ -17,6 +17,7 @@ SET (LIB_${PROJECT_NAME}_SOURCEFILES
     
     # Event generator implementations
     private/MuonGun/CanCan.cxx
+    private/MuonGun/Floodlight.cxx
     private/MuonGun/EnergyDependentSurfaceInjector.cxx
     private/MuonGun/CORSIKAGenerationProbability.cxx
 )
