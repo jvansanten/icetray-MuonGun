@@ -58,21 +58,12 @@ IF (IS_DIRECTORY ${CMAKE_SOURCE_DIR}/PROPOSAL)
         private/pybindings/histogram.cxx
     )
     LIST (APPEND LIB_${PROJECT_NAME}_PROJECTS
-        PROPOSAL sim-services
+        PROPOSAL
     )
     ADD_DEFINITIONS(-DUSE_PROPOSAL)
 ELSE (IS_DIRECTORY ${CMAKE_SOURCE_DIR}/PROPOSAL)
     COLORMSG (CYAN "+-- PROPOSAL not found, disabling Muonitron table-maker")
 ENDIF (IS_DIRECTORY ${CMAKE_SOURCE_DIR}/PROPOSAL)
-
-IF (IS_DIRECTORY ${CMAKE_SOURCE_DIR}/sim-services AND IS_DIRECTORY ${CMAKE_SOURCE_DIR}/cmc)
-    LIST (APPEND LIB_${PROJECT_NAME}_PROJECTS
-        sim-services cmc
-    )
-    ADD_DEFINITIONS(-DUSE_SIM_SERVICES)
-ELSE (IS_DIRECTORY ${CMAKE_SOURCE_DIR}/sim-services AND IS_DIRECTORY ${CMAKE_SOURCE_DIR}/cmc)
-    COLORMSG (CYAN "+-- sim-services not found, disabling GeneratorModule")
-ENDIF (IS_DIRECTORY ${CMAKE_SOURCE_DIR}/sim-services AND IS_DIRECTORY ${CMAKE_SOURCE_DIR}/cmc)
 
 i3_add_library(MuonGun
     ${LIB_${PROJECT_NAME}_SOURCEFILES}
