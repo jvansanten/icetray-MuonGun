@@ -77,10 +77,6 @@ def GenerateBundles(tray, name, Generator=None, Propagator=None,
 		header.start_time = eventTime
 		frame["I3EventHeader"] = header
 		
-		if "DrivingTime" in frame:
-			del frame["DrivingTime"]
-			frame["DrivingTime"] = dataclasses.I3Time(eventTime)
-		
 	if FromTime != ToTime:
 		if RandomService is None:
 			raise ValueError("You must specify a random service!")
