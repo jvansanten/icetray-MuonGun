@@ -13,6 +13,14 @@
 #include "PROPOSAL/Photonuclear.h"
 #include "PROPOSAL/MathModel.h"
 
+#include "PROPOSAL/Medium.h"
+#include "PROPOSAL/BremsStochastic.h"
+#include "PROPOSAL/EpairStochastic.h"
+#include "PROPOSAL/PhotoStochastic.h"
+#include "PROPOSAL/IonizStochastic.h"
+
+#include <boost/foreach.hpp>
+
 namespace I3MuonGun {
 
 MuonPropagator::MuonPropagator(const std::string &medium, double ecut, double vcut, double rho)
@@ -55,12 +63,12 @@ MuonPropagator::SetSeed(int seed)
 	MathModel::set_seed(seed);
 }
 
-std::string
-MuonPropagator::GetName(const I3Particle &p)
+inline std::string
+GetMMCName(I3Particle::ParticleType pt)
 {
-        std::string name;
+	std::string name;
 	
-	switch (p.GetType()) {
+	switch (pt) {
 		case I3Particle::MuMinus:
 			name="mu-";
 			break;
@@ -74,15 +82,93 @@ MuonPropagator::GetName(const I3Particle &p)
 	return name;
 }
 
+std::string
+MuonPropagator::GetName(const I3Particle &p)
+{
+	return GetMMCName(p.GetType());
+}
+
+inline I3Particle
+to_I3Particle(const PROPOSALParticle *pp)
+{
+	I3Particle p;
+	p.SetRDMCType(static_cast<I3Particle::ParticleType>(abs(pp->type)));
+	p.SetLocationType(I3Particle::InIce);
+	p.SetPos(pp->x*I3Units::cm, pp->y*I3Units::cm, pp->z*I3Units::cm);
+	p.SetTime(pp->t*I3Units::s);
+	p.SetThetaPhi(pp->theta*I3Units::deg, pp->phi*I3Units::deg);
+	p.SetLength(pp->l*I3Units::cm);
+	p.SetEnergy(pp->e*I3Units::MeV);
+	
+	return p;
+}
+
+/** Differential stochastic rate: d^2N/dv/dx [1/m] */
+double
+MuonPropagator::GetStochasticRate(double energy, double fraction, I3Particle::ParticleType type) const
+{
+	propagator_->get_output()->initDefault(0, 0, GetMMCName(type), 0, 0, 0, 0, 0, 0);
+	// Check kinematics
+	if (fraction <= 0 || energy*(1-fraction) <= propagator_->get_particle()->m*I3Units::MeV)
+		return 0.;
+	propagator_->get_particle()->setEnergy(energy/I3Units::MeV);
+	propagator_->get_cros()->get_ionization()->setEnergy();
+	
+	double contrib;
+	double rate = 0.;
+	// Separate contributions from each element for brems/epair/photonuclear interactions
+	for (int i=0; i < propagator_->get_cros()->get_medium()->get_numCompontents(); i++) {
+		propagator_->get_cros()->set_component(i);
+		if (std::isfinite(contrib = propagator_->get_cros()->get_bremsstrahlung()->get_Stochastic()->function(fraction)) && contrib > 0)
+			rate += contrib;
+		if (std::isfinite(contrib = propagator_->get_cros()->get_epairproduction()->get_Stochastic()->function(fraction)) && contrib > 0)
+			rate += contrib;
+		if (std::isfinite(contrib = propagator_->get_cros()->get_photonuclear()->get_Stochastic()->function(fraction)) && contrib > 0)
+			rate += contrib;
+	}
+	// Only one bulk ionization contribution
+	if (std::isfinite(contrib = propagator_->get_cros()->get_ionization()->get_Stochastic()->function(fraction)) && contrib > 0)
+		rate += contrib;
+	// printf("brems dN/dx: %e\n", propagator_->get_cros()->get_bremsstrahlung()->get_Stochastic()->dNdx());
+	// printf("epair dN/dx: %e\n", propagator_->get_cros()->get_epairproduction()->get_Stochastic()->dNdx());
+	// printf("photo dN/dx: %e\n", propagator_->get_cros()->get_photonuclear()->get_Stochastic()->dNdx());
+	// printf("ioniz dN/dx: %e\n", propagator_->get_cros()->get_ionization()->get_Stochastic()->dNdx());
+	
+	return rate*(I3Units::m/I3Units::cm);
+}
+
+/** total stochastic rate: dN/dx [1/m] */
+double
+MuonPropagator::GetTotalStochasticRate(double energy, I3Particle::ParticleType type) const
+{
+	propagator_->get_output()->initDefault(0, 0, GetMMCName(type), 0, 0, 0, 0, 0, 0);
+	propagator_->get_particle()->setEnergy(energy/I3Units::MeV);
+	propagator_->get_cros()->get_ionization()->setEnergy();
+	
+	double rate = 0;
+	rate += propagator_->get_cros()->get_bremsstrahlung()->get_Stochastic()->dNdx();
+	rate += propagator_->get_cros()->get_epairproduction()->get_Stochastic()->dNdx();
+	rate += propagator_->get_cros()->get_photonuclear()->get_Stochastic()->dNdx();
+	rate += propagator_->get_cros()->get_ionization()->get_Stochastic()->dNdx();
+	
+	return rate*(I3Units::m/I3Units::cm);
+}
+
 I3Particle
-MuonPropagator::propagate(const I3Particle &p, double distance)
+MuonPropagator::propagate(const I3Particle &p, double distance, boost::shared_ptr<std::vector<I3Particle> > losses)
 {
 	I3Particle endpoint(p);
 	
 	// propagator_.get_output()->DEBUG=true;
-	propagator_->get_output()->initDefault(0, 0, GetName(p), p.GetTime()/I3Units::second,
-	    p.GetPos().GetX()/I3Units::cm, p.GetPos().GetY()/I3Units::cm, p.GetPos().GetZ()/I3Units::cm,
-	    p.GetDir().CalcTheta()/I3Units::deg, p.GetDir().CalcPhi()/I3Units::deg);
+	if (losses) {
+		propagator_->get_output()->I3flag = true;
+		propagator_->get_output()->initF2000(0, 0, GetName(p), p.GetTime()/I3Units::second,
+		    p.GetPos().GetX()/I3Units::cm, p.GetPos().GetY()/I3Units::cm, p.GetPos().GetZ()/I3Units::cm,
+		    p.GetDir().CalcTheta()/I3Units::deg, p.GetDir().CalcPhi()/I3Units::deg);
+	} else
+		propagator_->get_output()->initDefault(0, 0, GetName(p), p.GetTime()/I3Units::second,
+		    p.GetPos().GetX()/I3Units::cm, p.GetPos().GetY()/I3Units::cm, p.GetPos().GetZ()/I3Units::cm,
+		    p.GetDir().CalcTheta()/I3Units::deg, p.GetDir().CalcPhi()/I3Units::deg);
 	
 	PROPOSALParticle *pp = propagator_->get_particle();
 	if (propagator_->propagateTo(distance/I3Units::cm, p.GetEnergy()/I3Units::MeV) > 0)
@@ -94,6 +180,16 @@ MuonPropagator::propagate(const I3Particle &p, double distance)
 	endpoint.SetThetaPhi(pp->theta*I3Units::degree, pp->phi*I3Units::degree);
 	endpoint.SetLength(pp->r*I3Units::cm);
 	endpoint.SetTime(pp->t*I3Units::second);
+	
+	if (losses) {
+		std::vector<PROPOSALParticle*> &history = propagator_->get_output()->I3hist;
+		BOOST_FOREACH(PROPOSALParticle *pp, history) {
+			losses->push_back(to_I3Particle(pp));
+			delete pp;
+		}
+		history.clear();
+		propagator_->get_output()->I3flag = false;
+	}
 	
 	return endpoint;
 }

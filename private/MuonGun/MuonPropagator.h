@@ -45,7 +45,8 @@ public:
 	 *          distance traveled to reach its current position
 	 *          from the position given as input.
 	 */
-	I3Particle propagate(const I3Particle &p, double distance);
+	I3Particle propagate(const I3Particle &p, double distance,
+	    boost::shared_ptr<std::vector<I3Particle> > losses=boost::shared_ptr<std::vector<I3Particle> >());
 	
 	/**
 	 * Set the (global) state of the random number generator used
@@ -57,6 +58,8 @@ public:
 	 */
 	static std::string GetName(const I3Particle &p);
 	
+	double GetStochasticRate(double energy, double fraction, I3Particle::ParticleType type=I3Particle::MuMinus) const;
+	double GetTotalStochasticRate(double energy, I3Particle::ParticleType type=I3Particle::MuMinus) const;
 private:
 	Propagate *propagator_;
 };
