@@ -10,6 +10,7 @@
 #define I3MUONGUN_ENERGYDISTRIBUTION_H_INCLUDED
 
 #include <icetray/I3Units.h>
+#include <icetray/serialization.h>
 #include <icetray/I3PointerTypedefs.h>
 #include <photospline/I3SplineTable.h>
 
@@ -96,6 +97,7 @@ private:
  */
 class OffsetPowerLaw {
 public:
+	OffsetPowerLaw();
 	/**
 	 * Create an offset power-law energy distribution of the form
 	 * @f$ dP/dE_{\mu} \propto (E_{\mu} + b)^{-\gamma} @f$ 
@@ -116,6 +118,10 @@ public:
 	const double GetMin() const { return emin_; }
 	const double GetMax() const { return emax_; }
 private:
+	friend class boost::serialization::access;
+	template <typename Archive>
+	void serialize(Archive &, unsigned);
+	
 	double gamma_, offset_;
 	double emin_, emax_;
 	double nmin_, nmax_, norm_, lognorm_;

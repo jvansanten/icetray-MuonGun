@@ -100,6 +100,9 @@ BMSSEnergyDistribution::Generate(I3RandomService &rng, double depth, double cos_
 	return 1.;
 }
 
+OffsetPowerLaw::OffsetPowerLaw() : gamma_(NAN), offset_(NAN), emin_(NAN), emax_(NAN)
+{}
+
 OffsetPowerLaw::OffsetPowerLaw(double gamma, double offset, double emin, double emax)
     : gamma_(gamma), offset_(offset), emin_(emin), emax_(emax)
 {
@@ -135,4 +138,18 @@ OffsetPowerLaw::Generate(I3RandomService &rng) const
 	return std::pow(rng.Uniform()*(nmax_ - nmin_) + nmin_, 1./(1.-gamma_)) - offset_;
 }
 
+template <typename Archive>
+void
+OffsetPowerLaw::serialize(Archive &ar, unsigned version)
+{
+	ar & make_nvp("Gamma", gamma_);
+	ar & make_nvp("Offset", offset_);
+	ar & make_nvp("MinEnergy", emin_);
+	ar & make_nvp("MaxEnergy", emax_);
+	
+	*this = OffsetPowerLaw(gamma_, offset_, emin_, emax_);
 }
+
+}
+
+I3_SERIALIZABLE(I3MuonGun::OffsetPowerLaw);

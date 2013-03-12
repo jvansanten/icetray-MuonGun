@@ -14,6 +14,7 @@
 #include <boost/make_shared.hpp>
 
 #include <icetray/I3PointerTypedefs.h>
+#include <icetray/I3FrameObject.h>
 
 class I3Particle;
 class I3RandomService;
@@ -157,7 +158,7 @@ GenerationProbabilityPtr operator+(GenerationProbabilityPtr p1, GenerationProbab
  * how to calculate the probability that they would have drawn some arbitrary
  * bundle from that same distribution.
  */
-class Generator : public GenerationProbability {
+class Generator : public GenerationProbability, public I3FrameObject {
 public:
 	virtual ~Generator();
 	/**

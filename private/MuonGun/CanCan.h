@@ -76,6 +76,10 @@ private:
 	
 	void CalculateMaxFlux();
 	
+	friend class boost::serialization::access;
+	template <typename Archive>
+	void serialize(Archive &, unsigned);
+	
 	SamplingSurfacePtr surface_;
 	FluxPtr flux_;
 	boost::shared_ptr<OffsetPowerLaw> energyGenerator_;

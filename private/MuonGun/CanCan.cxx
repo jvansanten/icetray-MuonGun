@@ -34,6 +34,19 @@ GetTablePath(const std::string &subpath)
 
 }
 
+template <typename Archive>
+void
+StaticSurfaceInjector::serialize(Archive &ar, unsigned version)
+{
+	ar & make_nvp("I3FrameObject", base_object<I3FrameObject>(*this));
+	ar & make_nvp("Surface", surface_);
+	ar & make_nvp("Flux", flux_);
+	ar & make_nvp("EnergySpectrum", energyGenerator_);
+	ar & make_nvp("RadialDistribution", radialDistribution_);
+	ar & make_nvp("MaxFlux", maxFlux_);
+	ar & make_nvp("TotalRate", totalRate_);
+}
+
 StaticSurfaceInjector::StaticSurfaceInjector()
 {
 	SetSurface(boost::make_shared<Cylinder>(1600, 800));
@@ -186,5 +199,7 @@ StaticSurfaceInjector::GetLogGenerationProbability(const I3Particle &axis,
 }
 
 }
+
+I3_SERIALIZABLE(I3MuonGun::StaticSurfaceInjector);
 
 // I3_MODULE(I3MuonGun::BundleGenerator);

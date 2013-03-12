@@ -105,7 +105,7 @@
 	  To compile a test program, compile cubature.c with
 	  -DTEST_INTEGRATOR as described at the end. */
 
-#include "cubature.h"
+#include "cubature/cubature.h"
 
 /* error return codes */
 #define SUCCESS 0

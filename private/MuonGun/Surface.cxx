@@ -202,6 +202,36 @@ Cylinder::SampleImpactRay(I3Position &impact, I3Direction &dir, I3RandomService 
 	return 2*M_PI*GetDifferentialArea(coszen);
 }
 
+template <typename Archive>
+void
+Surface::serialize(Archive &ar, unsigned version)
+{}
+
+template <typename Archive>
+void
+SamplingSurface::serialize(Archive &ar, unsigned version)
+{
+	ar & make_nvp("Surface", base_object<Surface>(*this));
+}
+
+template <typename Archive>
+void
+Cylinder::serialize(Archive &ar, unsigned version)
+{
+	ar & make_nvp("SamplingSurface", base_object<SamplingSurface>(*this));
+	ar & make_nvp("Length", length_);
+	ar & make_nvp("Radius", radius_);
+	ar & make_nvp("Center", center_);
+}
+
+template <typename Archive>
+void
+Sphere::serialize(Archive &ar, unsigned version)
+{
+	ar & make_nvp("Surface", base_object<Surface>(*this));
+	ar & make_nvp("OriginDepth", originDepth_);
+	ar & make_nvp("Radius", radius_);
+}
 
 std::pair<double, double>
 Sphere::GetIntersection(const I3Position &p, const I3Direction &dir) const
@@ -230,3 +260,8 @@ Sphere::GetIntersection(const I3Position &p, const I3Direction &dir) const
 }
 
 }
+
+I3_SERIALIZABLE(I3MuonGun::Surface);
+I3_SERIALIZABLE(I3MuonGun::SamplingSurface);
+I3_SERIALIZABLE(I3MuonGun::Cylinder);
+I3_SERIALIZABLE(I3MuonGun::Sphere);

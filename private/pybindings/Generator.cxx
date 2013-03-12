@@ -25,8 +25,9 @@ void register_Generator()
 	    .def("__imul__", (GenerationProbabilityPtr (*)(GenerationProbabilityPtr, size_t))(&operator*=))
 	;
 	
-	class_<Generator, bases<GenerationProbability>, boost::noncopyable>("Generator", no_init)
+	class_<Generator, bases<GenerationProbability, I3FrameObject>, boost::noncopyable>("Generator", no_init)
 	;
+	register_pointer_conversions<Generator>();
 	
 	class_<BundleEntry>("BundleEntry", init<double, double>())
 	    .def_readwrite("radius", &BundleEntry::radius)

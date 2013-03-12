@@ -10,6 +10,7 @@
 #define I3MUONGUN_SURFACE_H_INCLUDED
 
 #include <icetray/I3PointerTypedefs.h>
+#include <icetray/I3Units.h>
 #include <boost/function.hpp>
 #include <dataclasses/I3Position.h>
 
@@ -38,6 +39,11 @@ namespace I3MuonGun {
 		 *          "behind" the origin.
 		 */
 		virtual std::pair<double, double> GetIntersection(const I3Position &p, const I3Direction &dir) const = 0;
+	
+	private:
+		friend class boost::serialization::access;
+		template <typename Archive>
+		void serialize(Archive &, unsigned);
 	};
 	
 	I3_POINTER_TYPEDEFS(Surface);
@@ -76,6 +82,11 @@ namespace I3MuonGun {
 		  * @returns the projected area along the chosen zenith angle
 		  */ 
 		virtual double SampleImpactRay(I3Position &pos, I3Direction &dir, I3RandomService &rng, double cosMin=0, double cosMax=1) const = 0;
+	
+	private:
+		friend class boost::serialization::access;
+		template <typename Archive>
+		void serialize(Archive &, unsigned);
 	};
 	
 	I3_POINTER_TYPEDEFS(SamplingSurface);
@@ -85,7 +96,7 @@ namespace I3MuonGun {
 	 */
 	class Cylinder : public SamplingSurface {
 	public:
-		Cylinder(double length, double radius, I3Position center=I3Position(0,0,0)) : length_(length), radius_(radius), center_(center) {};
+		Cylinder(double length=1600*I3Units::m, double radius=800*I3Units::m, I3Position center=I3Position(0,0,0)) : length_(length), radius_(radius), center_(center) {};
 		
 		// Surface interface
 		std::pair<double, double> GetIntersection(const I3Position &p, const I3Direction &dir) const;
@@ -109,6 +120,10 @@ namespace I3MuonGun {
 	private:
 		double GetDifferentialTopArea(double cos_zenith) const;
 		double GetDifferentialSideArea(double cos_zenith) const;
+		
+		friend class boost::serialization::access;
+		template <typename Archive>
+		void serialize(Archive &, unsigned);
 	
 		double length_, radius_;
 		I3Position center_;
@@ -121,10 +136,15 @@ namespace I3MuonGun {
 	 */
 	class Sphere : public Surface {
 	public:
+		Sphere() : originDepth_(NAN), radius_(NAN) {}
 		Sphere(double originDepth, double radius) : originDepth_(originDepth), radius_(radius) {};
 		std::pair<double, double> GetIntersection(const I3Position &p, const I3Direction &dir) const;
 	private:
 		double originDepth_, radius_;
+		
+		friend class boost::serialization::access;
+		template <typename Archive>
+		void serialize(Archive &, unsigned);
 	};
 
 }
