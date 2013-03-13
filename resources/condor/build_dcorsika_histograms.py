@@ -6,7 +6,7 @@ import os, shutil
 hmodel = "SIBYLL"
 atmod = 12
 outdir = "/data/uwa/jvansanten/projects/2012/muongun/corsika/%(hmodel)s/atmod%(atmod)s" % locals()
-shutil.mkdir(outdir)
+os.mkdir(outdir)
 
 filesets = dict()
 basedir = "/data/sim/IceCube/2011/generated/dcorsika/length_1600_radius_800_v6960-5comp_sibyll_5-component/emin_600_emax_1e11_dslope_0_pgam_E2.0E2.0E2.0E2.0E2.0"

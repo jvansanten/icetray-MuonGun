@@ -19,7 +19,7 @@ from icecube.MuonGun import load_model, StaticSurfaceInjector, Cylinder, OffsetP
 from icecube.MuonGun.segments import GenerateBundles
 
 # Use Hoerandel as a template for generating muons
-model = load_model(expandvars('$I3_BUILD/MuonGun/resources/scripts/fitting/Hoerandel5_atmod12_SIBYLL'))
+model = load_model('Hoerandel5_atmod12_SIBYLL')
 # Generate only single muons, no bundles
 model.flux.max_multiplicity = 1
 # Center the sampling surface on the barycenter of IC79 strings

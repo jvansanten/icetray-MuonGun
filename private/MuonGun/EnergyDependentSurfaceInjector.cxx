@@ -28,7 +28,7 @@ std::string
 GetTablePath(const std::string &subpath)
 {
 	std::ostringstream tablePath;
-	tablePath << getenv("I3_BUILD") << "/MuonGun/resources/scripts/fitting/" << subpath;
+	tablePath << getenv("I3_BUILD") << "/MuonGun/resources/tables/" << subpath;
 	return tablePath.str();
 }
 

@@ -5,7 +5,7 @@ inbase=/data/sim/IceCube/2011/generated/dcorsika/length_1600_radius_800_v6960-5c
 outbase=/data/uwa/jvansanten/projects/2012/muongun/corsika/$hmodel
 
 for atmod in 12 11 13 14; do
-  for flux in CascadeOptimized Hoerandel5 GaisserH3a GaisserH4a; do
+  for flux in 5Comp CascadeOptimized Hoerandel5 GaisserH3a GaisserH4a; do
       outdir=$outbase/$flux/atmod_$atmod
       if [[ ! -d $outdir ]]; then
         mkdir -p $outdir

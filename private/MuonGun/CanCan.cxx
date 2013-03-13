@@ -28,7 +28,7 @@ std::string
 GetTablePath(const std::string &subpath)
 {
 	std::ostringstream tablePath;
-	tablePath << getenv("I3_BUILD") << "/MuonGun/resources/scripts/fitting/" << subpath;
+	tablePath << getenv("I3_BUILD") << "/MuonGun/resources/tables/" << subpath;
 	return tablePath.str();
 }
 
@@ -108,7 +108,6 @@ StaticSurfaceInjector::GetTotalRate() const
 	if (std::isnan(totalRate_) && surface_ && flux_) {
 		totalRate_ = 0;
 		for (unsigned m = flux_->GetMinMultiplicity(); m <= flux_->GetMaxMultiplicity(); m++) {
-			std::cout << "m = " << m << std::endl;
 			totalRate_ += surface_->IntegrateFlux(boost::bind(boost::cref(*flux_), _1, _2, m));
 		}
 	}
@@ -202,5 +201,3 @@ StaticSurfaceInjector::GetLogGenerationProbability(const I3Particle &axis,
 }
 
 I3_SERIALIZABLE(I3MuonGun::StaticSurfaceInjector);
-
-// I3_MODULE(I3MuonGun::BundleGenerator);
