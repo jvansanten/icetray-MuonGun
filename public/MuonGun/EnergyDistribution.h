@@ -12,7 +12,7 @@
 #include <icetray/I3Units.h>
 #include <icetray/serialization.h>
 #include <icetray/I3PointerTypedefs.h>
-#include <photospline/I3SplineTable.h>
+#include <MuonGun/SplineTable.h>
 
 class I3RandomService;
 
@@ -45,6 +45,9 @@ public:
 	void SetMax(double v) { max_ = v; }
 	void SetMin(double v) { min_ = v; }
 private:
+	friend class boost::serialization::access;
+	template <typename Archive>
+	void serialize(Archive &, unsigned);
 	
 	double min_, max_;
 };
@@ -65,8 +68,14 @@ public:
 	double Generate(I3RandomService &rng, double depth, double cos_theta,
 	    unsigned multiplicity, double radius) const;
 private:
-	I3SplineTable singles_;
-	I3SplineTable bundles_;
+	SplineEnergyDistribution() {}
+	
+	friend class boost::serialization::access;
+	template <typename Archive>
+	void serialize(Archive &, unsigned);
+
+	SplineTable singles_;
+	SplineTable bundles_;
 	double minLogEnergy_;
 };
 

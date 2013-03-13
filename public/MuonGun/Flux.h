@@ -9,7 +9,7 @@
 #ifndef I3MUONGUN_FLUX_H_INCLUDED
 #define I3MUONGUN_FLUX_H_INCLUDED
 
-#include <photospline/I3SplineTable.h>
+#include <MuonGun/SplineTable.h>
 #include <icetray/I3PointerTypedefs.h>
 
 namespace I3MuonGun {
@@ -36,6 +36,10 @@ public:
 	void SetMinMultiplicity(unsigned m) { minMultiplicity_ = m; }
 
 private:
+	friend class boost::serialization::access;
+	template <typename Archive>
+	void serialize(Archive &, unsigned);
+	
 	unsigned minMultiplicity_, maxMultiplicity_;
 };
 
@@ -61,8 +65,14 @@ public:
 	SplineFlux(const std::string &singles, const std::string &bundles);
 	double GetLog(double depth, double cos_theta, unsigned multiplicity) const;
 private:
-	I3SplineTable singles_;
-	I3SplineTable bundles_;
+	SplineFlux() {}
+	
+	friend class boost::serialization::access;
+	template <typename Archive>
+	void serialize(Archive &, unsigned);
+	
+	SplineTable singles_;
+	SplineTable bundles_;
 };
 
 }

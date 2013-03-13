@@ -27,6 +27,9 @@ public:
 	 */
 	SplineTable(const std::string &path);
 	virtual ~SplineTable();
+	
+	/** @brief Default constructor, to be used only in serialization */
+	SplineTable();
 
 	/**
 	 * @brief Evaulate the spline surface at the given coordinates
@@ -50,7 +53,6 @@ public:
 	 */
 	std::pair<double, double> GetExtents(int dim) const;
 private:
-	SplineTable();
 	struct splinetable table_;
 	double bias_;
 	

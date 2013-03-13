@@ -140,6 +140,20 @@ OffsetPowerLaw::Generate(I3RandomService &rng) const
 
 template <typename Archive>
 void
+EnergyDistribution::serialize(Archive &ar, unsigned)
+{}
+	
+template <typename Archive>
+void
+SplineEnergyDistribution::serialize(Archive &ar, unsigned)
+{
+	ar & make_nvp("EnergyDistribution", base_object<EnergyDistribution>(*this));
+	ar & make_nvp("SingleEnergy", singles_);
+	ar & make_nvp("BundleEnergy", bundles_);
+}
+
+template <typename Archive>
+void
 OffsetPowerLaw::serialize(Archive &ar, unsigned version)
 {
 	ar & make_nvp("Gamma", gamma_);
@@ -152,4 +166,6 @@ OffsetPowerLaw::serialize(Archive &ar, unsigned version)
 
 }
 
+I3_SERIALIZABLE(I3MuonGun::EnergyDistribution);
+I3_SERIALIZABLE(I3MuonGun::SplineEnergyDistribution);
 I3_SERIALIZABLE(I3MuonGun::OffsetPowerLaw);

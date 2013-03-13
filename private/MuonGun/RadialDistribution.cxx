@@ -84,7 +84,7 @@ BMSSRadialDistribution::Generate(I3RandomService &rng, double depth, double cos_
 }
 
 SplineRadialDistribution::SplineRadialDistribution(const std::string &path)
-    : I3SplineTable(path) {}
+    : spline_(path) {}
 
 double
 SplineRadialDistribution::GetLog(double depth, double cos_theta,
@@ -93,7 +93,7 @@ SplineRadialDistribution::GetLog(double depth, double cos_theta,
 	double coords[4] = {cos_theta, depth, N, radius};
 	double logprob;
 	
-	if (I3SplineTable::Eval(coords, &logprob) != 0)
+	if (spline_.Eval(coords, &logprob) != 0)
 		return -std::numeric_limits<double>::infinity();
 	else
 		// Spline is fit to log(dP/dr^2)
@@ -105,9 +105,9 @@ SplineRadialDistribution::Generate(I3RandomService &rng, double depth,
     double cos_theta, unsigned N) const
 {
 	double radius, logprob, maxprob;
-	std::pair<double, double> extent = I3SplineTable::GetExtents(3);
+	std::pair<double, double> extent = spline_.GetExtents(3);
 	double coords[4] = {cos_theta, depth, N, extent.first};
-	if (I3SplineTable::Eval(coords, &maxprob) != 0)
+	if (spline_.Eval(coords, &maxprob) != 0)
 		maxprob = -std::numeric_limits<double>::infinity();
 	
 	// The spline is fit to log(dP/dr^2) as a function of r,
@@ -116,11 +116,28 @@ SplineRadialDistribution::Generate(I3RandomService &rng, double depth,
 	do {
 		coords[3] = std::sqrt(rng.Uniform(extent.first*extent.first,
 		    extent.second*extent.second));
-		if (I3SplineTable::Eval(coords, &logprob) != 0)
+		if (spline_.Eval(coords, &logprob) != 0)
 			logprob = -std::numeric_limits<double>::infinity();
 	} while (std::log(rng.Uniform()) > logprob - maxprob);
 	
 	return coords[3];
 }
 
+template <typename Archive>
+void
+RadialDistribution::serialize(Archive &ar, unsigned)
+{}
+
+template <typename Archive>
+void
+SplineRadialDistribution::serialize(Archive &ar, unsigned)
+{
+	ar & make_nvp("RadialDistribution", base_object<RadialDistribution>(*this));
+	ar & make_nvp("SplineTable", spline_);
 }
+
+}
+
+I3_SERIALIZABLE(I3MuonGun::RadialDistribution);
+I3_SERIALIZABLE(I3MuonGun::SplineRadialDistribution);
+

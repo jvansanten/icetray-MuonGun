@@ -61,5 +61,24 @@ SplineFlux::GetLog(double depth, double cos_theta, unsigned multiplicity) const
 		return logflux;
 }
 
+template <typename Archive>
+void
+Flux::serialize(Archive &ar, unsigned)
+{
+	ar & make_nvp("MinMultiplicity", minMultiplicity_);
+	ar & make_nvp("MaxMultiplicity", maxMultiplicity_);
+}
+	
+template <typename Archive>
+void
+SplineFlux::serialize(Archive &ar, unsigned)
+{
+	ar & make_nvp("Flux", base_object<Flux>(*this));
+	ar & make_nvp("SingleFlux", singles_);
+	ar & make_nvp("BundleFlux", bundles_);
+}
 
 }
+
+I3_SERIALIZABLE(I3MuonGun::Flux);
+I3_SERIALIZABLE(I3MuonGun::SplineFlux);

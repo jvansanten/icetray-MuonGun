@@ -9,7 +9,7 @@
 #ifndef I3MUONGUN_RADIALDISTRIBUTION_H
 #define I3MUONGUN_RADIALDISTRIBUTION_H
 
-#include <photospline/I3SplineTable.h>
+#include <MuonGun/SplineTable.h>
 #include <icetray/I3PointerTypedefs.h>
 
 class I3Position;
@@ -55,6 +55,10 @@ public:
 	 */
 	virtual double Generate(I3RandomService &rng, double depth, double cos_theta,
 	    unsigned multiplicity) const = 0;
+private:
+	friend class boost::serialization::access;
+	template <typename Archive>
+	void serialize(Archive &, unsigned);
 };
 
 I3_POINTER_TYPEDEFS(RadialDistribution);
@@ -85,13 +89,20 @@ I3_POINTER_TYPEDEFS(BMSSRadialDistribution);
  * The surface is fit to @f$ d \log{P} / d{r^2} @f$ to remove the factor
  * of differential area implicit in @f$ dP / dr @f$
  */
-class SplineRadialDistribution : public RadialDistribution, private I3SplineTable {
+class SplineRadialDistribution : public RadialDistribution {
 public:
 	SplineRadialDistribution(const std::string&);
 	double GetLog(double depth, double cos_theta,
 	    unsigned multiplicity, double radius) const;
 	double Generate(I3RandomService &rng, double depth, double cos_theta,
 	    unsigned multiplicity) const;
+private:
+	SplineRadialDistribution() {}
+	friend class boost::serialization::access;
+	template <typename Archive>
+	void serialize(Archive &, unsigned);
+	
+	SplineTable spline_;
 };
 
 }

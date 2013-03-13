@@ -7,7 +7,6 @@
  */
 
 #include "MuonGun/MuonPropagator.h"
-#include "MuonGun/EnergyLossLikelihood.h"
 
 void
 register_MuonPropagator()
@@ -30,11 +29,5 @@ register_MuonPropagator()
 	    init<boost::shared_ptr<MuonPropagator> >())
 	    .def("add_layer", &Crust::AddLayer)
 	    .def("ingest", &Crust::Ingest)
-	;
-	    
-	class_<EnergyLossLikelihood, boost::shared_ptr<EnergyLossLikelihood> >("EnergyLossLikelihood",
-	    init<boost::shared_ptr<MuonPropagator> >())
-	    .def("set_event", &EnergyLossLikelihood::SetEvent)
-	    .def("__call__", &EnergyLossLikelihood::GetLogLikelihood)
 	;
 }
