@@ -60,8 +60,10 @@ inline bool Sort(const T &a, const T &b)
 double
 Track::GetEnergy(double length) const
 {
-	if (!std::isfinite(length) || length < 0 || length >= GetLength())
+	if (!std::isfinite(length) || length >= GetLength())
 		return 0.;
+	else if (length <= 0)
+		return GetEnergy();
 	// Find an energy checkpoint. The above if() guarantees that
 	// that both cp and cp+1 are valid.
 	std::vector<Checkpoint>::const_iterator cp =
