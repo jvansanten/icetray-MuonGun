@@ -139,6 +139,7 @@ StaticSurfaceInjector::GenerateAxis(I3RandomService &rng, std::pair<I3Particle, 
 	axis.first.SetShape(I3Particle::Primary);
 	axis.first.SetLocationType(I3Particle::Anywhere);
 	axis.first.SetType(I3Particle::unknown);
+	axis.first.SetTime(0.);
 	axis.second = m;
 }
 

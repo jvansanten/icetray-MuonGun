@@ -219,7 +219,6 @@ public:
 		AddParameter("Generator", "Muon bundle generator", generator_);
 		
 		mctreeName_ = "I3MCTree";
-		mmcTrackListName_ = "MMCTrackList";
 	}
 	
 	void Configure()
@@ -230,10 +229,19 @@ public:
 		if (!rng_)
 			log_fatal("No RandomService configured!");
 		maxEvents_ = generator_->GetTotalEvents();
+		
+		firstFrame_ = true;
 	}
 	
 	void DAQ(I3FramePtr frame)
 	{
+		if (firstFrame_) {
+			firstFrame_ = false;
+			I3FramePtr sframe = boost::make_shared<I3Frame>('S');
+			sframe->Put(GetName(), generator_);
+			PushFrame(sframe);
+		}
+		
 		I3MCTreePtr mctree = boost::make_shared<I3MCTree>();
 		BundleConfiguration bundlespec;
 		
@@ -249,7 +257,8 @@ private:
 	GeneratorPtr generator_;
 	I3RandomServicePtr rng_;
 	size_t maxEvents_, numEvents_;
-	std::string mctreeName_, mmcTrackListName_;
+	std::string mctreeName_;
+	bool firstFrame_;
 };
 
 }

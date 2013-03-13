@@ -41,7 +41,7 @@ def MakePropagator(radius=800*I3Units.m, length=1600*I3Units.m,
 
 @traysegment
 def GenerateBundles(tray, name, Generator=None,
-    RunNumber=1, NEvents=100, RandomService=None,
+    RunNumber=1, NEvents=100,
     GCDFile='/data/sim/sim-new/downloads/GCD_31_08_11/GeoCalibDetectorStatus_IC79.55380_L2a.i3.gz',
     FromTime=dataclasses.I3Time(55380),
     ToTime=dataclasses.I3Time(55380)):
@@ -49,11 +49,12 @@ def GenerateBundles(tray, name, Generator=None,
 	Generate muon bundles from a parametrization.
 	
 	:param Generator: an instance of I3MuonGun.Generator
-	:param Propagator: an instance of I3
 	"""
 	
 	from icecube import icetray, dataclasses
 	from icecube import sim_services, MuonGun
+	
+	randomService = tray.context['I3RandomService']
 	
 	tray.AddModule("I3InfiniteSource",name+"_streams",
 	    Prefix=GCDFile, Stream=icetray.I3Frame.DAQ)
@@ -86,7 +87,7 @@ def GenerateBundles(tray, name, Generator=None,
 			RandomService=RandomService,
 			Streams=[icetray.I3Frame.DAQ])
 	
-	tray.AddModule('I3MuonGun::GeneratorModule',name+"_gen_bundles",
+	tray.AddModule('I3MuonGun::GeneratorModule',name,
 	    Generator=NEvents*Generator)
 	# tray.AddModule('Dump', name+'dump')
 	
