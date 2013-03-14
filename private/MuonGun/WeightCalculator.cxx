@@ -177,10 +177,13 @@ MuonBundleConverter::FillRows(const I3MCTree &mctree, I3TableRowPtr rows)
 	float *energies = rows->GetPointer<float>("energy");
 	float *radii = rows->GetPointer<float>("radius");
 	
+	log_trace("%zu total tracks", Track::Harvest(mctree, *mmctracks).size());
+	
 	BOOST_FOREACH(const Track &track, Track::Harvest(mctree, *mmctracks)) {
 		std::pair<double, double> steps =
 		    surface_->GetIntersection(track.GetPos(), track.GetDir());
 		float energy = track.GetEnergy(steps.first);
+		log_trace("energy after %f m: %.1e", steps.first, energy);
 		if (energy > 0) {
 			if (m < maxMultiplicity_) {
 				energies[m] = energy;
@@ -201,25 +204,28 @@ MuonBundleConverter::FillRows(const I3MCTree &mctree, I3TableRowPtr rows)
  * WeightCalculatorModule handles the details of extracting energies and
  * radial offsets of muons from an I3MCTree and MMCTrackList.
  */
-class WeightCalculatorModule : public I3Module {
+class WeightCalculatorModule : public I3Module, protected WeightCalculator {
 public:
 	WeightCalculatorModule(const I3Context &ctx) : I3Module(ctx)
 	{
 		AddOutBox("OutBox");
-		AddParameter("Surface", "", surface_);
-		AddParameter("Flux", "", flux_);
-		AddParameter("RadialDistribution", "", radius_);
-		AddParameter("EnergyDistribution", "", energy_);
-		AddParameter("Generator", "", generator_);
+		AddParameter("Surface", "Target surface at which to calculate a flux weight", surface_);
+		AddParameter("Model", "Muon flux model for which to calculate a weight", boost::shared_ptr<BundleModel>());
+		AddParameter("Generator", "Generation spectrum for the bundles to be weighted", generator_);
 	}
 	
 	void Configure()
 	{
+		boost::shared_ptr<BundleModel> model;
 		GetParameter("Surface", surface_);
-		GetParameter("Flux", flux_);
-		GetParameter("RadialDistribution", radius_);
-		GetParameter("EnergyDistribution", energy_);
+		GetParameter("Model", model);
 		GetParameter("Generator", generator_);
+		
+		if (!model)
+			log_fatal("No flux model configured!");
+		flux_ = model->flux;
+		radius_ = model->radius;
+		energy_ = model->energy;
 		
 		if (!surface_)
 			log_fatal("No surface configured!");
@@ -253,30 +259,9 @@ public:
 			bundlespec.push_back(BundleEntry(
 			    GetRadius(*primary, track.GetPos(steps.first)), track.GetEnergy(steps.first)));
 		
-		double lograte = -std::numeric_limits<double>::infinity();
-		if (bundlespec.size() > 0 && std::isfinite(steps.first)) {
-			double h = GetDepth(primary->GetPos().GetZ() + steps.first*primary->GetDir().GetZ());
-			double coszen = cos(primary->GetDir().GetZenith());
-			unsigned m = bundlespec.size();
-			
-			lograte = flux_->GetLog(h, coszen, m) + std::log(surface_->GetDifferentialArea(coszen));
-			BOOST_FOREACH(const BundleEntry &track, bundlespec) {
-				if (m > 1)
-					lograte += radius_->GetLog(h, coszen, m, track.radius);
-				lograte += energy_->GetLog(h, coszen, m, track.radius, track.energy);
-			}
-			lograte -= generator_->GetLogGeneratedEvents(*primary, bundlespec);
-		}
-		
-		frame->Put(GetName(), boost::make_shared<I3Double>(std::exp(lograte)));
+		frame->Put(GetName(), boost::make_shared<I3Double>(GetWeight(*primary, bundlespec)));
 		PushFrame(frame);
 	}
-private:
-	SamplingSurfacePtr surface_;
-	FluxPtr flux_;
-	RadialDistributionPtr radius_;
-	EnergyDistributionPtr energy_;
-	GenerationProbabilityPtr generator_;
 };
 
 }

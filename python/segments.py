@@ -26,7 +26,7 @@ def MakePropagator(radius=800*I3Units.m, length=1600*I3Units.m,
 	mmcOpts += "-seed=%d " % seed
 	
 	if impl.lower() == 'mmc':
-		from icecube import sim_services, c2j_icetray, mmc_icetray
+		from icecube import sim_services, c2j_icetray, mmc_icetray, icetray
 		jvmOpts = icetray.vector_string()    # fill this with parameters passed directly to the JavaVM
 		jvmOpts.append(expandvars("-Djava.class.path=$I3_BUILD/lib/mmc.jar"))
 		jvmOpts.append("-Xms256m")
@@ -38,6 +38,24 @@ def MakePropagator(radius=800*I3Units.m, length=1600*I3Units.m,
 	else:
 		from icecube import sim_services, PROPOSAL_icetray
 		return PROPOSAL_icetray.I3PropagatorServicePROPOSAL(mmcOpts)
+
+@traysegment
+def PropagatorMMC(tray, name, seed=random.randint(0, (1<<32) - 1)):
+	from icecube import c2j_icetray, mmc_icetray, icetray
+	jvmOpts = icetray.vector_string()    # fill this with parameters passed directly to the JavaVM
+	jvmOpts.append(expandvars("-Djava.class.path=$I3_BUILD/lib/mmc.jar"))
+	jvmOpts.append("-Xms256m")
+	jvmOpts.append("-Xmx512m")
+	jvmOpts.append("-XX:-HeapDumpOnOutOfMemoryError")
+	tray.AddService('I3JavaVMFactory', 'jvm', Options=jvmOpts)
+	
+	mmcOpts = "-romb=5 -raw -user -sdec -time -lpm -bs=1 -ph=3 -bb=2 -sh=2 -frho -cont "
+	mmcOpts += expandvars("-tdir=$I3_BUILD/mmc-icetray/resources ")
+	mmcOpts += expandvars("-mediadef=$I3_BUILD/mmc-icetray/resources/mediadef ")
+	mmcOpts += "-radius=800 "
+	mmcOpts += "-length=1600 "
+	mmcOpts += "-seed=%d " % seed
+	tray.AddModule('I3PropagatorMMC', name, mode=-1, opts=mmcOpts)
 
 @traysegment
 def GenerateBundles(tray, name, Generator=None,

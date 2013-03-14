@@ -69,7 +69,9 @@ public:
 	 
 	SamplingSurfacePtr GetSurface() { return surface_; }
 	void SetSurface(SamplingSurfacePtr s) { surface_ = s; }
-private:
+
+protected:
+	WeightCalculator() {}
 	SamplingSurfacePtr surface_;
 	FluxConstPtr flux_;
 	RadialDistributionConstPtr radius_;
@@ -83,6 +85,7 @@ public:
 	I3TableRowDescriptionPtr CreateDescription(const I3MCTree&);
 	size_t FillRows(const I3MCTree&, I3TableRowPtr);
 private:
+	SET_LOGGER("I3MuonGun::WeightCalculator");
 	size_t maxMultiplicity_;
 	SamplingSurfacePtr surface_;
 };

@@ -24,6 +24,7 @@ void register_Generator()
 	    .def("__rmul__", (GenerationProbabilityPtr (*)(GenerationProbabilityPtr, size_t))(&operator*))
 	    .def("__imul__", (GenerationProbabilityPtr (*)(GenerationProbabilityPtr, size_t))(&operator*=))
 	;
+	implicitly_convertible<GenerationProbabilityPtr, GenerationProbabilityConstPtr>();
 	
 	class_<Generator, bases<GenerationProbability, I3FrameObject>, boost::noncopyable>("Generator", no_init)
 	;
