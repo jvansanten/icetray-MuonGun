@@ -20,9 +20,9 @@ void register_Generator()
 	    .def("generated_events", &GenerationProbability::GetGeneratedEvents)
 	    .add_property("total_events", &GenerationProbability::GetTotalEvents, &GenerationProbability::SetTotalEvents)
 	    .def("__add__",  (GenerationProbabilityPtr (*)(GenerationProbabilityPtr, GenerationProbabilityPtr))(&operator+))
-	    .def("__mul__",  (GenerationProbabilityPtr (*)(GenerationProbabilityPtr, size_t))(&operator*))
-	    .def("__rmul__", (GenerationProbabilityPtr (*)(GenerationProbabilityPtr, size_t))(&operator*))
-	    .def("__imul__", (GenerationProbabilityPtr (*)(GenerationProbabilityPtr, size_t))(&operator*=))
+	    .def("__mul__",  (GenerationProbabilityPtr (*)(GenerationProbabilityPtr, double))(&operator*))
+	    .def("__rmul__", (GenerationProbabilityPtr (*)(GenerationProbabilityPtr, double))(&operator*))
+	    .def("__imul__", (GenerationProbabilityPtr (*)(GenerationProbabilityPtr, double))(&operator*=))
 	;
 	implicitly_convertible<GenerationProbabilityPtr, GenerationProbabilityConstPtr>();
 	
