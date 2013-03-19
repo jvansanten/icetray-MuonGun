@@ -75,6 +75,8 @@ private:
 	std::vector<LossSum> losses_;
 };
 
+I3_POINTER_TYPEDEFS(Track);
+
 }
 
 #endif

@@ -18,7 +18,7 @@ namespace bp = boost::python;
 #define REGISTER_THESE_THINGS                                           \
   (I3MuonGun)(RadialDistribution)(EnergyDistribution)                   \
   (Flux)(Generator)(Surface)(WeightCalculator)(CanCan)                  \
-  (CORSIKAGenerationProbability)
+  (CORSIKAGenerationProbability)(Track)
 
 #define REGISTER_EXTRA (histogram)(TrackBinner)(MuonPropagator)(CompactTrack)
 

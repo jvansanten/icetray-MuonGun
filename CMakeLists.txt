@@ -30,6 +30,7 @@ SET (LIB_${PROJECT_NAME}_TOOLS
 
 SET (LIB_${PROJECT_NAME}_PYSOURCES 
     private/pybindings/I3MuonGun.cxx
+    private/pybindings/Track.cxx
     private/pybindings/CanCan.cxx
     private/pybindings/Generator.cxx
     private/pybindings/Surface.cxx
