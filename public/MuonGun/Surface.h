@@ -40,6 +40,7 @@ namespace I3MuonGun {
 		 */
 		virtual std::pair<double, double> GetIntersection(const I3Position &p, const I3Direction &dir) const = 0;
 	
+		virtual bool operator==(const Surface&) const = 0;
 	private:
 		friend class boost::serialization::access;
 		template <typename Archive>
@@ -99,7 +100,8 @@ namespace I3MuonGun {
 		Cylinder(double length, double radius, I3Position center=I3Position(0,0,0)) : length_(length), radius_(radius), center_(center) {};
 		
 		// Surface interface
-		std::pair<double, double> GetIntersection(const I3Position &p, const I3Direction &dir) const;
+		virtual std::pair<double, double> GetIntersection(const I3Position &p, const I3Direction &dir) const;
+		virtual bool operator==(const Surface&) const;
 		
 		// SamplingSurface interface
 		double GetDifferentialArea(double coszen) const;
@@ -139,7 +141,9 @@ namespace I3MuonGun {
 	class Sphere : public Surface {
 	public:
 		Sphere(double originDepth, double radius) : originDepth_(originDepth), radius_(radius) {};
-		std::pair<double, double> GetIntersection(const I3Position &p, const I3Direction &dir) const;
+		virtual std::pair<double, double> GetIntersection(const I3Position &p, const I3Direction &dir) const;
+		virtual bool operator==(const Surface&) const;
+		
 	private:
 		Sphere() {}
 		

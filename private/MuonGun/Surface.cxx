@@ -202,6 +202,29 @@ Cylinder::SampleImpactRay(I3Position &impact, I3Direction &dir, I3RandomService 
 	return 2*M_PI*GetDifferentialArea(coszen);
 }
 
+bool
+Cylinder::operator==(const Surface &s) const
+{
+	const Cylinder *other = dynamic_cast<const Cylinder*>(&s);
+	if (!other)
+		return false;
+	else 
+		return (radius_ == other->radius_ &&
+		    length_ == other->length_ &&
+		    center_ == other->center_);
+}
+
+bool
+Sphere::operator==(const Surface &s) const
+{
+	const Sphere *other = dynamic_cast<const Sphere*>(&s);
+	if (!other)
+		return false;
+	else 
+		return (radius_ == other->radius_ &&
+		    originDepth_ == other->originDepth_);
+}
+
 template <typename Archive>
 void
 Surface::serialize(Archive &ar, unsigned version)
