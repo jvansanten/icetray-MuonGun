@@ -26,6 +26,37 @@ SplineTable::~SplineTable()
 	splinetable_free(&table_);
 }
 
+bool
+SplineTable::operator==(const SplineTable &other) const
+{
+	if (bias_ != other.bias_)
+		return false;
+	// Same dimensions
+	if (table_.ndim != other.table_.ndim)
+		return false;
+	// Same spline order
+	if (!std::equal(table_.order, table_.order + table_.ndim, other.table_.order))
+		return false;
+	// Same knot grid
+	if (!std::equal(table_.nknots, table_.nknots + table_.ndim, other.table_.nknots))
+		return false;
+	// Same region of support
+	for (int i=0; i < table_.ndim; i++)
+		if (table_.extents[i][0] != other.table_.extents[i][0] || table_.extents[i][1] != other.table_.extents[i][1])
+			return false;
+	// Same size of coefficient grid
+	if (!std::equal(table_.naxes, table_.naxes + table_.ndim, other.table_.naxes))
+		return false;
+	size_t size = 1;
+	for (int i=0; i < table_.ndim; i++)
+		size *= table_.naxes[i];
+	// Same coefficient grid
+	if (!std::equal(table_.coefficients, table_.coefficients + size, other.table_.coefficients))
+		return false;
+	
+	return true;
+}
+
 int
 SplineTable::Eval(double *coordinates, double *result) const
 {

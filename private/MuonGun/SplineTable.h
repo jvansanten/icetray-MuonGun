@@ -52,6 +52,9 @@ public:
 	 *         >= the value returned by GetNDim()
 	 */
 	std::pair<double, double> GetExtents(int dim) const;
+	
+	/** @brief Deep comparison */
+	bool operator==(const SplineTable &) const;
 private:
 	struct splinetable table_;
 	double bias_;

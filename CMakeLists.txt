@@ -94,9 +94,9 @@ i3_add_pybindings(MuonGun
 
 i3_test_scripts(resources/test/test_StaticSurfaceInjector.py)
 
-# i3_test_executable(test 
-#   private/test/main.cxx
-#   private/test/DepthTest.cxx
-#   USE_PROJECTS MuonGun icetray dataclasses phys-services
-# )
+i3_test_executable(test 
+  private/test/main.cxx
+  private/test/SplineTable.cxx
+  USE_PROJECTS MuonGun icetray dataclasses phys-services
+)
 
