@@ -39,27 +39,6 @@ CORSIKAGenerationProbability::Clone() const
 }
 
 double
-CORSIKAGenerationProbability::GetLogBundleGenerationProbability(const I3Particle &axis,
-    unsigned m) const
-{
-	std::pair<double, double> steps = surface_->GetIntersection(axis.GetPos(), axis.GetDir());
-	// This shower axis doesn't intersect the sampling surface. Bail.
-	if (!std::isfinite(steps.first))
-		return -std::numeric_limits<double>::infinity();
-	
-	double h = GetDepth(axis.GetPos().GetZ() + steps.first*axis.GetDir().GetZ());
-	double coszen = cos(axis.GetDir().GetZenith());
-	return flux_->GetLog(h, coszen, m) + std::log(surface_->GetDifferentialArea(coszen));
-}
-
-double
-CORSIKAGenerationProbability::GetLogGenerationProbability(double h, double coszen,
-    unsigned m, double radius, double energy) const
-{
-	return energyDistribution_->GetLog(h, coszen, m, radius, energy);
-}
-
-double
 CORSIKAGenerationProbability::GetLogGenerationProbability(const I3Particle &axis, const BundleConfiguration &bundlespec) const
 {	
 	std::pair<double, double> steps = surface_->GetIntersection(axis.GetPos(), axis.GetDir());
@@ -71,11 +50,8 @@ CORSIKAGenerationProbability::GetLogGenerationProbability(const I3Particle &axis
 	double coszen = cos(axis.GetDir().GetZenith());
 	unsigned m = bundlespec.size();
 	double logprob = flux_->GetLog(h, coszen, m) + std::log(surface_->GetDifferentialArea(coszen));
-	BOOST_FOREACH(const BundleConfiguration::value_type &track, bundlespec) {
-		if (m > 1)
-			logprob += radialDistribution_->GetLog(h, coszen, m, track.radius);
+	BOOST_FOREACH(const BundleConfiguration::value_type &track, bundlespec)
 		logprob += energyDistribution_->GetLog(h, coszen, m, track.radius, track.energy);
-	}
 	
 	return logprob;
 }

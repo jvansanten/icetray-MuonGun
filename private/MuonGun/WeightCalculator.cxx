@@ -38,24 +38,15 @@ WeightCalculator::GetWeight(const I3Particle &axis, const BundleConfiguration &b
 	double coszen = cos(axis.GetDir().GetZenith());
 	unsigned m = bundlespec.size();
 	
-	double rate = flux_->GetLog(h, coszen, m) +
-	    std::log(surface_->GetDifferentialArea(coszen)) -
-	    generator_->GetLogGeneratedBundles(axis, m);
+	double rate = flux_->GetLog(h, coszen, m) + std::log(surface_->GetDifferentialArea(coszen))
+	    - generator_->GetLogGeneratedEvents(axis, bundlespec);
 	
-	// The weight for the internal configuration of the bundle is the quotient
-	// of 2*m-differential probabilities, each of which becomes quite small as
-	// the multiplicity increases. To mitigate round-off error, we add up
-	// differences in the logarithms of the individual terms, which for near-natural
-	// generation schemes will be close to zero.
-	double weight = 0.;
-	double term = 0.;
-	BOOST_FOREACH(const BundleEntry &track, bundlespec) {
-		if (std::isfinite(term = energy_->GetLog(h, coszen, m, track.radius, track.energy) -
-		    generator_->GetLogGenerationProbability(h, coszen, m, track.radius, track.energy)))
-			weight += term;
-	}
+	double term;
+	BOOST_FOREACH(const BundleEntry &track, bundlespec)
+		if (std::isfinite(term = energy_->GetLog(h, coszen, m, track.radius, track.energy)))
+			rate += term;
 	
-	return std::exp(rate + weight);
+	return std::exp(rate);
 }
 
 // Possibly throw-away utility function: "track" muons to a fixed surface using the

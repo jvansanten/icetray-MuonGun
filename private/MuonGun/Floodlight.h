@@ -16,8 +16,10 @@ public:
 	SamplingSurfaceConstPtr GetInjectionSurface(const I3Particle &axis, const BundleConfiguration &bundle) const { return surface_; }
 	
 private:
+	double GetTotalRate() const;
 	SamplingSurfacePtr surface_;
 	boost::shared_ptr<OffsetPowerLaw> energyGenerator_;
+	mutable double totalRate_;
 
 };
 

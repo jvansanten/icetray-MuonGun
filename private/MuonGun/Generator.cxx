@@ -34,12 +34,6 @@ GenerationProbability::GetGeneratedEvents(const I3Particle &axis, const BundleCo
 	return numEvents_*std::exp(GetLogGenerationProbability(axis, bundle));
 }
 
-double
-GenerationProbability::GetLogGeneratedBundles(const I3Particle &axis, unsigned multiplicity) const
-{
-	return std::log(double(numEvents_)) + GetLogBundleGenerationProbability(axis, multiplicity);
-}
-
 GenerationProbabilityCollection::GenerationProbabilityCollection(GenerationProbabilityPtr p1, GenerationProbabilityPtr p2)
 {
 	push_back(p1);
@@ -102,7 +96,7 @@ GenerationProbabilityCollection::Clone() const
 }
 
 GenerationProbabilityPtr
-operator*=(GenerationProbabilityPtr p, size_t n)
+operator*=(GenerationProbabilityPtr p, double n)
 {
 	p->SetTotalEvents(p->GetTotalEvents()*n);
 	
@@ -110,7 +104,7 @@ operator*=(GenerationProbabilityPtr p, size_t n)
 }
 
 GenerationProbabilityPtr
-operator*(GenerationProbabilityPtr p, size_t n)
+operator*(GenerationProbabilityPtr p, double n)
 {
 	GenerationProbabilityPtr pn = p->Clone();
 	pn *= n;
@@ -119,7 +113,7 @@ operator*(GenerationProbabilityPtr p, size_t n)
 }
 
 GenerationProbabilityPtr
-operator*(size_t n, GenerationProbabilityPtr p)
+operator*(double n, GenerationProbabilityPtr p)
 {
 	return p*n;
 }

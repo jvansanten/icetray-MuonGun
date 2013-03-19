@@ -54,8 +54,8 @@ public:
 	GenerationProbability() : numEvents_(1) {}
 	virtual ~GenerationProbability();
 	
-	void SetTotalEvents(size_t n) { numEvents_ = n; }
-	size_t GetTotalEvents() const { return numEvents_; }
+	void SetTotalEvents(double n) { numEvents_ = n; }
+	double GetTotalEvents() const { return numEvents_; }
 	
 	/**
 	 * @brief Calculate the differential number of events that
@@ -68,14 +68,6 @@ public:
 	double GetLogGeneratedEvents(const I3Particle &axis, const BundleConfiguration &bundle) const;
 	double GetGeneratedEvents(const I3Particle &axis, const BundleConfiguration &bundle) const;
 	
-	/**
-	 * @brief Calculate the number of bundles with the given multiplicity
-	 *        should have been generated along the given axis
-	 *
-	 * @param[in] axis         the bundle axis
-	 * @param[in] multiplicity number of muons in the bundle
-	 */
-	double GetLogGeneratedBundles(const I3Particle &axis, unsigned multiplicity) const;
 public:
 	/**
 	 * @brief Propose an injection surface for the given bundle configuration.
@@ -97,27 +89,31 @@ public:
 	 
 	/** Copy self into a shared pointer */
 	virtual GenerationProbabilityPtr Clone() const = 0;
-	// FIXME mark pure virtual
-	virtual double GetLogGenerationProbability(double depth, double cos_theta, unsigned multiplicity, double radius, double energy) const { return 0.; };
+	
+	/** @brief Compare to another GenerationProbability
+	 *
+	 * @returns true if the argument is identical to *this to
+	 *          within a scale factor, false otherwise.
+	 */
+	// TODO mark pure virtual
+	// virtual bool IsCompatible(GenerationProbabilityConstPtr) const;
 protected:
 	/**
 	 * @brief Calculate the differential probability per event that the
-	 *        given configuration was generated
+	 *        given configuration was generated.
+	 *
+	 * For single muons, this is @f$ \log(dP/dE) [\log(1/GeV)]@f$, for bundles
+	 * @f$ \log(d^2P/dEdr) [\log(1/GeV m)]@f$
 	 *
 	 * @param[in] axis   the bundle axis
 	 * @param[in] bundle the radial offset and energy of each muon
 	 *                   in the bundle
 	 */
 	virtual double GetLogGenerationProbability(const I3Particle &axis, const BundleConfiguration &bundle) const = 0;
-	 
-	virtual double GetLogBundleGenerationProbability(const I3Particle &axis, unsigned multiplicity) const { return 0.; };
-	
-
-	
 
 private:
 	/** @brief The total number of events that should be generated */
-	size_t numEvents_;
+	double numEvents_;
 };
 
 I3_POINTER_TYPEDEFS(GenerationProbability);
@@ -142,9 +138,9 @@ protected:
 };
 
 /** Scale the distribution by the given number of events */
-GenerationProbabilityPtr operator*(size_t, GenerationProbabilityPtr);
-GenerationProbabilityPtr operator*(GenerationProbabilityPtr, size_t);
-GenerationProbabilityPtr operator*=(GenerationProbabilityPtr, size_t);
+GenerationProbabilityPtr operator*(double, GenerationProbabilityPtr);
+GenerationProbabilityPtr operator*(GenerationProbabilityPtr, double);
+GenerationProbabilityPtr operator*=(GenerationProbabilityPtr, double);
 /**
  * Combine the distributions to form a GenerationProbabilityCollection
  * (or append to it if any of the arguments is already one)
