@@ -44,6 +44,8 @@ public:
 	double GetMin() const { return min_; }
 	void SetMax(double v) { max_ = v; }
 	void SetMin(double v) { min_ = v; }
+	
+	virtual bool operator==(const EnergyDistribution&) const = 0;
 private:
 	friend class boost::serialization::access;
 	template <typename Archive>
@@ -67,6 +69,8 @@ public:
 	    unsigned multiplicity, double radius, double energy) const;
 	double Generate(I3RandomService &rng, double depth, double cos_theta,
 	    unsigned multiplicity, double radius) const;
+	    
+	virtual bool operator==(const EnergyDistribution&) const;
 private:
 	SplineEnergyDistribution() {}
 	
@@ -86,6 +90,8 @@ public:
 	    unsigned multiplicity, double radius, double energy) const;
 	double Generate(I3RandomService &rng, double depth, double cos_theta,
 	    unsigned multiplicity, double radius) const;
+	
+	virtual bool operator==(const EnergyDistribution&) const;
 private:
 	// Single-muon energy distribution
 	double beta_, g0_, g1_, e0a_, e0b_, e1a_, e1b_;
@@ -126,6 +132,8 @@ public:
 	
 	const double GetMin() const { return emin_; }
 	const double GetMax() const { return emax_; }
+	
+	bool operator==(const OffsetPowerLaw &other) const;
 private:
 	friend class boost::serialization::access;
 	template <typename Archive>

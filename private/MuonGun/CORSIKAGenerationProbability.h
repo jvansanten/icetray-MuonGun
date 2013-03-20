@@ -34,6 +34,7 @@ public:
 	// GenerationProbability interface
 	SamplingSurfaceConstPtr GetInjectionSurface(const I3Particle&, const BundleConfiguration&) const { return surface_; }
 	GenerationProbabilityPtr Clone() const;
+	virtual bool IsCompatible(GenerationProbabilityConstPtr) const;
 	
 protected:
 	double GetLogGenerationProbability(const I3Particle &axis, const BundleConfiguration &bundle) const;

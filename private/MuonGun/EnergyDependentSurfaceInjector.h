@@ -41,6 +41,7 @@ public:
 	SamplingSurfaceConstPtr GetInjectionSurface(const I3Particle &axis, const BundleConfiguration &bundle) const;
 	double GetLogGenerationProbability(const I3Particle &axis, const BundleConfiguration &bundle) const;
 	GenerationProbabilityPtr Clone() const;
+	virtual bool IsCompatible(GenerationProbabilityConstPtr) const;
 	
 	// Generator interface
 	void Generate(I3RandomService &rng, I3MCTree &tree, BundleConfiguration &bundle) const;

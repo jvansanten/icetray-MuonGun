@@ -83,6 +83,20 @@ EnergyDependentSurfaceInjector::Clone() const
 	return boost::make_shared<EnergyDependentSurfaceInjector>(*this);
 }
 
+bool
+EnergyDependentSurfaceInjector::IsCompatible(GenerationProbabilityConstPtr o) const
+{
+	boost::shared_ptr<const EnergyDependentSurfaceInjector> other
+	    = boost::dynamic_pointer_cast<const EnergyDependentSurfaceInjector>(o);
+	if (!other)
+		return false;
+	else
+		return (*flux_ == *(other->flux_)
+		    && *radialDistribution_ == *(other->radialDistribution_)
+		    && *energyGenerator_ == *(other->energyGenerator_)
+		    && (scalingFunction_ == &ScaleForIC79) && (other->scalingFunction_ == &ScaleForIC79));
+}
+
 void
 EnergyDependentSurfaceInjector::Generate(I3RandomService &rng, I3MCTree &tree,
     BundleConfiguration &bundle) const

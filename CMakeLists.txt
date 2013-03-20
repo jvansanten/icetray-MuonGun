@@ -97,6 +97,9 @@ i3_test_scripts(resources/test/test_StaticSurfaceInjector.py)
 i3_test_executable(test 
   private/test/main.cxx
   private/test/SplineTable.cxx
+  private/test/Surface.cxx
+  private/test/EnergyDistribution.cxx
+  private/test/Generator.cxx
   USE_PROJECTS MuonGun icetray dataclasses phys-services
 )
 

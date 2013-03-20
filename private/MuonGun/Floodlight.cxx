@@ -22,6 +22,17 @@ Floodlight::Clone() const
 	return GenerationProbabilityPtr(new Floodlight(*this));
 }
 
+bool
+Floodlight::IsCompatible(GenerationProbabilityConstPtr o) const
+{
+	boost::shared_ptr<const Floodlight> other = boost::dynamic_pointer_cast<const Floodlight>(o);
+	if (!other)
+		return false;
+	else
+		return (*surface_ == *(other->surface_)
+		    && *energyGenerator_ == *(other->energyGenerator_));
+}
+
 void
 Floodlight::Generate(I3RandomService &rng, I3MCTree &tree, BundleConfiguration &bundle) const
 {

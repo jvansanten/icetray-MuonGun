@@ -55,6 +55,9 @@ public:
 	 */
 	virtual double Generate(I3RandomService &rng, double depth, double cos_theta,
 	    unsigned multiplicity) const = 0;
+	    
+	
+	virtual bool operator==(const RadialDistribution&) const = 0;
 private:
 	friend class boost::serialization::access;
 	template <typename Archive>
@@ -73,6 +76,8 @@ public:
 	    unsigned multiplicity, double radius) const;
 	double Generate(I3RandomService &rng, double depth, double cos_theta,
 	    unsigned multiplicity) const;
+	
+	virtual bool operator==(const RadialDistribution&) const;
 private:
 	double GetMeanRadius(double, double, unsigned) const;
 	double GetShapeParameter(double, double, unsigned) const;
@@ -96,6 +101,8 @@ public:
 	    unsigned multiplicity, double radius) const;
 	double Generate(I3RandomService &rng, double depth, double cos_theta,
 	    unsigned multiplicity) const;
+	
+	virtual bool operator==(const RadialDistribution&) const;
 private:
 	SplineRadialDistribution() {}
 	friend class boost::serialization::access;

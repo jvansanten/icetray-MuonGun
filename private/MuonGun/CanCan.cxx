@@ -79,6 +79,18 @@ StaticSurfaceInjector::Clone() const
 	return boost::make_shared<StaticSurfaceInjector>(*this);
 }
 
+bool
+StaticSurfaceInjector::IsCompatible(GenerationProbabilityConstPtr o) const
+{
+	boost::shared_ptr<const StaticSurfaceInjector> other
+	    = boost::dynamic_pointer_cast<const StaticSurfaceInjector>(o);
+	if (!other)
+		return false;
+	return (*surface_ == *(other->surface_) && *flux_ == *(other->flux_)
+	    && *radialDistribution_ == *(other->radialDistribution_)
+	    && *energyGenerator_ == *(other->energyGenerator_));
+}
+
 void
 StaticSurfaceInjector::SetSurface(SamplingSurfacePtr p)
 {

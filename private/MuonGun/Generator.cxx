@@ -40,6 +40,25 @@ GenerationProbabilityCollection::GenerationProbabilityCollection(GenerationProba
 	push_back(p2);
 }
 
+void
+GenerationProbabilityCollection::push_back(const GenerationProbabilityPtr &other)
+{
+	BOOST_FOREACH(value_type &p, *this)
+		if (p && p->IsCompatible(other)) {
+			p = p->Clone();
+			p->SetTotalEvents(p->GetTotalEvents() + other->GetTotalEvents());
+			return;
+		}
+	std::vector<GenerationProbabilityPtr>::push_back(other);
+}
+
+bool
+GenerationProbabilityCollection::IsCompatible(GenerationProbabilityConstPtr) const
+{
+	log_fatal("I should never be called.");
+	return false;
+}
+
 double
 GenerationProbabilityCollection::GetLogGenerationProbability(const I3Particle &axis,
     const BundleConfiguration &bundle) const
@@ -121,13 +140,21 @@ operator*(double n, GenerationProbabilityPtr p)
 GenerationProbabilityPtr
 operator+(GenerationProbabilityPtr p1, GenerationProbabilityPtr p2)
 {
+	// If the two elements are identical, just scale up.
+	if (p1->IsCompatible(p2)) {
+		GenerationProbabilityPtr p = p1->Clone();
+		p->SetTotalEvents(p1->GetTotalEvents() + p2->GetTotalEvents());
+		return p;
+	}
+	// If one or both is a collection, merge
 	boost::shared_ptr<GenerationProbabilityCollection> c1 =
 	    boost::dynamic_pointer_cast<GenerationProbabilityCollection>(p1);
 	boost::shared_ptr<GenerationProbabilityCollection> c2 =
 	    boost::dynamic_pointer_cast<GenerationProbabilityCollection>(p2);
 	if (c1 && c2) {
 		c1 = boost::make_shared<GenerationProbabilityCollection>(*c1);
-		std::copy(c2->begin(), c2->end(), std::back_inserter(*c1));
+		BOOST_FOREACH(const GenerationProbabilityPtr &other, *c2)
+			c1->push_back(other);
 		return c1;
 	} else if (c1) {
 		c1 = boost::make_shared<GenerationProbabilityCollection>(*c1);
@@ -139,6 +166,7 @@ operator+(GenerationProbabilityPtr p1, GenerationProbabilityPtr p2)
 		return c2;
 	}
 	
+	// If all else fails, start a new collection
 	return boost::make_shared<GenerationProbabilityCollection>(p1, p2);
 }
 

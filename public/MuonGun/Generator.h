@@ -95,8 +95,7 @@ public:
 	 * @returns true if the argument is identical to *this to
 	 *          within a scale factor, false otherwise.
 	 */
-	// TODO mark pure virtual
-	// virtual bool IsCompatible(GenerationProbabilityConstPtr) const;
+	virtual bool IsCompatible(GenerationProbabilityConstPtr) const = 0;
 protected:
 	/**
 	 * @brief Calculate the differential probability per event that the
@@ -124,11 +123,12 @@ I3_POINTER_TYPEDEFS(GenerationProbability);
 class GenerationProbabilityCollection : public GenerationProbability, public std::vector<GenerationProbabilityPtr> {
 public:
 	GenerationProbabilityCollection(GenerationProbabilityPtr, GenerationProbabilityPtr);
-	
+	void push_back(const GenerationProbabilityPtr&);
 public:
 	// GenerationProbability interface
 	GenerationProbabilityPtr Clone() const;
 	SamplingSurfaceConstPtr GetInjectionSurface(const I3Particle &axis, const BundleConfiguration &bundle) const;
+	virtual bool IsCompatible(GenerationProbabilityConstPtr) const;
 protected:
 	/**
 	 * Calculate the *total* probability that the given configuration was generated

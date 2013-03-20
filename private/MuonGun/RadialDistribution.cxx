@@ -83,6 +83,12 @@ BMSSRadialDistribution::Generate(I3RandomService &rng, double depth, double cos_
 	return r;
 }
 
+bool
+BMSSRadialDistribution::operator==(const RadialDistribution &o) const
+{
+	return dynamic_cast<const BMSSRadialDistribution*>(&o);
+}
+
 SplineRadialDistribution::SplineRadialDistribution(const std::string &path)
     : spline_(path) {}
 
@@ -121,6 +127,16 @@ SplineRadialDistribution::Generate(I3RandomService &rng, double depth,
 	} while (std::log(rng.Uniform()) > logprob - maxprob);
 	
 	return coords[3];
+}
+
+bool
+SplineRadialDistribution::operator==(const RadialDistribution &o) const
+{
+	const SplineRadialDistribution *other = dynamic_cast<const SplineRadialDistribution*>(&o);
+	if (!other)
+		return false;
+	else
+		return (spline_ == other->spline_);
 }
 
 template <typename Archive>

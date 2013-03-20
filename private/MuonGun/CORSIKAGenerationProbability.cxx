@@ -38,6 +38,18 @@ CORSIKAGenerationProbability::Clone() const
 	return boost::make_shared<CORSIKAGenerationProbability>(*this);
 }
 
+bool
+CORSIKAGenerationProbability::IsCompatible(GenerationProbabilityConstPtr o) const
+{
+	boost::shared_ptr<const CORSIKAGenerationProbability> other
+	    = boost::dynamic_pointer_cast<const CORSIKAGenerationProbability>(o);
+	if (!other)
+		return false;
+	return (*surface_ == *(other->surface_) && *flux_ == *(other->flux_)
+	    && *radialDistribution_ == *(other->radialDistribution_)
+	    && *energyDistribution_ == *(other->energyDistribution_));
+}
+
 double
 CORSIKAGenerationProbability::GetLogGenerationProbability(const I3Particle &axis, const BundleConfiguration &bundlespec) const
 {	

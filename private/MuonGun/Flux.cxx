@@ -22,6 +22,12 @@ Flux::operator()(double depth, double cos_theta, unsigned multiplicity) const
 	return std::exp(GetLog(depth, cos_theta, multiplicity));
 }
 
+bool Flux::operator==(const Flux &other) const
+{
+	return (minMultiplicity_ == other.minMultiplicity_
+	    && maxMultiplicity_ == other.maxMultiplicity_);
+}
+
 BMSSFlux::BMSSFlux() : k0a_(7.2e-3), k0b_(-1.927), k1a_(-0.581), k1b_(0.034),
     v0a_(0.01041), v0b_(0.09912), v0c_(2.712), v1a_(0.01615), v1b_(0.6010)
 {}
@@ -38,6 +44,11 @@ BMSSFlux::GetLog(double depth, double cos_theta, unsigned multiplicity) const
 	
 	// Not the most stable thing, but only for demo purposes
 	return std::log(flux);
+}
+
+bool BMSSFlux::operator==(const Flux &other) const
+{
+	return Flux::operator==(other) && dynamic_cast<const BMSSFlux*>(&other);
 }
 
 SplineFlux::SplineFlux(const std::string &singles, const std::string &bundles)
@@ -59,6 +70,15 @@ SplineFlux::GetLog(double depth, double cos_theta, unsigned multiplicity) const
 		return -std::numeric_limits<double>::infinity();
 	else
 		return logflux;
+}
+
+bool SplineFlux::operator==(const Flux &o) const
+{
+	const SplineFlux *other = dynamic_cast<const SplineFlux*>(&o);
+	if (!(other && Flux::operator==(o)))
+		return false;
+	else
+		return (singles_ == other->singles_ && bundles_ == other->bundles_);
 }
 
 template <typename Archive>

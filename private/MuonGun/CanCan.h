@@ -37,9 +37,10 @@ public:
 	    boost::shared_ptr<OffsetPowerLaw> edist, RadialDistributionPtr rdist);
 	
 	// Generator Interface
-	void Generate(I3RandomService &rng, I3MCTree &tree, BundleConfiguration &bundle) const;
-	GenerationProbabilityPtr Clone() const;
-	double GetLogGenerationProbability(const I3Particle &axis, const BundleConfiguration &bundle) const;
+	virtual void Generate(I3RandomService &rng, I3MCTree &tree, BundleConfiguration &bundle) const;
+	virtual GenerationProbabilityPtr Clone() const;
+	virtual bool IsCompatible(GenerationProbabilityConstPtr) const;
+	virtual double GetLogGenerationProbability(const I3Particle &axis, const BundleConfiguration &bundle) const;
 	SamplingSurfaceConstPtr GetInjectionSurface(const I3Particle &axis, const BundleConfiguration &bundle) const { return surface_; }
 	
 	void SetSurface(SamplingSurfacePtr p);
@@ -61,6 +62,7 @@ public:
 	 * @returns a rate in units of @f$ [s^{-1}] @f$
 	 */
 	double GetTotalRate() const;
+	
 private:
 	/**
 	 * Draw a sample from the distribution of shower impact points

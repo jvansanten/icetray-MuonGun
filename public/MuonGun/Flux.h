@@ -34,7 +34,8 @@ public:
 	
 	void SetMaxMultiplicity(unsigned m) { maxMultiplicity_ = m; }
 	void SetMinMultiplicity(unsigned m) { minMultiplicity_ = m; }
-
+	
+	virtual bool operator==(const Flux&) const;
 private:
 	friend class boost::serialization::access;
 	template <typename Archive>
@@ -52,6 +53,8 @@ class BMSSFlux : public Flux {
 public:
 	BMSSFlux();
 	double GetLog(double depth, double cos_theta, unsigned multiplicity) const;
+	
+	virtual bool operator==(const Flux&) const;
 private:
 	double k0a_, k0b_, k1a_, k1b_;
 	double v0a_, v0b_, v0c_, v1a_, v1b_;
@@ -64,6 +67,8 @@ class SplineFlux : public Flux {
 public:
 	SplineFlux(const std::string &singles, const std::string &bundles);
 	double GetLog(double depth, double cos_theta, unsigned multiplicity) const;
+	
+	virtual bool operator==(const Flux&) const;
 private:
 	SplineFlux() {}
 	

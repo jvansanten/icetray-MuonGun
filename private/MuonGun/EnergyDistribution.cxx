@@ -20,6 +20,16 @@ EnergyDistribution::operator()(double d, double ct,
 	return std::exp(GetLog(d, ct, m, r, e));
 }
 
+bool
+SplineEnergyDistribution::operator==(const EnergyDistribution &o) const
+{
+	const SplineEnergyDistribution *other = dynamic_cast<const SplineEnergyDistribution*>(&o);
+	if (!other)
+		return false;
+	else
+		return (singles_ == other->singles_ && bundles_ == other->bundles_);
+}
+
 SplineEnergyDistribution::SplineEnergyDistribution(const std::string &singles, const std::string &bundles)
     : singles_(singles), bundles_(bundles)
 {
@@ -67,6 +77,12 @@ BMSSEnergyDistribution::BMSSEnergyDistribution() :
     d0a_(-0.398), d0b_(3.955), d1a_(0.012), d1b_(-0.35)
 {}
 
+bool
+BMSSEnergyDistribution::operator==(const EnergyDistribution &o) const
+{
+	return dynamic_cast<const BMSSEnergyDistribution*>(&o);
+}
+
 double
 BMSSEnergyDistribution::GetLog(double depth, double cos_theta, 
     unsigned m, double r, double energy) const
@@ -112,6 +128,12 @@ OffsetPowerLaw::OffsetPowerLaw(double gamma, double offset, double emin, double 
 	nmax_ = std::pow(emax + offset, 1-gamma);
 	norm_ = (1-gamma)/(nmax_ - nmin_);
 	lognorm_ = std::log(norm_);
+}
+
+bool
+OffsetPowerLaw::operator==(const OffsetPowerLaw &other) const
+{
+	return (gamma_ == other.gamma_ && emin_ == other.emin_ && emax_ == other.emax_);
 }
 
 double
