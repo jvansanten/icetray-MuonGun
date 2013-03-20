@@ -22,6 +22,21 @@ namespace I3MuonGun {
 GenerationProbability::~GenerationProbability() {}
 Generator::~Generator() {}
 
+template <typename Archive>
+void
+GenerationProbability::serialize(Archive &ar, unsigned version)
+{
+	ar & make_nvp("I3FrameObject", base_object<I3FrameObject>(*this));
+	ar & make_nvp("NEvents", numEvents_);
+}
+
+template <typename Archive>
+void
+Generator::serialize(Archive &ar, unsigned version)
+{
+	ar & make_nvp("GenerationProbability", base_object<GenerationProbability>(*this));
+}
+
 double
 GenerationProbability::GetLogGeneratedEvents(const I3Particle &axis, const BundleConfiguration &bundle) const
 {
@@ -112,6 +127,14 @@ GenerationProbabilityPtr
 GenerationProbabilityCollection::Clone() const
 {
 	return boost::make_shared<GenerationProbabilityCollection>(*this);
+}
+
+template <typename Archive>
+void
+GenerationProbabilityCollection::serialize(Archive &ar, unsigned version)
+{
+	ar & make_nvp("GenerationProbability", base_object<GenerationProbability>(*this));
+	ar & make_nvp("Vector", base_object<std::vector<GenerationProbabilityPtr> >(*this));
 }
 
 GenerationProbabilityPtr
@@ -285,4 +308,7 @@ private:
 
 }
 
+I3_SERIALIZABLE(I3MuonGun::GenerationProbability);
+I3_SERIALIZABLE(I3MuonGun::GenerationProbabilityCollection);
+I3_SERIALIZABLE(I3MuonGun::Generator);
 I3_MODULE(I3MuonGun::GeneratorModule);

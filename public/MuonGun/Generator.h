@@ -15,6 +15,7 @@
 
 #include <icetray/I3PointerTypedefs.h>
 #include <icetray/I3FrameObject.h>
+#include <icetray/serialization.h>
 
 class I3Particle;
 class I3RandomService;
@@ -49,7 +50,7 @@ I3_FORWARD_DECLARATION(GenerationProbability);
  *
  * GenerationProbability represents the normalization required for WeightCalculator
  */
-class GenerationProbability {
+class GenerationProbability : public I3FrameObject {
 public:
 	GenerationProbability() : numEvents_(1) {}
 	virtual ~GenerationProbability();
@@ -111,6 +112,10 @@ protected:
 	virtual double GetLogGenerationProbability(const I3Particle &axis, const BundleConfiguration &bundle) const = 0;
 
 private:
+	friend class boost::serialization::access;
+	template <typename Archive>
+	void serialize(Archive&, unsigned);
+	
 	/** @brief The total number of events that should be generated */
 	double numEvents_;
 };
@@ -135,6 +140,11 @@ protected:
 	 * by any of the distributions in the colleciton.
 	 */
 	double GetLogGenerationProbability(const I3Particle &axis, const BundleConfiguration &bundle) const;
+private:
+	GenerationProbabilityCollection() {}
+	friend class boost::serialization::access;
+	template <typename Archive>
+	void serialize(Archive&, unsigned);
 };
 
 /** Scale the distribution by the given number of events */
@@ -154,7 +164,7 @@ GenerationProbabilityPtr operator+(GenerationProbabilityPtr p1, GenerationProbab
  * how to calculate the probability that they would have drawn some arbitrary
  * bundle from that same distribution.
  */
-class Generator : public GenerationProbability, public I3FrameObject {
+class Generator : public GenerationProbability {
 public:
 	virtual ~Generator();
 	/**
@@ -181,6 +191,11 @@ public:
 	 */
 	static I3Particle CreateParallelTrack(double radius, double azimuth,
 	    const Surface &surface, const I3Particle &axis);
+
+private:
+	friend class boost::serialization::access;
+	template <typename Archive>
+	void serialize(Archive&, unsigned);
 };
 
 I3_POINTER_TYPEDEFS(Generator);

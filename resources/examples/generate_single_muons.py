@@ -16,7 +16,7 @@ tray.context['I3RandomService'] = randomService
 
 from icecube.icetray import I3Units
 from icecube.MuonGun import load_model, StaticSurfaceInjector, Cylinder, OffsetPowerLaw
-from icecube.MuonGun.segments import GenerateBundles, PropagatorMMC, MakePropagator
+from icecube.MuonGun.segments import GenerateBundles
 
 # Use Hoerandel as a template for generating muons
 model = load_model('Hoerandel5_atmod12_SIBYLL')
@@ -42,9 +42,7 @@ def make_propagators():
 	from icecube.PROPOSAL import I3PropagatorServicePROPOSAL
 	from icecube.cmc import I3CascadeMCService
 	propagators = I3ParticleTypePropagatorServiceMap()
-	# switch to PROPOSAL when available
-	#muprop = I3PropagatorServicePROPOSAL(type=dataclasses.I3Particle.MuMinus, cylinderHeight=1200, cylinderRadius=700)
-	muprop = MakePropagator()
+	muprop = I3PropagatorServicePROPOSAL(type=dataclasses.I3Particle.MuMinus, cylinderHeight=1200, cylinderRadius=700)
 	cprop = I3CascadeMCService(phys_services.I3GSLRandomService(1)) # dummy RNG
 	for pt in 'MuMinus', 'MuPlus':
 		propagators[getattr(dataclasses.I3Particle.ParticleType, pt)] = muprop

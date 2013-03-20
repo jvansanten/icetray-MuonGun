@@ -38,7 +38,7 @@ template <typename Archive>
 void
 StaticSurfaceInjector::serialize(Archive &ar, unsigned version)
 {
-	ar & make_nvp("I3FrameObject", base_object<I3FrameObject>(*this));
+	ar & make_nvp("Generator", base_object<Generator>(*this));
 	ar & make_nvp("Surface", surface_);
 	ar & make_nvp("Flux", flux_);
 	ar & make_nvp("EnergySpectrum", energyGenerator_);
