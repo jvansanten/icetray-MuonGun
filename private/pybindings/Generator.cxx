@@ -7,9 +7,16 @@
  */
 
 #include <MuonGun/Generator.h>
+#include <MuonGun/Surface.h>
 #include <dataclasses/physics/I3Particle.h>
 #include <icetray/python/dataclass_suite.hpp>
 #include <boost/serialization/list.hpp>
+
+static I3MuonGun::SamplingSurfacePtr
+GetInjectionSurface(const I3MuonGun::GenerationProbability &self)
+{
+	return boost::const_pointer_cast<I3MuonGun::SamplingSurface>(self.GetInjectionSurface());
+}
 
 void register_Generator()
 {
@@ -19,6 +26,7 @@ void register_Generator()
 	class_<GenerationProbability, GenerationProbabilityPtr, boost::noncopyable>("GenerationProbability", no_init)
 	    .def("generated_events", &GenerationProbability::GetGeneratedEvents)
 	    .add_property("total_events", &GenerationProbability::GetTotalEvents, &GenerationProbability::SetTotalEvents)
+	    .add_property("surface", &GetInjectionSurface)
 	    .def("__add__",  (GenerationProbabilityPtr (*)(GenerationProbabilityPtr, GenerationProbabilityPtr))(&operator+))
 	    .def("__mul__",  (GenerationProbabilityPtr (*)(GenerationProbabilityPtr, double))(&operator*))
 	    .def("__rmul__", (GenerationProbabilityPtr (*)(GenerationProbabilityPtr, double))(&operator*))

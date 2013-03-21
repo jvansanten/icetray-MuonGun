@@ -128,7 +128,7 @@ GetRadius(const I3Particle &axis, const I3Position &pos)
 
 }
 
-MuonBundleConverter::MuonBundleConverter(size_t maxMultiplicity, SamplingSurfacePtr surface)
+MuonBundleConverter::MuonBundleConverter(size_t maxMultiplicity, SamplingSurfaceConstPtr surface)
     : maxMultiplicity_(maxMultiplicity),
     surface_(surface ? surface : boost::make_shared<Cylinder>(1600, 800))
 {}
@@ -200,7 +200,6 @@ public:
 	WeightCalculatorModule(const I3Context &ctx) : I3Module(ctx)
 	{
 		AddOutBox("OutBox");
-		AddParameter("Surface", "Target surface at which to calculate a flux weight", surface_);
 		AddParameter("Model", "Muon flux model for which to calculate a weight", boost::shared_ptr<BundleModel>());
 		AddParameter("Generator", "Generation spectrum for the bundles to be weighted", generator_);
 	}
@@ -208,7 +207,6 @@ public:
 	void Configure()
 	{
 		boost::shared_ptr<BundleModel> model;
-		GetParameter("Surface", surface_);
 		GetParameter("Model", model);
 		GetParameter("Generator", generator_);
 		
@@ -218,16 +216,12 @@ public:
 		radius_ = model->radius;
 		energy_ = model->energy;
 		
-		if (!surface_)
-			log_fatal("No surface configured!");
-		if (!flux_)
-			log_fatal("No flux configured!");
-		if (!radius_)
-			log_fatal("No radial distribution configured!");
-		if (!energy_)
-			log_fatal("No energy distribution configured!");
 		if (!generator_)
 			log_fatal("No generator configured!");
+		
+		surface_ = generator_->GetInjectionSurface();
+		if (!surface_)
+			log_fatal("No surface configured!");
 	}
 	
 	void DAQ(I3FramePtr frame)

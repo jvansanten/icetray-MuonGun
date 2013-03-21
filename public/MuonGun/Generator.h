@@ -71,22 +71,11 @@ public:
 	
 public:
 	/**
-	 * @brief Propose an injection surface for the given bundle configuration.
+	 * @brief Get the injection surface this generation scheme uses.
 	 * 
-	 * If variable-surface and fixed-surface generation schemes are to be combined,
-	 * the variable surface must satisfy a few basic requirements:
-	 * - The variable surface must always be *inside* any fixed surfaces
-	 * - As the bundle properties are sampled at later and later times, the
-	 *   proposed surface must retreat. For example, the surface must become
-	 *   monotonically smaller for lower energies and multiplicities.
-	 *
-	 * @param[in] axis   an I3Particle representing the shower axis
-	 * @param[in] bundle the radial offset and energy of each muon
-	 *                   in the bundle
-	 * @returns the surface where a bundle of the given characteristics
-	 *          would be placed
+	 * If generation schemes are combined, the injection surfaces must be identical!
 	 */
-	virtual SamplingSurfaceConstPtr GetInjectionSurface(const I3Particle &axis, const BundleConfiguration &bundle) const = 0;
+	virtual SamplingSurfaceConstPtr GetInjectionSurface() const = 0;
 	 
 	/** Copy self into a shared pointer */
 	virtual GenerationProbabilityPtr Clone() const = 0;
@@ -131,15 +120,15 @@ public:
 	void push_back(const GenerationProbabilityPtr&);
 public:
 	// GenerationProbability interface
-	GenerationProbabilityPtr Clone() const;
-	SamplingSurfaceConstPtr GetInjectionSurface(const I3Particle &axis, const BundleConfiguration &bundle) const;
+	virtual GenerationProbabilityPtr Clone() const;
+	virtual SamplingSurfaceConstPtr GetInjectionSurface() const;
 	virtual bool IsCompatible(GenerationProbabilityConstPtr) const;
 protected:
 	/**
 	 * Calculate the *total* probability that the given configuration was generated
 	 * by any of the distributions in the colleciton.
 	 */
-	double GetLogGenerationProbability(const I3Particle &axis, const BundleConfiguration &bundle) const;
+	virtual double GetLogGenerationProbability(const I3Particle &axis, const BundleConfiguration &bundle) const;
 private:
 	GenerationProbabilityCollection() {}
 	friend class boost::serialization::access;

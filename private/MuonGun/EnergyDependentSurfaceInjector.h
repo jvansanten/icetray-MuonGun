@@ -38,9 +38,9 @@ public:
 	    boost::function<SamplingSurfacePtr (double)> scaling=boost::function<SamplingSurfacePtr (double)>());
 	
 	// GenerationProbability interface
-	SamplingSurfaceConstPtr GetInjectionSurface(const I3Particle &axis, const BundleConfiguration &bundle) const;
-	double GetLogGenerationProbability(const I3Particle &axis, const BundleConfiguration &bundle) const;
-	GenerationProbabilityPtr Clone() const;
+	virtual SamplingSurfaceConstPtr GetInjectionSurface() const { return injectionSurface_; };
+	virtual double GetLogGenerationProbability(const I3Particle &axis, const BundleConfiguration &bundle) const;
+	virtual GenerationProbabilityPtr Clone() const;
 	virtual bool IsCompatible(GenerationProbabilityConstPtr) const;
 	
 	// Generator interface

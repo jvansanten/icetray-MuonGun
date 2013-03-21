@@ -47,14 +47,13 @@ struct BundleModel {
 class WeightCalculator {
 public:
 	/**
-	 * @param[in] s Surface at which to calculate the weights
 	 * @param[in] m Target model of the muon flux as a function of
 	 *              angle, depth, multiplicity, radius, and energy
 	 * @param[in] g Generation scheme according by which the
 	 *              events were generated.
 	 */
-	WeightCalculator(SamplingSurfacePtr s, const BundleModel &m, GenerationProbabilityPtr g)
-	    : surface_(s), flux_(m.flux), radius_(m.radius), energy_(m.energy), generator_(g) {}
+	WeightCalculator(const BundleModel &m, GenerationProbabilityPtr g)
+	    : surface_(g->GetInjectionSurface()), flux_(m.flux), radius_(m.radius), energy_(m.energy), generator_(g) {}
 	
 	/**
 	 * Calculate a weight corresponding to the frequency with which
@@ -67,12 +66,12 @@ public:
 	 */
 	double GetWeight(const I3Particle &axis, const BundleConfiguration &bundle) const;
 	 
-	SamplingSurfacePtr GetSurface() { return surface_; }
+	SamplingSurfaceConstPtr GetSurface() { return surface_; }
 	void SetSurface(SamplingSurfacePtr s) { surface_ = s; }
 
 protected:
 	WeightCalculator() {}
-	SamplingSurfacePtr surface_;
+	SamplingSurfaceConstPtr surface_;
 	FluxConstPtr flux_;
 	RadialDistributionConstPtr radius_;
 	EnergyDistributionConstPtr energy_;
@@ -81,13 +80,13 @@ protected:
 
 class MuonBundleConverter : public I3ConverterImplementation<I3MCTree> {
 public:
-	MuonBundleConverter(size_t maxMultiplicity=25, SamplingSurfacePtr surface=SamplingSurfacePtr());
+	MuonBundleConverter(size_t maxMultiplicity=25, SamplingSurfaceConstPtr surface=SamplingSurfaceConstPtr());
 	I3TableRowDescriptionPtr CreateDescription(const I3MCTree&);
 	size_t FillRows(const I3MCTree&, I3TableRowPtr);
 private:
 	SET_LOGGER("I3MuonGun::WeightCalculator");
 	size_t maxMultiplicity_;
-	SamplingSurfacePtr surface_;
+	SamplingSurfaceConstPtr surface_;
 };
 
 }

@@ -20,7 +20,7 @@ register_CanCan()
 	class_<StaticSurfaceInjector, bases<Generator> >("StaticSurfaceInjector")
 		.def(init<SamplingSurfacePtr, FluxPtr,
 		    boost::shared_ptr<OffsetPowerLaw>, RadialDistributionPtr>())
-		#define PROPS (Surface)(Flux)(RadialDistribution)(EnergyDistribution)
+		#define PROPS (Flux)(RadialDistribution)(EnergyDistribution)
 		BOOST_PP_SEQ_FOR_EACH(WRAP_PROP, StaticSurfaceInjector, PROPS)
 		#undef PROPS
 		.add_property("total_rate", &StaticSurfaceInjector::GetTotalRate)

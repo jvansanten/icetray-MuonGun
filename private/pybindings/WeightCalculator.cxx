@@ -107,8 +107,8 @@ void register_WeightCalculator()
 	    .def_readwrite("energy", &BundleModel::energy)
 	;
 
-	class_<WeightCalculator>("WeightCalculator", init<SamplingSurfacePtr, const BundleModel&, GenerationProbabilityPtr>(
-	    (arg("surface"), "model", "generator")))
+	class_<WeightCalculator>("WeightCalculator", init<const BundleModel&, GenerationProbabilityPtr>(
+	    (arg("model"), "generator")))
 	    .def("__call__", &WeightCalculator::GetWeight)
 #ifdef USE_NUMPY
 	    .def("__call__", &GetWeight, (bp::arg("x"), "y", "z", "zenith", "azimuth",
@@ -121,7 +121,7 @@ void register_WeightCalculator()
 	
 	I3CONVERTER_NAMESPACE(MuonGun);
 	I3CONVERTER_EXPORT(MuonBundleConverter, "foo")
-	    .def(init<uint32_t, SamplingSurfacePtr>((
+	    .def(init<uint32_t, SamplingSurfaceConstPtr>((
 	    arg("maxMultiplicity")=25,
 	    arg("surface")=boost::make_shared<Cylinder>(1600, 800))))
 	;

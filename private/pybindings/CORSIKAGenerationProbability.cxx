@@ -18,7 +18,7 @@ void register_CORSIKAGenerationProbability()
 	
 	class_<CORSIKAGenerationProbability, boost::shared_ptr<CORSIKAGenerationProbability>, bases<GenerationProbability> >
 	    ("CORSIKAGenerationProbability", init<SamplingSurfacePtr, FluxPtr, RadialDistributionPtr, EnergyDistributionPtr>())
-	    #define RO_PROPS (Surface)(Flux)(RadialDistribution)(EnergyDistribution)
+	    #define RO_PROPS (Flux)(RadialDistribution)(EnergyDistribution)
 	    BOOST_PP_SEQ_FOR_EACH(WRAP_PROP_RO, CORSIKAGenerationProbability, RO_PROPS)
 	    #undef RO_PROPS
 	;

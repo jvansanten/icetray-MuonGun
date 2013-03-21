@@ -42,8 +42,7 @@ def book_weights(infiles, outfile, model='Hoerandel5_atmod12_SIBYLL'):
 	
 	model = MuonGun.load_model(model)
 	generator = harvest_generators(infiles)
-	tray.AddModule('I3MuonGun::WeightCalculatorModule', 'MuonWeight', Model=model,
-	    Surface=generator.surface, Generator=generator)
+	tray.AddModule('I3MuonGun::WeightCalculatorModule', 'MuonWeight', Model=model, Generator=generator)
 	
 	from icecube.hdfwriter import I3HDFWriter
 	tray.AddSegment(I3HDFWriter, 'scribe',
@@ -73,7 +72,7 @@ try:
 	# or make a freestanding WeightCalculator with a different flux model
 	model = MuonGun.load_model('GaisserH4a_atmod12_SIBYLL')
 	generator = harvest_generators(infiles)
-	weighter = MuonGun.WeightCalculator(generator.surface, model, generator)
+	weighter = MuonGun.WeightCalculator(model, generator)
 	
 	# and use the bundle axis and its radius/energy distribution to calculate a weight
 	axis = hdf.root.MCPrimary.read()

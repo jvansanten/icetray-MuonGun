@@ -173,13 +173,6 @@ EnergyDependentSurfaceInjector::GetTargetSurface(double energy) const
 		return boost::make_shared<Cylinder>(1600, 800);
 }
 
-SamplingSurfaceConstPtr
-EnergyDependentSurfaceInjector::GetInjectionSurface(const I3Particle &axis,
-    const BundleConfiguration &bundle) const
-{
-	return injectionSurface_;
-}
-
 double
 EnergyDependentSurfaceInjector::GetTotalRate(SamplingSurfaceConstPtr surface) const
 {

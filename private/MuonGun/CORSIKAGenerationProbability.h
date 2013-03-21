@@ -32,7 +32,7 @@ public:
 	EnergyDistributionConstPtr GetEnergyDistribution() const { return energyDistribution_; }
 public:
 	// GenerationProbability interface
-	SamplingSurfaceConstPtr GetInjectionSurface(const I3Particle&, const BundleConfiguration&) const { return surface_; }
+	virtual SamplingSurfaceConstPtr GetInjectionSurface() const { return surface_; }
 	GenerationProbabilityPtr Clone() const;
 	virtual bool IsCompatible(GenerationProbabilityConstPtr) const;
 	

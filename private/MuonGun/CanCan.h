@@ -41,7 +41,7 @@ public:
 	virtual GenerationProbabilityPtr Clone() const;
 	virtual bool IsCompatible(GenerationProbabilityConstPtr) const;
 	virtual double GetLogGenerationProbability(const I3Particle &axis, const BundleConfiguration &bundle) const;
-	SamplingSurfaceConstPtr GetInjectionSurface(const I3Particle &axis, const BundleConfiguration &bundle) const { return surface_; }
+	virtual SamplingSurfaceConstPtr GetInjectionSurface() const { return surface_; }
 	
 	void SetSurface(SamplingSurfacePtr p);
 	SamplingSurfacePtr GetSurface() { return surface_; }

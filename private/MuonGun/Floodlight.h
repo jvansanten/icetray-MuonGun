@@ -10,11 +10,11 @@ public:
 	Floodlight();
 	
 	// Generator Interface
-	void Generate(I3RandomService &rng, I3MCTree &tree, BundleConfiguration &bundle) const;
-	GenerationProbabilityPtr Clone() const;
+	virtual void Generate(I3RandomService &rng, I3MCTree &tree, BundleConfiguration &bundle) const;
+	virtual GenerationProbabilityPtr Clone() const;
 	virtual bool IsCompatible(GenerationProbabilityConstPtr) const;
-	double GetLogGenerationProbability(const I3Particle &axis, const BundleConfiguration &bundle) const;
-	SamplingSurfaceConstPtr GetInjectionSurface(const I3Particle &axis, const BundleConfiguration &bundle) const { return surface_; }
+	virtual double GetLogGenerationProbability(const I3Particle &axis, const BundleConfiguration &bundle) const;
+	virtual SamplingSurfaceConstPtr GetInjectionSurface() const { return surface_; }
 	
 private:
 	double GetTotalRate() const;
