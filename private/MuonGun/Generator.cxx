@@ -163,12 +163,7 @@ operator*(double n, GenerationProbabilityPtr p)
 GenerationProbabilityPtr
 operator+(GenerationProbabilityPtr p1, GenerationProbabilityPtr p2)
 {
-	// If the two elements are identical, just scale up.
-	if (p1->IsCompatible(p2)) {
-		GenerationProbabilityPtr p = p1->Clone();
-		p->SetTotalEvents(p1->GetTotalEvents() + p2->GetTotalEvents());
-		return p;
-	}
+
 	// If one or both is a collection, merge
 	boost::shared_ptr<GenerationProbabilityCollection> c1 =
 	    boost::dynamic_pointer_cast<GenerationProbabilityCollection>(p1);
@@ -187,10 +182,15 @@ operator+(GenerationProbabilityPtr p1, GenerationProbabilityPtr p2)
 		c2 = boost::make_shared<GenerationProbabilityCollection>(*c2);
 		c2->push_back(c1);
 		return c2;
+	} else if (p1->IsCompatible(p2)) {
+		// If the two elements are identical, just scale up.
+		GenerationProbabilityPtr p = p1->Clone();
+		p->SetTotalEvents(p1->GetTotalEvents() + p2->GetTotalEvents());
+		return p;
+	} else {
+		// If all else fails, start a new collection
+		return boost::make_shared<GenerationProbabilityCollection>(p1, p2);
 	}
-	
-	// If all else fails, start a new collection
-	return boost::make_shared<GenerationProbabilityCollection>(p1, p2);
 }
 
 namespace {
