@@ -1,4 +1,7 @@
-i3_project(MuonGun PYTHON_DIR python)
+i3_project(MuonGun
+    PYTHON_DIR python
+    DOCS_DIR resources/docs
+)
 
 SET (LIB_${PROJECT_NAME}_SOURCEFILES
     # Numerical integration
