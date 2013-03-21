@@ -151,7 +151,7 @@ OffsetPowerLaw::GetLog(double energy) const
 	if (energy <= emax_ && energy >= emin_)
 		return lognorm_ - gamma_*std::log(energy);
 	else
-		return 0.;
+		return -std::numeric_limits<double>::infinity();
 }
 
 double
