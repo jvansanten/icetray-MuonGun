@@ -30,6 +30,10 @@ Track::Track(const I3MMCTrack &mmctrack,
 	// Sum energy losses between entry and exit
 	double elost = 0;
 	BOOST_FOREACH(const I3Particle &p, std::make_pair(sbegin, send)) {
+		if (p.GetTime() < mmctrack.GetTi() || p.GetTime() > mmctrack.GetTf())
+			log_fatal("Stochastic loss at %.1f ns is outside the simulation volume "
+			    "(%.1f, %.1f) ns. Did you forget to time-shift the MMCTrackList?",
+			    p.GetTime(), mmctrack.GetTi(), mmctrack.GetTf());
 		elost += p.GetEnergy();
 		losses_.push_back(LossSum((p.GetTime()-I3Particle::GetTime())*GetSpeed(),
 		    elost));
@@ -120,6 +124,25 @@ operator!=(const I3MMCTrack &track, const I3Particle &p)
 	    track.GetI3Particle().GetMinorID() != p.GetMinorID());
 }
 
+/**
+ * Ensure that the MMCTrack has the same time reference as
+ * the associated I3MCTree.
+ */
+inline I3MMCTrack
+TimeShift(const I3Particle &p, const I3MMCTrack mmctrack)
+{
+	I3MMCTrack shifted(mmctrack);
+	double dt = p.GetTime() + p.GetPos().CalcDistance(I3Position(
+	    mmctrack.GetXi(), mmctrack.GetYi(), mmctrack.GetZi()))/p.GetSpeed()
+	    - mmctrack.GetTi();
+	shifted.SetEnter( mmctrack.GetXi(), mmctrack.GetYi(), mmctrack.GetZi(), mmctrack.GetTi() + dt, mmctrack.GetEi());
+	shifted.SetCenter(mmctrack.GetXc(), mmctrack.GetYc(), mmctrack.GetZc(), mmctrack.GetTc() + dt, mmctrack.GetEc());
+	shifted.SetExit(  mmctrack.GetXf(), mmctrack.GetYf(), mmctrack.GetZf(), mmctrack.GetTf() + dt, mmctrack.GetEf());
+	shifted.GetParticle().SetTime(p.GetTime());
+	
+	return shifted;
+}
+
 }
 
 std::list<Track>
@@ -134,7 +157,7 @@ Track::Harvest(const I3MCTree &mctree, const I3MMCTrackList &mmctracks)
 		if (p != mctree.end()) {
 			// Get energy checkpoints from the MMCTrack and stochastic losses
 			// from the direct daughters of the corresponding MCTree node
-			tracks.push_back(Track(mmctrack, mctree.begin(p), mctree.end(p)));
+			tracks.push_back(Track(TimeShift(*p, mmctrack), mctree.begin(p), mctree.end(p)));
 			// Fast-forward past the secondaries
 			p = mctree.end(p);
 		}
