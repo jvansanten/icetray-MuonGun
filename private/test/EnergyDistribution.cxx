@@ -21,7 +21,7 @@ TEST(Equality)
 	
 	{
 		BundleModel p1 = load_model("Hoerandel5_atmod12_SIBYLL");
-		BundleModel p2 = load_model("Standard5Comp_atmod12_SIBYLL");
+		BundleModel p2 = load_model("GaisserH4a_atmod12_SIBYLL");
 		ENSURE(*p1.energy == *p1.energy);
 		ENSURE(*p2.energy == *p2.energy);
 		ENSURE(!(*p1.energy == *p2.energy));

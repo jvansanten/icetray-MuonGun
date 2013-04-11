@@ -15,7 +15,7 @@ TEST(Addition)
 	using boost::make_shared;
 	
 	BundleModel soft = load_model("Hoerandel5_atmod12_SIBYLL");
-	BundleModel hard = load_model("GaisserH3a_atmod12_SIBYLL");
+	BundleModel hard = load_model("GaisserH4a_atmod12_SIBYLL");
 	
 	boost::shared_ptr<CORSIKAGenerationProbability> soft_g(
 	    new CORSIKAGenerationProbability(make_shared<Cylinder>(1600, 800), soft.flux, soft.radius, soft.energy));

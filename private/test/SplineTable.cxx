@@ -38,7 +38,7 @@ TEST(Equality)
 	using namespace I3MuonGun;
 	
 	const SplineTable t1(get_tabledir() + "Hoerandel5_atmod12_SIBYLL.single_flux.fits");
-	const SplineTable t2(get_tabledir() + "Standard5Comp_atmod12_SIBYLL.single_flux.fits");
+	const SplineTable t2(get_tabledir() + "GaisserH4a_atmod12_SIBYLL.single_flux.fits");
 	
 	ENSURE(t1 == t1);
 	ENSURE(t2 == t2);
