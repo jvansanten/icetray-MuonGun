@@ -122,18 +122,25 @@ OffsetPowerLaw::OffsetPowerLaw() : gamma_(NAN), offset_(NAN), emin_(NAN), emax_(
 OffsetPowerLaw::OffsetPowerLaw(double gamma, double offset, double emin, double emax)
     : gamma_(gamma), offset_(offset), emin_(emin), emax_(emax)
 {
-	if (gamma <= 1)
-		log_fatal("gamma must be > 1");
-	nmin_ = std::pow(emin + offset, 1-gamma);
-	nmax_ = std::pow(emax + offset, 1-gamma);
-	norm_ = (1-gamma)/(nmax_ - nmin_);
+	if (gamma <= 0)
+		log_fatal("Power law index must be > 0");
+	else if (gamma == 1) {
+		nmin_ = std::log(emin + offset);
+		nmax_ = std::log(emax + offset);
+		norm_ = 1./(nmax_ - nmin_);
+	} else {
+		nmin_ = std::pow(emin + offset, 1-gamma);
+		nmax_ = std::pow(emax + offset, 1-gamma);
+		norm_ = (1-gamma)/(nmax_ - nmin_);
+	}
 	lognorm_ = std::log(norm_);
 }
 
 bool
 OffsetPowerLaw::operator==(const OffsetPowerLaw &other) const
 {
-	return (gamma_ == other.gamma_ && emin_ == other.emin_ && emax_ == other.emax_);
+	return (gamma_ == other.gamma_ && offset_ == other.offset_
+	    && emin_ == other.emin_ && emax_ == other.emax_ );
 }
 
 double
@@ -149,7 +156,7 @@ double
 OffsetPowerLaw::GetLog(double energy) const
 {
 	if (energy <= emax_ && energy >= emin_)
-		return lognorm_ - gamma_*std::log(energy);
+		return lognorm_ - gamma_*std::log(energy + offset_);
 	else
 		return -std::numeric_limits<double>::infinity();
 }
@@ -157,7 +164,10 @@ OffsetPowerLaw::GetLog(double energy) const
 double
 OffsetPowerLaw::Generate(I3RandomService &rng) const
 {
-	return std::pow(rng.Uniform()*(nmax_ - nmin_) + nmin_, 1./(1.-gamma_)) - offset_;
+	if (gamma_ == 1)
+		return std::exp(rng.Uniform()*(nmax_ - nmin_) + nmin_) - offset_;
+	else
+		return std::pow(rng.Uniform()*(nmax_ - nmin_) + nmin_, 1./(1.-gamma_)) - offset_;
 }
 
 template <typename Archive>
