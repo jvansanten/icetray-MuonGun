@@ -116,6 +116,10 @@ public:
 	 */
 	double GetTotalRate(SamplingSurfaceConstPtr surface) const;
 private:
+	friend class boost::serialization::access;
+	template <typename Archive>
+	void serialize(Archive &, unsigned);
+	
 	SurfaceScalingFunctionPtr scalingFunction_;
 	SamplingSurfacePtr injectionSurface_;
 	FluxPtr flux_;

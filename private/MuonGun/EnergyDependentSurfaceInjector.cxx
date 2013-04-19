@@ -194,6 +194,18 @@ EnergyDependentSurfaceInjector::GetLogGenerationProbability(const I3Particle &ax
 	return logprob;
 }
 
+template <typename Archive>
+void
+EnergyDependentSurfaceInjector::serialize(Archive &ar, unsigned)
+{
+	ar & make_nvp("Generator", base_object<Generator>(*this));
+	ar & make_nvp("ScalingFunction", scalingFunction_);
+	ar & make_nvp("InjectionSurface", injectionSurface_);
+	ar & make_nvp("Flux", flux_);
+	ar & make_nvp("Energy", energyGenerator_);
+	ar & make_nvp("Radius", radialDistribution_);
+}
+
 SurfaceScalingFunction::~SurfaceScalingFunction() {}
 
 template <typename Archive>
@@ -206,6 +218,13 @@ void
 BasicSurfaceScalingFunction::serialize(Archive &ar, unsigned)
 {
 	ar & make_nvp("SurfaceScalingFunction", base_object<SurfaceScalingFunction>(*this));
+	ar & make_nvp("Scale", scale_);
+	ar & make_nvp("EnergyScale", energyScale_);
+	ar & make_nvp("Offset", offset_);
+	ar & make_nvp("Power", power_);
+	ar & make_nvp("RadiusBounds", rBounds_);
+	ar & make_nvp("ZBounds", zBounds_);
+	ar & make_nvp("CenterBounds", centerBounds_);
 }
 
 BasicSurfaceScalingFunction::BasicSurfaceScalingFunction() :
@@ -292,3 +311,7 @@ BasicSurfaceScalingFunction::operator==(const SurfaceScalingFunction &o) const
 }
 
 }
+
+I3_SERIALIZABLE(I3MuonGun::SurfaceScalingFunction);
+I3_SERIALIZABLE(I3MuonGun::BasicSurfaceScalingFunction);
+I3_SERIALIZABLE(I3MuonGun::EnergyDependentSurfaceInjector);
