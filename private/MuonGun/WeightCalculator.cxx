@@ -38,8 +38,7 @@ WeightCalculator::GetWeight(const I3Particle &axis, const BundleConfiguration &b
 	double coszen = cos(axis.GetDir().GetZenith());
 	unsigned m = bundlespec.size();
 	
-	double rate = flux_->GetLog(h, coszen, m) + std::log(surface_->GetDifferentialArea(coszen))
-	    - generator_->GetLogGeneratedEvents(axis, bundlespec);
+	double rate = flux_->GetLog(h, coszen, m) - generator_->GetLogGeneratedEvents(axis, bundlespec);
 	
 	double term;
 	BOOST_FOREACH(const BundleEntry &track, bundlespec)

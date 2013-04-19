@@ -61,7 +61,7 @@ CORSIKAGenerationProbability::GetLogGenerationProbability(const I3Particle &axis
 	double h = GetDepth(axis.GetPos().GetZ() + steps.first*axis.GetDir().GetZ());
 	double coszen = cos(axis.GetDir().GetZenith());
 	unsigned m = bundlespec.size();
-	double logprob = flux_->GetLog(h, coszen, m) + std::log(surface_->GetDifferentialArea(coszen));
+	double logprob = flux_->GetLog(h, coszen, m);
 	BOOST_FOREACH(const BundleConfiguration::value_type &track, bundlespec)
 		logprob += energyDistribution_->GetLog(h, coszen, m, track.radius, track.energy);
 	

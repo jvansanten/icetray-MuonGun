@@ -183,9 +183,13 @@ EnergyDependentSurfaceInjector::GetLogGenerationProbability(const I3Particle &ax
 			logprob += radialDistribution_->GetLog(h, coszen, m, track.radius);
 		logprob += energyGenerator_->GetLog(track.energy);
 	}
-	// FIXME: rate integration is potentially expensive, as are repeated heap
-	// allocations in GetSurface()
-	logprob += std::log(surface->GetDifferentialArea(coszen)) - std::log(GetTotalRate(surface));
+	// Bundle axes are sampled uniformly in the projected area of the target surface.
+	// Here we apply a density correction to account for the fact that a locally isotropic
+	// flux through the inner target surface is not necessarily an isotropic flux through
+	// the outer surface when they have different shapes.
+	double aspect_ratio = (injectionSurface_->GetDifferentialArea(coszen)/injectionSurface_->GetTotalArea())
+	    / (surface->GetDifferentialArea(coszen)/surface->GetTotalArea());
+	logprob += std::log(aspect_ratio) - std::log(GetTotalRate(surface));
 	
 	return logprob;
 }
