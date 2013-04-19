@@ -30,7 +30,7 @@ Track::Track(const I3MMCTrack &mmctrack,
 	// Sum energy losses between entry and exit
 	double elost = 0;
 	BOOST_FOREACH(const I3Particle &p, std::make_pair(sbegin, send)) {
-		if (p.GetTime() < mmctrack.GetTi() || p.GetTime() > mmctrack.GetTf())
+		if (p.GetTime() < mmctrack.GetTi()-10 || p.GetTime() > mmctrack.GetTf()+10)
 			log_fatal("Stochastic loss at %.1f ns is outside the simulation volume "
 			    "(%.1f, %.1f) ns. Did you forget to time-shift the MMCTrackList?",
 			    p.GetTime(), mmctrack.GetTi(), mmctrack.GetTf());
