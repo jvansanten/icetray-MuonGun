@@ -108,6 +108,14 @@ Cylinder::GetDifferentialArea(double coszen) const
 }
 
 double
+Cylinder::GetTotalArea(double cosMin, double cosMax) const
+{
+	return (M_PI/2)*radius_*(radius_*(cosMax*cosMax - cosMin*cosMin)
+	    + (2*length_/M_PI)*(acos(cosMin) - acos(cosMax) -
+	      (sqrt(1-cosMin*cosMin)*cosMin) - sqrt(1-cosMax*cosMax)*cosMax));
+}
+
+double
 Cylinder::GetMaxDifferentialArea() const
 {
 	double thetaMax = atan(2*length_/(M_PI*radius_));

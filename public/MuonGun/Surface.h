@@ -61,6 +61,8 @@ namespace I3MuonGun {
 		virtual ~SamplingSurface();
 		/** Get d(A_projected)/d(cos(theta)) at a particular cos(theta) */
 		virtual double GetDifferentialArea(double coszen) const = 0;
+		/** Get the integral of d(A_projected)/d(cos(theta)) over the given cos(theta) range */
+		virtual double GetTotalArea(double cosMin=0, double cosMax=1) const = 0;
 		/** Get the maximum of d(A_projected)/d(cos(theta)) */
 		virtual double GetMaxDifferentialArea() const = 0;
 		/** Get the minimum vertical depth the surface occupies */
@@ -105,6 +107,7 @@ namespace I3MuonGun {
 		
 		// SamplingSurface interface
 		double GetDifferentialArea(double coszen) const;
+		double GetTotalArea(double cosMin=0, double cosMax=1) const;
 		double GetMaxDifferentialArea() const;
 		double GetMinDepth() const;
 		double IntegrateFlux(boost::function<double (double, double)> flux, double cosMin=0, double cosMax=1) const;

@@ -24,6 +24,7 @@ void register_Surface()
 	
 	class_<SamplingSurface, SamplingSurfacePtr, bases<Surface>, boost::noncopyable>("SamplingSurface", no_init)
 	    .def("differential_area", &SamplingSurface::GetDifferentialArea)
+	    .def("total_area", &SamplingSurface::GetTotalArea, (arg("cosMin")=0., arg("cosMax")=1.))
 	;
 	
 	implicitly_convertible<SamplingSurfacePtr, SamplingSurfaceConstPtr>();
@@ -37,8 +38,6 @@ void register_Surface()
 	;
 	
 	implicitly_convertible<CylinderPtr, CylinderConstPtr>();
-	// implicitly_convertible<SamplingSurfaceConstPtr, CylinderConstPtr>();
-	// implicitly_convertible<SamplingSurfacePtr, CylinderPtr>();
 	
 	class_<Sphere, bases<Surface> >("Sphere", init<double, double>())
 	;
