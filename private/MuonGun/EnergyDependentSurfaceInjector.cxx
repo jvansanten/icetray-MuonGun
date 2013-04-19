@@ -32,31 +32,10 @@ GetTablePath(const std::string &subpath)
 	return tablePath.str();
 }
 
-SamplingSurfacePtr
-ScaleForIC79(double energy)
-{
-	// Distance to border of detector scales as (b*(a - log10(e)))**(1./alpha)
-	double a = 4.5;
-	double b = 1e5;
-	int alpha = 2;
-	
-	// Center of cylinder moves from barycenter of total IC79 geometry at high energies
-	// to the center of DeepCore (String 36) at low energies
-	double x[2] = { 46.29, 31.25};
-	double y[2] = {-34.88, 19.64};
-	
-	double d = log10(energy) >= a ? 0 : pow(b*(a - log10(energy)), 1./alpha);
-	double r = std::max(600. - d, 100.);
-	double l = std::max(1000. - d, 400.);
-	I3Position center(x[0] + (r/600)*(x[1]-x[0]), y[0] + (r/600)*(y[1]-y[0]), -500 + l/2.);
-	
-	return boost::make_shared<Cylinder>(l, r, center);
-}
-
 }
 
 EnergyDependentSurfaceInjector::EnergyDependentSurfaceInjector(FluxPtr flux, RadialDistributionPtr radius,
-    boost::shared_ptr<OffsetPowerLaw> energies, boost::function<SamplingSurfacePtr (double)> scaling)
+    boost::shared_ptr<OffsetPowerLaw> energies, SurfaceScalingFunctionPtr scaling)
     : scalingFunction_(scaling), flux_(flux), energyGenerator_(energies), radialDistribution_(radius)
 {
 	if (!flux_) {
@@ -71,8 +50,6 @@ EnergyDependentSurfaceInjector::EnergyDependentSurfaceInjector(FluxPtr flux, Rad
 		    GetTablePath("Hoerandel5_atmod12_SIBYLL.radius.fits"));
 	if (!energyGenerator_)
 		energyGenerator_ = boost::make_shared<OffsetPowerLaw>(2, 500., 50, 1e6);
-	if (!scalingFunction_)
-		scalingFunction_ = &ScaleForIC79;
 	
 	injectionSurface_ = boost::make_shared<Cylinder>(1600, 800);
 }
@@ -94,7 +71,7 @@ EnergyDependentSurfaceInjector::IsCompatible(GenerationProbabilityConstPtr o) co
 		return (*flux_ == *(other->flux_)
 		    && *radialDistribution_ == *(other->radialDistribution_)
 		    && *energyGenerator_ == *(other->energyGenerator_)
-		    && (scalingFunction_ == &ScaleForIC79) && (other->scalingFunction_ == &ScaleForIC79));
+		    && *scalingFunction_ == *(other->scalingFunction_));
 }
 
 void
@@ -168,7 +145,7 @@ SamplingSurfacePtr
 EnergyDependentSurfaceInjector::GetTargetSurface(double energy) const
 {
 	if (scalingFunction_)
-		return scalingFunction_(energy);
+		return scalingFunction_->GetSurface(energy);
 	else
 		return boost::make_shared<Cylinder>(1600, 800);
 }
@@ -194,7 +171,7 @@ EnergyDependentSurfaceInjector::GetLogGenerationProbability(const I3Particle &ax
 	    surface->GetIntersection(axis.GetPos(), axis.GetDir());
 	// This shower axis doesn't intersect the sampling surface. Bail.
 	if (!std::isfinite(steps.first))
-		return 0.;
+		return -std::numeric_limits<double>::infinity();
 	
 	double h = GetDepth(axis.GetPos().GetZ() + steps.first*axis.GetDir().GetZ());
 	double coszen = cos(axis.GetDir().GetZenith());
@@ -211,6 +188,103 @@ EnergyDependentSurfaceInjector::GetLogGenerationProbability(const I3Particle &ax
 	logprob += std::log(surface->GetDifferentialArea(coszen)) - std::log(GetTotalRate(surface));
 	
 	return logprob;
+}
+
+SurfaceScalingFunction::~SurfaceScalingFunction() {}
+
+template <typename Archive>
+void
+SurfaceScalingFunction::serialize(Archive &ar, unsigned)
+{}
+
+template <typename Archive>
+void
+BasicSurfaceScalingFunction::serialize(Archive &ar, unsigned)
+{
+	ar & make_nvp("SurfaceScalingFunction", base_object<SurfaceScalingFunction>(*this));
+}
+
+BasicSurfaceScalingFunction::BasicSurfaceScalingFunction() :
+    scale_(800., 240957.5), energyScale_(4., 4.), offset_(3.778, 3.622), power_(1.10, 2.23),
+    rBounds_(0., 525.), zBounds_(-500., 400.),
+    centerBounds_(pair(46.29,-34.88), pair(31.25, 19.64))
+{}
+
+BasicSurfaceScalingFunction::~BasicSurfaceScalingFunction() {}
+
+double
+BasicSurfaceScalingFunction::GetMargin(double logenergy, double scale, double offset, double power) const
+{
+	if (logenergy < offset)
+		return pow(scale*(offset - logenergy), 1./power);
+	else
+		return 0.;
+}
+
+SamplingSurfacePtr
+BasicSurfaceScalingFunction::GetSurface(double energy) const
+{
+	// Shrink the cylinder down by an energy-dependent amount
+	double z = std::max(zBounds_.second -
+	    GetMargin(std::log10(energy/energyScale_.first), scale_.first, offset_.first, power_.first), zBounds_.first);
+	
+	// Shrink the sides of the cylinder
+	double r = std::max(rBounds_.second -
+	    GetMargin(std::log10(energy/energyScale_.second), scale_.second, offset_.second, power_.second), rBounds_.first);
+	
+	// Move the center smoothly between the configured bounds
+	double hscale = r/(rBounds_.second-rBounds_.first);
+	I3Position center(centerBounds_.first.first + hscale*(centerBounds_.second.first-centerBounds_.first.first),
+	    centerBounds_.first.second + hscale*(centerBounds_.second.second-centerBounds_.first.second),
+	    (zBounds_.first + z)/2.);
+	
+	return boost::make_shared<Cylinder>(z-zBounds_.first, r, center);
+}
+
+void
+BasicSurfaceScalingFunction::SetCapScaling(double energyScale, double scale, double offset, double power)
+{
+	energyScale_.first = energyScale;
+	scale_.first = scale;
+	offset_.first = offset;
+	power_.first = power;
+}
+
+void
+BasicSurfaceScalingFunction::SetSideScaling(double energyScale, double scale, double offset, double power)
+{
+	energyScale_.second = energyScale;
+	scale_.second = scale;
+	offset_.second = offset;
+	power_.second = power;
+}
+
+void
+BasicSurfaceScalingFunction::SetRadiusBounds(double rmin, double rmax)
+{
+	rBounds_ = std::make_pair(rmin, rmax);
+}
+
+void
+BasicSurfaceScalingFunction::SetZBounds(double zmin, double zmax)
+{
+	zBounds_ = std::make_pair(zmin, zmax);
+}
+
+bool
+BasicSurfaceScalingFunction::operator==(const SurfaceScalingFunction &o) const
+{
+	const BasicSurfaceScalingFunction *other = dynamic_cast<const BasicSurfaceScalingFunction*>(&o);
+	if (!other)
+		return false;
+	else
+		return (scale_ == other->scale_ &&
+		    energyScale_ == other->energyScale_ &&
+		    offset_ == other->offset_ &&
+		    power_ == other->power_ &&
+		    rBounds_ == other->rBounds_ &&
+		    zBounds_ == other->zBounds_ &&
+		    centerBounds_ == other->centerBounds_);
 }
 
 }

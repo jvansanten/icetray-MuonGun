@@ -26,12 +26,19 @@ register_CanCan()
 		.add_property("total_rate", &StaticSurfaceInjector::GetTotalRate)
 	;
 
+	class_<SurfaceScalingFunction, SurfaceScalingFunctionPtr, boost::noncopyable>("SurfaceScalingFunction", no_init)
+		.def("__call__", &SurfaceScalingFunction::GetSurface)
+	;
+	
+	class_<BasicSurfaceScalingFunction, BasicSurfaceScalingFunctionPtr, bases<SurfaceScalingFunction> >("BasicSurfaceScalingFunction")
+	;
+
 #if 1
-	def_function<boost::function<SamplingSurfacePtr (double)> >("SurfaceScalingFunction");
+	// def_function<boost::function<SamplingSurfacePtr (double)> >("SurfaceScalingFunction");
 	class_<EnergyDependentSurfaceInjector, bases<Generator> >("EnergyDependentSurfaceInjector",
-	    init<FluxPtr, RadialDistributionPtr, boost::shared_ptr<OffsetPowerLaw>, boost::function<SamplingSurfacePtr (double)> >
+	    init<FluxPtr, RadialDistributionPtr, boost::shared_ptr<OffsetPowerLaw>, SurfaceScalingFunctionPtr>
 	    ((arg("flux")=FluxPtr(), arg("radius")=RadialDistributionPtr(),
-	    arg("energy")=boost::shared_ptr<OffsetPowerLaw>(), arg("scaling")=boost::function<SamplingSurfacePtr (double)>())))
+	    arg("energy")=boost::shared_ptr<OffsetPowerLaw>(), arg("scaling")=boost::make_shared<BasicSurfaceScalingFunction>())))
 		.def("total_rate", &EnergyDependentSurfaceInjector::GetTotalRate)
 		.def("target_surface", &EnergyDependentSurfaceInjector::GetTargetSurface)
 		#define PROPS (Scaling)(Flux)(EnergyDistribution)(RadialDistribution)
@@ -41,4 +48,7 @@ register_CanCan()
 #endif
 	class_<Floodlight, boost::shared_ptr<Floodlight>, bases<Generator> >("Floodlight")
 	;
+	
+
+	
 }

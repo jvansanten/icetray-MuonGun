@@ -20,6 +20,52 @@ I3_FORWARD_DECLARATION(Flux);
 I3_FORWARD_DECLARATION(OffsetPowerLaw);
 I3_FORWARD_DECLARATION(RadialDistribution);
 
+class SurfaceScalingFunction {
+public:
+	~SurfaceScalingFunction();
+	
+	/** @brief Propose a target surface for the given energy */
+	virtual SamplingSurfacePtr GetSurface(double energy) const = 0;
+	
+	/** @brief Compare for equality */
+	virtual bool operator==(const SurfaceScalingFunction&) const = 0;
+private:
+	friend class boost::serialization::access;
+	template <typename Archive>
+	void serialize(Archive &, unsigned);
+};
+
+I3_POINTER_TYPEDEFS(SurfaceScalingFunction);
+
+class BasicSurfaceScalingFunction : public SurfaceScalingFunction {
+public:
+	BasicSurfaceScalingFunction();
+	~BasicSurfaceScalingFunction();
+	
+	virtual SamplingSurfacePtr GetSurface(double energy) const;
+	virtual bool operator==(const SurfaceScalingFunction&) const;
+	
+	void SetCapScaling(double energyScale, double scale, double offset, double power);
+	void SetSideScaling(double energyScale, double scale, double offset, double power);
+	void SetRadiusBounds(double rmin, double rmax);
+	void SetZBounds(double zmin, double zmax);
+	
+private:
+	friend class boost::serialization::access;
+	template <typename Archive>
+	void serialize(Archive &, unsigned);
+	
+	double GetMargin(double logenergy, double scale, double offset, double power) const;
+	
+	typedef std::pair<double, double> pair;
+	pair scale_, energyScale_, offset_, power_;
+	pair rBounds_;
+	pair zBounds_;
+	std::pair<pair, pair> centerBounds_;
+};
+
+I3_POINTER_TYPEDEFS(BasicSurfaceScalingFunction);
+
 /**
  * @brief A rejection-sampling Generator with energy-dependent sampling surface
  *
@@ -35,7 +81,7 @@ class EnergyDependentSurfaceInjector : public Generator {
 public:
 	EnergyDependentSurfaceInjector(FluxPtr flux=FluxPtr(), RadialDistributionPtr radius=RadialDistributionPtr(),
 	    boost::shared_ptr<OffsetPowerLaw> energies=boost::shared_ptr<OffsetPowerLaw>(),
-	    boost::function<SamplingSurfacePtr (double)> scaling=boost::function<SamplingSurfacePtr (double)>());
+	    SurfaceScalingFunctionPtr scaling=boost::make_shared<BasicSurfaceScalingFunction>());
 	
 	// GenerationProbability interface
 	virtual SamplingSurfaceConstPtr GetInjectionSurface() const { return injectionSurface_; };
@@ -46,8 +92,8 @@ public:
 	// Generator interface
 	void Generate(I3RandomService &rng, I3MCTree &tree, BundleConfiguration &bundle) const;
 	
-	boost::function<SamplingSurfacePtr (double)> GetScaling() const { return scalingFunction_; }
-	void SetScaling(boost::function<SamplingSurfacePtr (double)> f) { scalingFunction_ = f; }
+	SurfaceScalingFunctionPtr GetScaling() const { return scalingFunction_; }
+	void SetScaling(SurfaceScalingFunctionPtr &f) { scalingFunction_ = f; }
 	
 	FluxConstPtr GetFlux() const { return flux_; }
 	void SetFlux(FluxPtr f) { flux_ = f; }
@@ -70,7 +116,7 @@ public:
 	 */
 	double GetTotalRate(SamplingSurfaceConstPtr surface) const;
 private:
-	boost::function<SamplingSurfacePtr (double)> scalingFunction_;
+	SurfaceScalingFunctionPtr scalingFunction_;
 	SamplingSurfacePtr injectionSurface_;
 	FluxPtr flux_;
 	boost::shared_ptr<OffsetPowerLaw> energyGenerator_;
