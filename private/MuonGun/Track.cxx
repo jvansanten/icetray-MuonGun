@@ -19,10 +19,10 @@ Track::Track(const I3MMCTrack &mmctrack,
 {
 	// In the beginning, the particle is at its vertex with the given energy
 	checkpoints_.push_back(Checkpoint(0., I3Particle::GetEnergy(), 0u));
+	losses_.push_back(LossSum(checkpoints_.back().length, 0.));
 	if (mmctrack.GetEi() > 0) {
 		// Track started outside the MMC volume; we get an extra
 		// measurement point (but no stochastics)
-		losses_.push_back(LossSum(checkpoints_.back().length, 0.));
 		checkpoints_.push_back(Checkpoint((mmctrack.GetTi()-I3Particle::GetTime())*I3Particle::GetSpeed(),
 		    mmctrack.GetEi(), losses_.size()));
 	}
@@ -30,6 +30,8 @@ Track::Track(const I3MMCTrack &mmctrack,
 	// Sum energy losses between entry and exit
 	double elost = 0;
 	BOOST_FOREACH(const I3Particle &p, std::make_pair(sbegin, send)) {
+		if (p.GetShape() == I3Particle::Dark)
+			continue;
 		if (p.GetTime() < mmctrack.GetTi()-10 || p.GetTime() > mmctrack.GetTf()+10)
 			log_fatal("Stochastic loss at %.1f ns is outside the simulation volume "
 			    "(%.1f, %.1f) ns. Did you forget to time-shift the MMCTrackList?",
@@ -71,19 +73,15 @@ Track::GetEnergy(double length) const
 	// Find an energy checkpoint. The above if() guarantees that
 	// that both cp and cp+1 are valid.
 	std::vector<Checkpoint>::const_iterator cp =
-	    std::lower_bound(checkpoints_.begin(), checkpoints_.end(),
-	    Checkpoint(length), Sort<Checkpoint>);
-	if (cp > checkpoints_.begin())
-		cp -= 1;
+	    std::max(std::lower_bound(checkpoints_.begin(), checkpoints_.end(),
+	    Checkpoint(length), Sort<Checkpoint>)-1, checkpoints_.begin());
 	// Store iterators the mark the records of stochastic losses
 	// between the checkpoints
-	std::vector<LossSum>::const_iterator l1(losses_.begin()+cp->offset),
+	std::vector<LossSum>::const_iterator l1(losses_.begin()+(cp->offset > 0 ? cp->offset-1 : 0)),
 	    l2(losses_.begin()+(cp+1)->offset);
 	// Find the cumulative energy loss since the last checkpoint
-	std::vector<LossSum>::const_iterator ls = std::lower_bound(l1, l2,
-	    LossSum(length), Sort<LossSum>);
-	if (ls > l1)
-		ls -= 1;
+	std::vector<LossSum>::const_iterator ls = std::max(std::lower_bound(l1, l2,
+	    LossSum(length), Sort<LossSum>)-1, l1);
 	
 	// Estimate continuous loss rate
 	double conti_rate = (cp->energy - (cp+1)->energy - (l2-1)->energy)
