@@ -6,8 +6,8 @@
  * $Date$
  */
 
-#include <MuonGun/CanCan.h>
 #include <MuonGun/I3MuonGun.h>
+#include <MuonGun/StaticSurfaceInjector.h>
 #include <dataclasses/I3Constants.h>
 
 #include <boost/bind.hpp>

@@ -10,7 +10,7 @@
 #define I3MUONGUN_ENERGYDEPENDENTSURFACEINJECTOR_H_INCLUDED
 
 #include <MuonGun/Generator.h>
-#include <MuonGun/CanCan.h>
+#include <MuonGun/StaticSurfaceInjector.h>
 #include <boost/function.hpp>
 
 namespace I3MuonGun {

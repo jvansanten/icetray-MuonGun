@@ -6,9 +6,9 @@
  * $Date$
  */
 
-#include <MuonGun/CanCan.h>
-#include <MuonGun/Floodlight.h>
+#include <MuonGun/StaticSurfaceInjector.h>
 #include <MuonGun/EnergyDependentSurfaceInjector.h>
+#include <MuonGun/Floodlight.h>
 #include <icetray/python/function.hpp>
 
 void
@@ -33,7 +33,6 @@ register_CanCan()
 	class_<BasicSurfaceScalingFunction, BasicSurfaceScalingFunctionPtr, bases<SurfaceScalingFunction> >("BasicSurfaceScalingFunction")
 	;
 
-#if 1
 	class_<EnergyDependentSurfaceInjector, bases<StaticSurfaceInjector> >("EnergyDependentSurfaceInjector",
 	    init<CylinderPtr, FluxPtr, boost::shared_ptr<OffsetPowerLaw>, RadialDistributionPtr, SurfaceScalingFunctionPtr>
 	    ((arg("surface")=CylinderPtr(), arg("flux")=FluxPtr(), arg("energy")=boost::shared_ptr<OffsetPowerLaw>(),
@@ -44,10 +43,9 @@ register_CanCan()
 		BOOST_PP_SEQ_FOR_EACH(WRAP_PROP, EnergyDependentSurfaceInjector, PROPS)
 		#undef PROPS
 	;
-#endif
+
 	class_<Floodlight, boost::shared_ptr<Floodlight>, bases<Generator> >("Floodlight")
 	;
 	
-
-	
 }
+
