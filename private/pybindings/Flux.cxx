@@ -7,6 +7,22 @@
  */
 
 #include <MuonGun/Flux.h>
+#include <icetray/python/gil_holder.hpp>
+
+namespace I3MuonGun {
+
+using namespace boost::python;
+
+class PyFlux : public Flux, public wrapper<Flux> {
+public:
+	double GetLog(double h, double ct, unsigned m) const
+	{
+		detail::gil_holder lock;
+		return get_override("GetLog")(h, ct, m);
+	}
+};
+
+}
 
 void register_Flux()
 {
@@ -24,5 +40,12 @@ void register_Flux()
 	;
 	
 	class_<BMSSFlux, bases<Flux> >("BMSSFlux")
+	;
+	
+	class_<PyFlux, boost::noncopyable>("FluxBase")
+    	    .def("__call__", &Flux::operator(), (args("depth"), "cos_theta", "multiplicity"))
+    	    #define PROPS (MinMultiplicity)(MaxMultiplicity)
+    	    BOOST_PP_SEQ_FOR_EACH(WRAP_PROP, Flux, PROPS)
+    	    #undef PROPS
 	;
 }
