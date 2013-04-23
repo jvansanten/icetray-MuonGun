@@ -104,15 +104,29 @@ Cylinder::GetIntersection(const I3Position &p, const I3Direction &dir) const
 double
 Cylinder::GetDifferentialArea(double coszen) const
 {
-	return M_PI*radius_*(radius_*coszen + (2*length_/M_PI)*sqrt(1-coszen*coszen));
+	return M_PI*radius_*(radius_*fabs(coszen) + (2*length_/M_PI)*sqrt(1-coszen*coszen));
+}
+
+static double integrate_area(double a, double b, double radius, double length)
+{
+	return (M_PI/2)*radius*(radius*(b*b - a*a)
+	    + (2*length/M_PI)*(acos(a) - acos(b) -
+	      (sqrt(1-a*a)*a) - sqrt(1-b*b)*b));
 }
 
 double
 Cylinder::GetTotalArea(double cosMin, double cosMax) const
 {
-	return (M_PI/2)*radius_*(radius_*(cosMax*cosMax - cosMin*cosMin)
-	    + (2*length_/M_PI)*(acos(cosMin) - acos(cosMax) -
-	      (sqrt(1-cosMin*cosMin)*cosMin) - sqrt(1-cosMax*cosMax)*cosMax));
+	if (cosMin >= 0 && cosMax >= 0)
+		return integrate_area(cosMin, cosMax, radius_, length_);
+	else if (cosMin < 0 && cosMax <= 0)
+		return integrate_area(-cosMax, -cosMin, radius_, length_);
+	else if (cosMin < 0 && cosMax > 0)
+		return integrate_area(0, -cosMin, radius_, length_)
+		    + integrate_area(0, cosMax, radius_, length_);
+	else
+		log_fatal("Can't deal with zenith range [%.1e, %.1e]", cosMin, cosMax);
+	return NAN;
 }
 
 double

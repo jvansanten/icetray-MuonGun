@@ -44,7 +44,10 @@ register_CanCan()
 		#undef PROPS
 	;
 
-	class_<Floodlight, boost::shared_ptr<Floodlight>, bases<Generator> >("Floodlight")
+	class_<Floodlight, boost::shared_ptr<Floodlight>, bases<Generator> >("Floodlight",
+	    init<SamplingSurfacePtr, boost::shared_ptr<OffsetPowerLaw> >((
+	    arg("surface")=CylinderPtr(),
+	    arg("energyGenerator")=boost::shared_ptr<OffsetPowerLaw>())))
 	;
 	
 }

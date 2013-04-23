@@ -7,7 +7,7 @@ namespace I3MuonGun {
 
 class Floodlight : public Generator {
 public:
-	Floodlight();
+	Floodlight(SamplingSurfacePtr, boost::shared_ptr<OffsetPowerLaw>);
 	
 	// Generator Interface
 	virtual void Generate(I3RandomService &rng, I3MCTree &tree, BundleConfiguration &bundle) const;
@@ -17,10 +17,8 @@ public:
 	virtual SamplingSurfaceConstPtr GetInjectionSurface() const { return surface_; }
 	
 private:
-	double GetTotalRate() const;
 	SamplingSurfacePtr surface_;
 	boost::shared_ptr<OffsetPowerLaw> energyGenerator_;
-	mutable double totalRate_;
 
 };
 

@@ -12,9 +12,14 @@
 
 namespace I3MuonGun {
 
-Floodlight::Floodlight() : surface_(new Cylinder(1000, 600, I3Position(31.25, 19.64, 0))),
-    energyGenerator_(new OffsetPowerLaw(1.1, 0., 5e2, 1e7)), totalRate_(NAN)
-{}
+Floodlight::Floodlight(SamplingSurfacePtr surface, boost::shared_ptr<OffsetPowerLaw> energyGenerator) : surface_(surface),
+    energyGenerator_(energyGenerator_)
+{
+	if (!surface_)
+		surface_ = boost::make_shared<Cylinder>(1000, 600, I3Position(31.25, 19.64, 0));
+	if (!energyGenerator_)
+		energyGenerator_ = boost::make_shared<OffsetPowerLaw>(1, 0., 5e2, 1e7);
+}
 
 GenerationProbabilityPtr
 Floodlight::Clone() const
@@ -55,34 +60,15 @@ Floodlight::Generate(I3RandomService &rng, I3MCTree &tree, BundleConfiguration &
 	I3MCTreeUtils::AppendChild(tree, primary, muon);
 }
 
-static double
-one(double,double) { return 1.; }
-
-double
-Floodlight::GetTotalRate() const
-{
-	if (std::isfinite(totalRate_))
-		return totalRate_;
-	totalRate_ = std::log(surface_->IntegrateFlux(one, -1, 1));
-	return totalRate_;
-}
-
 double
 Floodlight::GetLogGenerationProbability(const I3Particle &axis, const BundleConfiguration &bundle) const
 {
 	std::pair<double, double> steps = surface_->GetIntersection(axis.GetPos(), axis.GetDir());
-	// This shower axis doesn't intersect the sampling surface. Bail.
-	if (!std::isfinite(steps.first))
+	// Bail if the axis doesn't intersect the surface, or there's more than 1 muon.
+	if (!std::isfinite(steps.first) || bundle.size() != 1)
 		return -std::numeric_limits<double>::infinity();
 	
-	double h = GetDepth(axis.GetPos().GetZ() + steps.first*axis.GetDir().GetZ());
-	double coszen = cos(axis.GetDir().GetZenith());
-	unsigned m = bundle.size();
-	double logprob = std::log(surface_->GetDifferentialArea(coszen));
-	BOOST_FOREACH(const BundleEntry &track, bundle)
-		logprob += energyGenerator_->GetLog(track.energy);
-	
-	return logprob - GetTotalRate();
+	return energyGenerator_->GetLog(bundle.front().energy) - std::log(2*M_PI*surface_->GetTotalArea(-1, 1));
 }
 
 }
