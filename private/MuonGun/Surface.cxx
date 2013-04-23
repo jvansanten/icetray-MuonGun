@@ -139,7 +139,7 @@ Cylinder::GetDifferentialTopArea(double coszen) const
 double
 Cylinder::GetDifferentialSideArea(double coszen) const
 {
-	return M_PI*radius_*((2/M_PI)*sqrt(1-coszen*coszen));
+	return 2*radius_*sqrt(1-coszen*coszen);
 }
 
 double
@@ -164,8 +164,8 @@ Cylinder::IntegrateFlux(boost::function<double (double, double)> flux,
 		f2 dN = boost::bind(flux, boost::bind(GetDepth, _1), _2);
 		f2 dOmega = boost::bind(&Cylinder::GetDifferentialSideArea, this, _2);
 		f2 dN_dOmega = detail::multiply<2>(dN, dOmega);
-		boost::array<double, 2> low = {{center_.GetZ()  - length_/2., 0.}};
-		boost::array<double, 2> high = {{center_.GetZ() + length_/2., 1.}};
+		boost::array<double, 2> low = {{center_.GetZ()  - length_/2., cosMin}};
+		boost::array<double, 2> high = {{center_.GetZ() + length_/2., cosMax}};
 		total += 2*M_PI*Integrate(dN_dOmega, low, high, 1e-3, 1e-3, 10000u);
 	}
 	
@@ -176,7 +176,13 @@ double
 Cylinder::SampleImpactRay(I3Position &impact, I3Direction &dir, I3RandomService &rng,
     double cosMin, double cosMax) const
 {
-	double coszen = rng.Uniform(cosMin, cosMax);
+	// Sample a direction proportional to the projected area 
+	// of the surface.
+	double coszen;
+	double maxarea = GetMaxDifferentialArea();
+	do {
+		coszen = rng.Uniform(cosMin, cosMax);
+	} while (rng.Uniform(0, maxarea) > GetDifferentialArea(coszen));
 	dir = I3Direction(acos(coszen), rng.Uniform(0, 2*M_PI));
 	
 	// The projection of a cylinder onto a plane whose

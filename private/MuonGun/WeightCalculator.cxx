@@ -44,7 +44,7 @@ WeightCalculator::GetWeight(const I3Particle &axis, const BundleConfiguration &b
 	BOOST_FOREACH(const BundleEntry &track, bundlespec)
 		if (std::isfinite(term = energy_->GetLog(h, coszen, m, track.radius, track.energy)))
 			rate += term;
-	
+	// assert(std::isfinite(std::exp(rate)));
 	return std::exp(rate);
 }
 
@@ -231,17 +231,27 @@ public:
 		I3MMCTrackListConstPtr mmctracks = frame->Get<I3MMCTrackListConstPtr>("MMCTrackList");
 		if (!mctree)
 			log_fatal("I3MCTree missing!");
-		if (!mmctracks)
-			log_fatal("I3MMCTrackList missing!");
+		// if (!mmctracks)
+		// 	log_fatal("I3MMCTrackList missing!");
 		
 		const I3MCTree::iterator primary = mctree->begin();
 		std::pair<double, double> steps =
 		    surface_->GetIntersection(primary->GetPos(), primary->GetDir());
-		std::list<Track> tracks = Track::Harvest(*mctree, *mmctracks);
 		BundleConfiguration bundlespec;
-		BOOST_FOREACH(const Track &track, tracks)
-			bundlespec.push_back(BundleEntry(
-			    GetRadius(*primary, track.GetPos(steps.first)), track.GetEnergy(steps.first)));
+		
+		if (mmctracks) {
+			std::list<Track> tracks = Track::Harvest(*mctree, *mmctracks);
+			BOOST_FOREACH(const Track &track, tracks)
+				bundlespec.push_back(BundleEntry(
+				    GetRadius(*primary, track.GetPos(steps.first)), track.GetEnergy(steps.first)));
+		} else {
+			// log_warn("No MMCTrackList found in the frame! Assuming that everything starts on the sampling surface...");
+			BOOST_FOREACH(const I3Particle &track, std::make_pair(mctree->begin(), mctree->end())) {
+				if (track.GetType() == I3Particle::MuMinus || track.GetType() == I3Particle::MuPlus)
+					bundlespec.push_back(BundleEntry(
+					    GetRadius(*primary, track.GetPos()), track.GetEnergy()));
+			}
+		}
 		
 		frame->Put(GetName(), boost::make_shared<I3Double>(GetWeight(*primary, bundlespec)));
 		PushFrame(frame);

@@ -10,6 +10,12 @@
 #include <dataclasses/I3Position.h>
 #include <dataclasses/I3Direction.h>
 #include <icetray/python/dataclass_suite.hpp>
+#include <MuonGun/Flux.h>
+
+static double IntegrateFlux(const I3MuonGun::SamplingSurface &s, I3MuonGun::FluxPtr flux, unsigned m, double cosMin, double cosMax)
+{
+	return s.IntegrateFlux(boost::bind(boost::cref(*flux), _1, _2, m), cosMin, cosMax);
+}
 
 void register_Surface()
 {
@@ -25,6 +31,7 @@ void register_Surface()
 	class_<SamplingSurface, SamplingSurfacePtr, bases<Surface>, boost::noncopyable>("SamplingSurface", no_init)
 	    .def("differential_area", &SamplingSurface::GetDifferentialArea)
 	    .def("total_area", &SamplingSurface::GetTotalArea, (arg("cosMin")=0., arg("cosMax")=1.))
+	    .def("integrate_flux", &IntegrateFlux, (arg("self"), arg("flux"), arg("m")=1u, arg("cosMin")=0, arg("cosMax")=1))
 	;
 	
 	implicitly_convertible<SamplingSurfacePtr, SamplingSurfaceConstPtr>();

@@ -33,7 +33,7 @@ namespace I3MuonGun {
 class StaticSurfaceInjector : public Generator {
 public:
 	StaticSurfaceInjector();
-	StaticSurfaceInjector(SamplingSurfacePtr surface, FluxPtr flux,
+	StaticSurfaceInjector(CylinderPtr surface, FluxPtr flux,
 	    boost::shared_ptr<OffsetPowerLaw> edist, RadialDistributionPtr rdist);
 	
 	// Generator Interface
@@ -43,8 +43,8 @@ public:
 	virtual double GetLogGenerationProbability(const I3Particle &axis, const BundleConfiguration &bundle) const;
 	virtual SamplingSurfaceConstPtr GetInjectionSurface() const { return surface_; }
 	
-	void SetSurface(SamplingSurfacePtr p);
-	SamplingSurfacePtr GetSurface() { return surface_; }
+	void SetSurface(CylinderPtr p);
+	CylinderPtr GetSurface() { return surface_; }
 	
 	void SetFlux(FluxPtr p);
 	FluxPtr GetFlux() { return flux_; }
@@ -62,14 +62,14 @@ public:
 	 * @returns a rate in units of @f$ [s^{-1}] @f$
 	 */
 	double GetTotalRate() const;
-	
-private:
+
+protected:
 	/**
 	 * Draw a sample from the distribution of shower impact points
 	 *
 	 * @returns shower axis and multiplicity
 	 */
-	 void GenerateAxis(I3RandomService &rng, std::pair<I3Particle, unsigned> &axis) const;
+	void GenerateAxis(I3RandomService &rng, std::pair<I3Particle, unsigned> &axis) const;
 	/**
 	 * Distribute the given number of muons in the transverse plane
 	 * and draw an energy for each
@@ -78,17 +78,27 @@ private:
 	
 	void CalculateMaxFlux();
 	
+	/**
+	 * Get the normalization term for relative weighting of zenith
+	 * angles and multiplicities by integrating the flux at the top
+	 * of the cylinder over all zenith angles and summing over all
+	 * allowed multiplicities.
+	 */
+	double GetZenithNorm() const;
+
+private:
 	friend class boost::serialization::access;
 	template <typename Archive>
 	void serialize(Archive &, unsigned);
-	
-	SamplingSurfacePtr surface_;
+
+protected:
+	CylinderPtr surface_;
 	FluxPtr flux_;
 	boost::shared_ptr<OffsetPowerLaw> energyGenerator_;
 	RadialDistributionPtr radialDistribution_;
 	
 	double maxFlux_;
-	mutable double totalRate_;
+	mutable double totalRate_, zenithNorm_;
 
 };
 

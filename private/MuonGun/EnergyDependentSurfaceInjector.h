@@ -10,6 +10,7 @@
 #define I3MUONGUN_ENERGYDEPENDENTSURFACEINJECTOR_H_INCLUDED
 
 #include <MuonGun/Generator.h>
+#include <MuonGun/CanCan.h>
 #include <boost/function.hpp>
 
 namespace I3MuonGun {
@@ -77,14 +78,13 @@ I3_POINTER_TYPEDEFS(BasicSurfaceScalingFunction);
  * background for an event selection that requires a thick veto for dim events
  * (where the rates are also highest) but becomes more accepting for bright events.
  */
-class EnergyDependentSurfaceInjector : public Generator {
+class EnergyDependentSurfaceInjector : public StaticSurfaceInjector {
 public:
-	EnergyDependentSurfaceInjector(FluxPtr flux=FluxPtr(), RadialDistributionPtr radius=RadialDistributionPtr(),
-	    boost::shared_ptr<OffsetPowerLaw> energies=boost::shared_ptr<OffsetPowerLaw>(),
+	EnergyDependentSurfaceInjector(CylinderPtr surface=CylinderPtr(), FluxPtr flux=FluxPtr(), boost::shared_ptr<OffsetPowerLaw> energies=boost::shared_ptr<OffsetPowerLaw>(),
+	    RadialDistributionPtr radius=RadialDistributionPtr(),
 	    SurfaceScalingFunctionPtr scaling=boost::make_shared<BasicSurfaceScalingFunction>());
-	
+
 	// GenerationProbability interface
-	virtual SamplingSurfaceConstPtr GetInjectionSurface() const { return injectionSurface_; };
 	virtual double GetLogGenerationProbability(const I3Particle &axis, const BundleConfiguration &bundle) const;
 	virtual GenerationProbabilityPtr Clone() const;
 	virtual bool IsCompatible(GenerationProbabilityConstPtr) const;
@@ -94,15 +94,6 @@ public:
 	
 	SurfaceScalingFunctionPtr GetScaling() const { return scalingFunction_; }
 	void SetScaling(SurfaceScalingFunctionPtr &f) { scalingFunction_ = f; }
-	
-	FluxConstPtr GetFlux() const { return flux_; }
-	void SetFlux(FluxPtr f) { flux_ = f; }
-	
-	boost::shared_ptr<const OffsetPowerLaw> GetEnergyDistribution() const { return energyGenerator_; }
-	void SetEnergyDistribution(boost::shared_ptr<OffsetPowerLaw> f) { energyGenerator_ = f; }
-	
-	RadialDistributionConstPtr GetRadialDistribution() const { return radialDistribution_; }
-	void SetRadialDistribution(RadialDistributionPtr f) { radialDistribution_ = f; }
 	
 	/** 
 	 * Scale the sampling cylinder to a size appropriate for
@@ -116,15 +107,12 @@ public:
 	 */
 	double GetTotalRate(SamplingSurfaceConstPtr surface) const;
 private:
+	
 	friend class boost::serialization::access;
 	template <typename Archive>
 	void serialize(Archive &, unsigned);
 	
 	SurfaceScalingFunctionPtr scalingFunction_;
-	SamplingSurfacePtr injectionSurface_;
-	FluxPtr flux_;
-	boost::shared_ptr<OffsetPowerLaw> energyGenerator_;
-	RadialDistributionPtr radialDistribution_;
 };
 
 }

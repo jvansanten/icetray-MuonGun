@@ -64,7 +64,7 @@ StaticSurfaceInjector::StaticSurfaceInjector()
 	    GetTablePath("Hoerandel5_atmod12_SIBYLL.radius.fits"));
 }
 
-StaticSurfaceInjector::StaticSurfaceInjector(SamplingSurfacePtr surface, FluxPtr flux,
+StaticSurfaceInjector::StaticSurfaceInjector(CylinderPtr surface, FluxPtr flux,
     boost::shared_ptr<OffsetPowerLaw> edist, RadialDistributionPtr rdist)
 {
 	SetSurface(surface);
@@ -92,10 +92,11 @@ StaticSurfaceInjector::IsCompatible(GenerationProbabilityConstPtr o) const
 }
 
 void
-StaticSurfaceInjector::SetSurface(SamplingSurfacePtr p)
+StaticSurfaceInjector::SetSurface(CylinderPtr p)
 {
 	surface_ = p;
 	totalRate_ = NAN;
+	zenithNorm_ = NAN;
 	CalculateMaxFlux();
 }
 
@@ -104,6 +105,7 @@ StaticSurfaceInjector::SetFlux(FluxPtr p)
 {
 	flux_ = p;
 	totalRate_ = NAN;
+	zenithNorm_ = NAN;
 	CalculateMaxFlux();
 }
 
@@ -126,24 +128,38 @@ StaticSurfaceInjector::GetTotalRate() const
 	return totalRate_;
 }
 
+double
+StaticSurfaceInjector::GetZenithNorm() const
+{
+	if (std::isnan(zenithNorm_) && surface_ && flux_) {
+		zenithNorm_ = 0;
+		for (unsigned m = flux_->GetMinMultiplicity(); m <= flux_->GetMaxMultiplicity(); m++) {
+			zenithNorm_ += Integrate(boost::bind(boost::cref(*flux_), surface_->GetMinDepth(), _1, m), 0, 1);
+		}
+		zenithNorm_ = std::log(zenithNorm_);
+	}
+	return zenithNorm_;
+}
+
 void
 StaticSurfaceInjector::GenerateAxis(I3RandomService &rng, std::pair<I3Particle, unsigned> &axis) const
 {
+	// Choose a direction and impact position from a uniform flux through
+	// the sampling surface, then pick a multiplicity. Accept zenith angles
+	// and multiplicities at a rate proportional to the flux at the shallowest depth.
 	I3Direction dir;
 	I3Position pos;
 	unsigned m;
 	double flux;
+	// For any sane distribution the maximum flux is for single vertical muons
+	// at minimum depth
+	double maxflux = (*flux_)(surface_->GetMinDepth(), 1., flux_->GetMinMultiplicity());
 	do {
 		surface_->SampleImpactRay(pos, dir, rng);
 		m = rng.Integer(flux_->GetMaxMultiplicity() - flux_->GetMinMultiplicity())
 		    + flux_->GetMinMultiplicity();
-		// Now, calculate the flux expectation at the chosen zenith angle
-		// and at the depth where the shower axis crosses the surface
-		double h = GetDepth(pos.GetZ());
-		double coszen = cos(dir.GetZenith());
-		flux = (*flux_)(h, coszen, m)
-		    * surface_->GetDifferentialArea(coszen);
-	} while (flux <= rng.Uniform(0., maxFlux_));
+		flux = (*flux_)(surface_->GetMinDepth(), cos(dir.GetZenith()), m);
+	} while (rng.Uniform(0., maxflux) > flux);
 	
 	axis.first.SetPos(pos);
 	axis.first.SetDir(dir);
@@ -200,14 +216,17 @@ StaticSurfaceInjector::GetLogGenerationProbability(const I3Particle &axis,
 	double h = GetDepth(axis.GetPos().GetZ() + steps.first*axis.GetDir().GetZ());
 	double coszen = cos(axis.GetDir().GetZenith());
 	unsigned m = bundlespec.size();
-	double logprob = flux_->GetLog(h, coszen, m);
+
+	// We used the flux to do rejection sampling in zenith and multiplicity. Evaluate
+	// the properly-normalized PDF here.
+	double logprob = flux_->GetLog(surface_->GetMinDepth(), coszen, m) - GetZenithNorm();
 	BOOST_FOREACH(const BundleEntry &track, bundlespec) {
 		if (m > 1)
 			logprob += radialDistribution_->GetLog(h, coszen, m, track.radius);
 		logprob += energyGenerator_->GetLog(track.energy);
 	}
 	
-	return logprob - std::log(GetTotalRate());
+	return logprob - std::log(2*M_PI*surface_->GetTotalArea());
 }
 
 }

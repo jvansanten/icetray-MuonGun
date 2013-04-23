@@ -22,36 +22,10 @@
 
 namespace I3MuonGun {
 
-namespace {
-
-std::string
-GetTablePath(const std::string &subpath)
+EnergyDependentSurfaceInjector::EnergyDependentSurfaceInjector(CylinderPtr surface, FluxPtr flux,
+    boost::shared_ptr<OffsetPowerLaw> energies, RadialDistributionPtr radius, SurfaceScalingFunctionPtr scaling)
+    : StaticSurfaceInjector(surface, flux, energies, radius), scalingFunction_(scaling)
 {
-	std::ostringstream tablePath;
-	tablePath << getenv("I3_BUILD") << "/MuonGun/resources/tables/" << subpath;
-	return tablePath.str();
-}
-
-}
-
-EnergyDependentSurfaceInjector::EnergyDependentSurfaceInjector(FluxPtr flux, RadialDistributionPtr radius,
-    boost::shared_ptr<OffsetPowerLaw> energies, SurfaceScalingFunctionPtr scaling)
-    : scalingFunction_(scaling), flux_(flux), energyGenerator_(energies), radialDistribution_(radius)
-{
-	if (!flux_) {
-		flux_ = boost::make_shared<SplineFlux>(
-		    GetTablePath("Hoerandel5_atmod12_SIBYLL.single_flux.fits"),
-		    GetTablePath("Hoerandel5_atmod12_SIBYLL.bundle_flux.fits"));
-		flux_->SetMinMultiplicity(1);
-		flux_->SetMaxMultiplicity(1);
-	}
-	if (!radialDistribution_)
-		radialDistribution_ = boost::make_shared<SplineRadialDistribution>(
-		    GetTablePath("Hoerandel5_atmod12_SIBYLL.radius.fits"));
-	if (!energyGenerator_)
-		energyGenerator_ = boost::make_shared<OffsetPowerLaw>(2, 500., 50, 1e6);
-	
-	injectionSurface_ = boost::make_shared<Cylinder>(1600, 800);
 }
 
 GenerationProbabilityPtr
@@ -63,15 +37,14 @@ EnergyDependentSurfaceInjector::Clone() const
 bool
 EnergyDependentSurfaceInjector::IsCompatible(GenerationProbabilityConstPtr o) const
 {
+	if (!StaticSurfaceInjector::IsCompatible(o))
+		return false;
 	boost::shared_ptr<const EnergyDependentSurfaceInjector> other
 	    = boost::dynamic_pointer_cast<const EnergyDependentSurfaceInjector>(o);
 	if (!other)
 		return false;
 	else
-		return (*flux_ == *(other->flux_)
-		    && *radialDistribution_ == *(other->radialDistribution_)
-		    && *energyGenerator_ == *(other->energyGenerator_)
-		    && *scalingFunction_ == *(other->scalingFunction_));
+		return *scalingFunction_ == *(other->scalingFunction_);
 }
 
 void
@@ -81,7 +54,8 @@ EnergyDependentSurfaceInjector::Generate(I3RandomService &rng, I3MCTree &tree,
 	I3Direction dir;
 	I3Position pos;
 	unsigned m;
-	double flux, max_flux;
+	double flux;
+	double maxflux = (*flux_)(surface_->GetMinDepth(), 1., flux_->GetMinMultiplicity());
 	double h, coszen;
 	SamplingSurfaceConstPtr surface;
 	do {
@@ -93,29 +67,26 @@ EnergyDependentSurfaceInjector::Generate(I3RandomService &rng, I3MCTree &tree,
 		for (unsigned i=0; i < m; i++)
 			bundle.push_back(BundleEntry(0., energyGenerator_->Generate(rng)));
 		bundle.sort();
+		
 		// Choose target surface based on highest-energy muon
 		surface = GetTargetSurface(bundle.front().energy);
 		// Sample an impact point on the target surface
 		surface->SampleImpactRay(pos, dir, rng);
+		h = GetDepth(pos.GetZ());
+		coszen = cos(dir.GetZenith());
+		
 		// Snap the impact point back to the injection surface
-		std::pair<double, double> steps = injectionSurface_->GetIntersection(pos, dir);
+		std::pair<double, double> steps = surface_->GetIntersection(pos, dir);
 		if (!(steps.first <= 0))
 			log_fatal("The target point is outside the injection surface!");
 		pos.SetX(pos.GetX() + steps.first*dir.GetX());
 		pos.SetY(pos.GetY() + steps.first*dir.GetY());
 		pos.SetZ(pos.GetZ() + steps.first*dir.GetZ());
-		// Calculate the differential flux expectation for
-		// this surface at the chosen angle, depth, and
-		// multiplicity, and compare to the maximum differential
-		// flux anywhere on the surface.
-		h = GetDepth(pos.GetZ());
-		coszen = cos(dir.GetZenith());
-		flux = (*flux_)(h, coszen, m)
-		    * surface->GetDifferentialArea(coszen);
-		max_flux = (*flux_)(injectionSurface_->GetMinDepth(),
-		    1., 1u)*surface->GetMaxDifferentialArea();
-	} while (flux <= rng.Uniform(0., max_flux));
-	
+		
+		// Accept or reject the chosen zenith angle and multiplicity
+		flux = (*flux_)(surface_->GetMinDepth(), cos(dir.GetZenith()), m);
+	} while (rng.Uniform(0., maxflux) > flux);
+
 	I3Particle primary;
 	primary.SetPos(pos);
 	primary.SetDir(dir);
@@ -161,49 +132,41 @@ EnergyDependentSurfaceInjector::GetTotalRate(SamplingSurfaceConstPtr surface) co
 
 double
 EnergyDependentSurfaceInjector::GetLogGenerationProbability(const I3Particle &axis,
-    const BundleConfiguration &bundle) const
+    const BundleConfiguration &bundlespec) const
 {
 	// Entries are sorted in descending order of energy, so the
 	// "minimum" entry has the maximum energy
 	SamplingSurfaceConstPtr surface =
-	    GetTargetSurface(std::min_element(bundle.begin(), bundle.end())->energy);
+	    GetTargetSurface(std::min_element(bundlespec.begin(), bundlespec.end())->energy);
 	std::pair<double, double> steps =
 	    surface->GetIntersection(axis.GetPos(), axis.GetDir());
-	// This shower axis doesn't intersect the sampling surface. Bail.
+	// This shower axis doesn't intersect the target surface. Bail.
 	if (!std::isfinite(steps.first))
 		return -std::numeric_limits<double>::infinity();
 	
 	double h = GetDepth(axis.GetPos().GetZ() + steps.first*axis.GetDir().GetZ());
 	double coszen = cos(axis.GetDir().GetZenith());
-	unsigned m = bundle.size();
-	double logprob = flux_->GetLog(h, coszen, m);
-	double max_energy = 0.;
-	BOOST_FOREACH(const BundleEntry &track, bundle) {
+	unsigned m = bundlespec.size();
+
+	// We used the flux to do rejection sampling in zenith and multiplicity. Evaluate
+	// the properly-normalized PDF here.
+	double logprob = flux_->GetLog(surface_->GetMinDepth(), coszen, m) - GetZenithNorm();
+	BOOST_FOREACH(const BundleEntry &track, bundlespec) {
 		if (m > 1)
 			logprob += radialDistribution_->GetLog(h, coszen, m, track.radius);
 		logprob += energyGenerator_->GetLog(track.energy);
 	}
-	// Bundle axes are sampled uniformly in the projected area of the target surface.
-	// Here we apply a density correction to account for the fact that a locally isotropic
-	// flux through the inner target surface is not necessarily an isotropic flux through
-	// the outer surface when they have different shapes.
-	double aspect_ratio = (injectionSurface_->GetDifferentialArea(coszen)/injectionSurface_->GetTotalArea())
-	    / (surface->GetDifferentialArea(coszen)/surface->GetTotalArea());
-	logprob += std::log(aspect_ratio) - std::log(GetTotalRate(surface));
 	
-	return logprob;
+	// We only distributed events over the target surface, not the entire injection surface
+	return logprob - std::log(2*M_PI*surface->GetTotalArea());
 }
 
 template <typename Archive>
 void
 EnergyDependentSurfaceInjector::serialize(Archive &ar, unsigned)
 {
-	ar & make_nvp("Generator", base_object<Generator>(*this));
+	ar & make_nvp("StaticSurfaceInjector", base_object<StaticSurfaceInjector>(*this));
 	ar & make_nvp("ScalingFunction", scalingFunction_);
-	ar & make_nvp("InjectionSurface", injectionSurface_);
-	ar & make_nvp("Flux", flux_);
-	ar & make_nvp("Energy", energyGenerator_);
-	ar & make_nvp("Radius", radialDistribution_);
 }
 
 SurfaceScalingFunction::~SurfaceScalingFunction() {}

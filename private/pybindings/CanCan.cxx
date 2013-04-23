@@ -18,7 +18,7 @@ register_CanCan()
 	using namespace boost::python;
 	
 	class_<StaticSurfaceInjector, bases<Generator> >("StaticSurfaceInjector")
-		.def(init<SamplingSurfacePtr, FluxPtr,
+		.def(init<CylinderPtr, FluxPtr,
 		    boost::shared_ptr<OffsetPowerLaw>, RadialDistributionPtr>())
 		#define PROPS (Flux)(RadialDistribution)(EnergyDistribution)
 		BOOST_PP_SEQ_FOR_EACH(WRAP_PROP, StaticSurfaceInjector, PROPS)
@@ -34,11 +34,10 @@ register_CanCan()
 	;
 
 #if 1
-	// def_function<boost::function<SamplingSurfacePtr (double)> >("SurfaceScalingFunction");
-	class_<EnergyDependentSurfaceInjector, bases<Generator> >("EnergyDependentSurfaceInjector",
-	    init<FluxPtr, RadialDistributionPtr, boost::shared_ptr<OffsetPowerLaw>, SurfaceScalingFunctionPtr>
-	    ((arg("flux")=FluxPtr(), arg("radius")=RadialDistributionPtr(),
-	    arg("energy")=boost::shared_ptr<OffsetPowerLaw>(), arg("scaling")=boost::make_shared<BasicSurfaceScalingFunction>())))
+	class_<EnergyDependentSurfaceInjector, bases<StaticSurfaceInjector> >("EnergyDependentSurfaceInjector",
+	    init<CylinderPtr, FluxPtr, boost::shared_ptr<OffsetPowerLaw>, RadialDistributionPtr, SurfaceScalingFunctionPtr>
+	    ((arg("surface")=CylinderPtr(), arg("flux")=FluxPtr(), arg("energy")=boost::shared_ptr<OffsetPowerLaw>(),
+	    arg("radius")=RadialDistributionPtr(), arg("scaling")=boost::make_shared<BasicSurfaceScalingFunction>())))
 		.def("total_rate", &EnergyDependentSurfaceInjector::GetTotalRate)
 		.def("target_surface", &EnergyDependentSurfaceInjector::GetTargetSurface)
 		#define PROPS (Scaling)(Flux)(EnergyDistribution)(RadialDistribution)
