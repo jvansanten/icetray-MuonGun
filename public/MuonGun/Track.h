@@ -53,7 +53,6 @@ public:
 	 */
 	static std::list<Track> Harvest(const I3MCTree &, const I3MMCTrackList &);
 
-private:
 	/**
 	 * @brief A point at which the absolute energy of the particle is known
 	 */
@@ -71,6 +70,11 @@ private:
 		LossSum(double l, double e=0.)
 		    : length(l), energy(e) {}
 	};
+	
+	std::vector<Checkpoint> GetCheckpoints() const { return checkpoints_; }
+	std::vector<LossSum> GetLosses() const { return losses_; }
+	
+private:
 	std::vector<Checkpoint> checkpoints_;
 	std::vector<LossSum> losses_;
 };
