@@ -19,8 +19,8 @@ SET (LIB_${PROJECT_NAME}_SOURCEFILES
     private/MuonGun/EnergyDistribution.cxx
     
     # Event generator implementations
-    private/MuonGun/CanCan.cxx
     private/MuonGun/Floodlight.cxx
+    private/MuonGun/StaticSurfaceInjector.cxx
     private/MuonGun/EnergyDependentSurfaceInjector.cxx
     private/MuonGun/CORSIKAGenerationProbability.cxx
 )
@@ -34,7 +34,7 @@ SET (LIB_${PROJECT_NAME}_TOOLS
 SET (LIB_${PROJECT_NAME}_PYSOURCES 
     private/pybindings/I3MuonGun.cxx
     private/pybindings/Track.cxx
-    private/pybindings/CanCan.cxx
+    private/pybindings/Injectors.cxx
     private/pybindings/Generator.cxx
     private/pybindings/Surface.cxx
     private/pybindings/Flux.cxx
@@ -103,6 +103,7 @@ i3_test_executable(test
   private/test/Surface.cxx
   private/test/EnergyDistribution.cxx
   private/test/Generator.cxx
+  private/test/Track.cxx
   USE_PROJECTS MuonGun icetray dataclasses phys-services
 )
 
