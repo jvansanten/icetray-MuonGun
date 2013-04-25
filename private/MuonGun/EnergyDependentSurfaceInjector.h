@@ -38,6 +38,24 @@ private:
 
 I3_POINTER_TYPEDEFS(SurfaceScalingFunction);
 
+class ConstantSurfaceScalingFunction : public SurfaceScalingFunction {
+public:
+	ConstantSurfaceScalingFunction(SamplingSurfacePtr surface);
+	~ConstantSurfaceScalingFunction();
+	
+	virtual SamplingSurfacePtr GetSurface(double energy) const;
+	virtual bool operator==(const SurfaceScalingFunction&) const;
+private:
+	ConstantSurfaceScalingFunction();
+	friend class boost::serialization::access;
+	template <typename Archive>
+	void serialize(Archive &, unsigned);
+	
+	SamplingSurfacePtr surface_;
+};
+
+I3_POINTER_TYPEDEFS(ConstantSurfaceScalingFunction);
+
 class BasicSurfaceScalingFunction : public SurfaceScalingFunction {
 public:
 	BasicSurfaceScalingFunction();

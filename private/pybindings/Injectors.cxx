@@ -32,6 +32,9 @@ register_CanCan()
 	
 	class_<BasicSurfaceScalingFunction, BasicSurfaceScalingFunctionPtr, bases<SurfaceScalingFunction> >("BasicSurfaceScalingFunction")
 	;
+	class_<ConstantSurfaceScalingFunction, ConstantSurfaceScalingFunctionPtr, bases<SurfaceScalingFunction> >("ConstantSurfaceScalingFunction",
+	    init<SamplingSurfacePtr>())
+	;
 
 	class_<EnergyDependentSurfaceInjector, bases<StaticSurfaceInjector> >("EnergyDependentSurfaceInjector",
 	    init<CylinderPtr, FluxPtr, boost::shared_ptr<OffsetPowerLaw>, RadialDistributionPtr, SurfaceScalingFunctionPtr>

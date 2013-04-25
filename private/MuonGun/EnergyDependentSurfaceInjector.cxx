@@ -176,6 +176,31 @@ void
 SurfaceScalingFunction::serialize(Archive &ar, unsigned)
 {}
 
+ConstantSurfaceScalingFunction::ConstantSurfaceScalingFunction() {}
+ConstantSurfaceScalingFunction::ConstantSurfaceScalingFunction(SamplingSurfacePtr surface) : surface_(surface) {}
+ConstantSurfaceScalingFunction::~ConstantSurfaceScalingFunction() {}
+
+template <typename Archive>
+void
+ConstantSurfaceScalingFunction::serialize(Archive &ar, unsigned)
+{
+	ar & make_nvp("SurfaceScalingFunction", base_object<SurfaceScalingFunction>(*this));
+	ar & make_nvp("Surface", surface_);
+}
+
+SamplingSurfacePtr
+ConstantSurfaceScalingFunction::GetSurface(double energy) const { return surface_; }
+
+bool
+ConstantSurfaceScalingFunction::operator==(const SurfaceScalingFunction &o) const
+{
+	const ConstantSurfaceScalingFunction *other = dynamic_cast<const ConstantSurfaceScalingFunction*>(&o);
+	if (!other)
+		return false;
+	else
+		return (*surface_ == *(other->surface_));
+}
+
 template <typename Archive>
 void
 BasicSurfaceScalingFunction::serialize(Archive &ar, unsigned)
@@ -276,5 +301,6 @@ BasicSurfaceScalingFunction::operator==(const SurfaceScalingFunction &o) const
 }
 
 I3_SERIALIZABLE(I3MuonGun::SurfaceScalingFunction);
+I3_SERIALIZABLE(I3MuonGun::ConstantSurfaceScalingFunction);
 I3_SERIALIZABLE(I3MuonGun::BasicSurfaceScalingFunction);
 I3_SERIALIZABLE(I3MuonGun::EnergyDependentSurfaceInjector);
