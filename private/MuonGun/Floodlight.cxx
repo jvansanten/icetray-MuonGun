@@ -13,7 +13,7 @@
 namespace I3MuonGun {
 
 Floodlight::Floodlight(SamplingSurfacePtr surface, boost::shared_ptr<OffsetPowerLaw> energyGenerator) : surface_(surface),
-    energyGenerator_(energyGenerator_)
+    energyGenerator_(energyGenerator)
 {
 	if (!surface_)
 		surface_ = boost::make_shared<Cylinder>(1000, 600, I3Position(31.25, 19.64, 0));
