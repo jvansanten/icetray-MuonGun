@@ -17,6 +17,9 @@ static boost::shared_ptr<histogram_base> get_multiplicity(TrackBinner &t) { retu
 static boost::shared_ptr<histogram_base> get_radius(TrackBinner &t) { return t.radius_; }
 static boost::shared_ptr<histogram_base> get_energy(TrackBinner &t) { return t.energy_; }
 
+static boost::shared_ptr<histogram_base> get_nue(NeutrinoBinner &t) { return t.nu_e_; }
+static boost::shared_ptr<histogram_base> get_numu(NeutrinoBinner &t) { return t.nu_mu_; }
+
 void register_TrackBinner()
 {
 	bp::class_<TrackBinner>("TrackBinner", bp::init<double,double,unsigned>((
@@ -28,4 +31,9 @@ void register_TrackBinner()
 	    .add_property("energy", &get_energy)
 	;
 	
+	bp::class_<NeutrinoBinner>("NeutrinoBinner")
+	    .def("consume", &NeutrinoBinner::Consume)
+	    .add_property("nu_e", &get_nue)
+	    .add_property("nu_mu", &get_numu)
+	;
 }

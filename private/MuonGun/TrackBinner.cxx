@@ -76,6 +76,51 @@ void TrackBinner::Consume(boost::shared_ptr<const TrackBundle> tracks,
 	}
 }
 
+NeutrinoBinner::NeutrinoBinner()
+{
+	using namespace histogram::binning;
+	// Zenith angle, bundle energy, neutrino energy
+	histogram::histogram<3>::bin_specification mspecs;
+	mspecs[0] = uniform<cosine>::create(0, M_PI/2, 101);
+	mspecs[1] = uniform<histogram::binning::log10>::create(1, 1e8, 101);
+	mspecs[2] = uniform<histogram::binning::log10>::create(1e2, 1e8, 101);
+	
+	nu_e_ = boost::make_shared<histogram::histogram<3> >(mspecs);
+	nu_mu_ = boost::make_shared<histogram::histogram<3> >(mspecs);
+}
+
+void NeutrinoBinner::Consume(boost::shared_ptr<const TrackBundle> tracks,
+    I3MCTreeConstPtr tree, double weight)
+{
+	if (tree->size() == 0)
+		return;
+	double zenith = tree->begin()->GetZenith();
+	double total_energy = 0;
+	if (tracks->size() > 0)
+		BOOST_FOREACH(const CompactTrack &track, tracks->begin()->second)
+			total_energy += track.GetEnergy();
+	else
+		total_energy = 0;
+	
+	boost::array<double, 3> values = {{zenith, total_energy, 0.}};
+	BOOST_FOREACH(const I3Particle &p, std::make_pair(tree->begin(), tree->end())) {
+		if (p.IsNeutrino()) {
+			values[2] = p.GetEnergy();
+			switch (p.GetPdgEncoding()) {
+				case 12:
+				case -12:
+					nu_e_->fill(values, weight);
+					break;
+				case 14:
+				case -14:
+					nu_mu_->fill(values, weight);
+					break;
+				default:
+					log_fatal("Unknown neutrino type %d!", p.GetPdgEncoding());
+			}	
+		}
+	}
+}
 
 
 }

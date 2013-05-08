@@ -11,6 +11,7 @@
 
 #include <MuonGun/histogram.h>
 #include <MuonGun/CompactTrack.h>
+#include <dataclasses/physics/I3MCTree.h>
 
 namespace I3MuonGun {
 
@@ -26,6 +27,17 @@ public:
 	boost::shared_ptr<histogram::histogram<3> > multiplicity_;
 	boost::shared_ptr<histogram::histogram<4> > radius_;
 	boost::shared_ptr<histogram::histogram<5> > energy_;
+};
+
+class NeutrinoBinner {
+
+public:
+	NeutrinoBinner();
+	void Consume(boost::shared_ptr<const TrackBundle> tracks,
+	    I3MCTreeConstPtr tree, double weight);
+	boost::shared_ptr<histogram::histogram<3> > nu_e_;
+	boost::shared_ptr<histogram::histogram<3> > nu_mu_;
+	
 };
 
 };
