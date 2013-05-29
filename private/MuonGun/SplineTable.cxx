@@ -10,7 +10,7 @@ namespace I3MuonGun {
 
 SplineTable::SplineTable() : bias_(0)
 {
-	memset(&table_, sizeof(struct splinetable), 0);
+  memset(&table_, 0, sizeof(struct splinetable));
 }
 
 SplineTable::SplineTable(const std::string &path)
