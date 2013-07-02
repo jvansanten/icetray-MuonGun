@@ -105,7 +105,7 @@ make_vector(const I3Position &dir)
 }
 
 inline vector
-operator-(const I3Position &p1, const I3Position &p2)
+subtract(const I3Position &p1, const I3Position &p2)
 {
 	return make_vector(p1.GetX()-p2.GetX(), p1.GetY()-p2.GetY(), p1.GetZ()-p2.GetZ());
 }
@@ -119,7 +119,7 @@ operator-(const vector &v, const I3Position &p)
 inline double
 GetRadius(const I3Particle &axis, const I3Position &pos)
 {
-	vector r = pos-axis.GetPos();
+        vector r = subtract(pos,axis.GetPos());
 	double l = ublas::inner_prod(make_vector(axis.GetDir()), r);
 	
 	return sqrt(std::max(0., ublas::inner_prod(r, r) - l*l));

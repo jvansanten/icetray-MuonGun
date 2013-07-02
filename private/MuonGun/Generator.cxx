@@ -179,31 +179,6 @@ operator+(GenerationProbabilityPtr p1, GenerationProbabilityPtr p2)
 	}
 }
 
-namespace {
-
-inline I3Position
-operator+(const I3Position &a, const I3Position &b)
-{
-	return I3Position(a.GetX()+b.GetX(), a.GetY()+b.GetY(), a.GetZ()+b.GetZ());
-}
-
-inline I3Position&
-operator+=(I3Position &a, const I3Position &b)
-{
-	a.SetX(a.GetX() + b.GetX());
-	a.SetY(a.GetY() + b.GetY());
-	a.SetZ(a.GetZ() + b.GetZ());
-	return a;
-}
-
-inline I3Position
-operator*(double v, const I3Direction &d)
-{
-	return I3Position(v*d.GetX(), v*d.GetY(), v*d.GetZ());
-}
-
-}
-
 I3Particle
 Generator::CreateParallelTrack(double radius, double azimuth,
     const Surface &surface, const I3Particle &axis)
