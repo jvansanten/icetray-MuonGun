@@ -12,6 +12,23 @@
 
 namespace bp = boost::python;
 
+#if PY_MAJOR_VERSION >= 3
+static PyObject *
+PyBuffer_FromMemory(void *memory, size_t size)
+{
+	Py_buffer buf;
+	memset(&buf, 0, sizeof(buf));
+	buf.buf = memory;
+	buf.len = size;
+	buf.readonly = true;
+	buf.ndim = 1;
+	buf.itemsize = sizeof(double);
+	Py_ssize_t shape[] = { size/sizeof(double) };
+	buf.shape = shape;
+	return PyMemoryView_FromBuffer(&buf);
+}
+#endif
+
 static bp::object
 to_dashi(boost::shared_ptr<I3MuonGun::histogram::histogram_base> h)
 {
