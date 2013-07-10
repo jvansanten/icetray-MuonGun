@@ -27,5 +27,5 @@ def get_propagator(radius=800, length=1600, seed=random.randint(0, (1<<32) - 1))
 	except ImportError:
 		pass
 	
-	print 'Neither PROPOSAL nor MMC found!'
+	print('Neither PROPOSAL nor MMC found!')
 	return None

@@ -1,7 +1,7 @@
 
 # a collection of cosmic-ray fluxes
 
-from weighting import I3Units, ParticleType
+from .weighting import I3Units, ParticleType
 import numpy
 import operator
 
@@ -44,7 +44,7 @@ class Hoerandel(CompiledFlux):
 		gamma = numpy.array([2.71, 2.64, 2.54, 2.75, 2.95, 2.66, 2.72, 2.68, 2.69, 2.64, 2.66, 2.64, 2.66, 2.75, 2.69, 2.55, 2.68, 2.64, 2.65, 2.7, 2.64, 2.61, 2.63, 2.67, 2.46, 2.59])
 		flux = numpy.array([0.0873, 0.0571, 0.00208, 0.000474, 0.000895, 0.0106, 0.00235, 0.0157, 0.000328, 0.0046, 0.000754, 0.00801, 0.00115, 0.00796, 0.00027, 0.00229, 0.000294, 0.000836, 0.000536, 0.00147, 0.000304, 0.00113, 0.000631, 0.00136, 0.00135, 0.0204])
 		flux *= (I3Units.TeV/I3Units.GeV)**(gamma-1) # unit conversion
-		expr = "%(flux)s*E**(-%(gamma)s)*%(knee)s" % dict(gamma=self.build_lookup(zip(self.ptypes, gamma)), flux=self.build_lookup(zip(self.ptypes, flux)), knee=self.knee)
+		expr = "%(flux)s*E**(-%(gamma)s)*%(knee)s" % dict(gamma=self.build_lookup(list(zip(self.ptypes, gamma))), flux=self.build_lookup(list(zip(self.ptypes, flux))), knee=self.knee)
 		CompiledFlux.__init__(self, expr)
 
 class Hoerandel5(Hoerandel):
@@ -60,7 +60,7 @@ class Hoerandel5(Hoerandel):
 		gamma = numpy.array([2.71, 2.64, 2.68, 2.67, 2.58])
 		flux = numpy.array([8.73e-2, 5.71e-2, 3.24e-2, 3.16e-2, 2.18e-2])
 		flux *= (I3Units.TeV/I3Units.GeV)**(gamma-1) # unit conversion
-		expr = "%(flux)s*E**(-%(gamma)s)*%(knee)s" % dict(gamma=self.build_lookup(zip(self.ptypes, gamma)), flux=self.build_lookup(zip(self.ptypes, flux)), knee=self.knee)
+		expr = "%(flux)s*E**(-%(gamma)s)*%(knee)s" % dict(gamma=self.build_lookup(list(zip(self.ptypes, gamma))), flux=self.build_lookup(list(zip(self.ptypes, flux))), knee=self.knee)
 		CompiledFlux.__init__(self, expr)
 
 class Glasstetter(CompiledFlux):
@@ -75,10 +75,10 @@ class Glasstetter(CompiledFlux):
 	"""
 	ptypes = [getattr(ParticleType, p) for p in ('PPlus', 'Fe56Nucleus')]
 	def __init__(self):
-		gamma1 = self.build_lookup(zip(self.ptypes, [2.67, 2.69]))
-		gamma2 = self.build_lookup(zip(self.ptypes, [3.39, 3.10]))
-		flux = self.build_lookup(zip(self.ptypes, [17e3, 9e3]))
-		knee = self.build_lookup(zip(self.ptypes, [4.1*I3Units.PeV, 1.1e2*I3Units.PeV]))
+		gamma1 = self.build_lookup(list(zip(self.ptypes, [2.67, 2.69])))
+		gamma2 = self.build_lookup(list(zip(self.ptypes, [3.39, 3.10])))
+		flux = self.build_lookup(list(zip(self.ptypes, [17e3, 9e3])))
+		knee = self.build_lookup(list(zip(self.ptypes, [4.1*I3Units.PeV, 1.1e2*I3Units.PeV])))
 		CompiledFlux.__init__(self, "%(flux)s*where(E < %(knee)s, E**-%(gamma1)s, %(knee)s**(%(gamma2)s-%(gamma1)s)*E**-%(gamma2)s)" % locals())
 
 class GaisserHillas(CompiledFlux):
@@ -99,8 +99,8 @@ class GaisserHillas(CompiledFlux):
 	def get_rigidity(self):
 		return [4*I3Units.PeV]
 	def __init__(self):
-		flux = [self.build_lookup(zip(self.ptypes, f)) for f in self.get_flux()]
-		gamma = [self.build_lookup(zip(self.ptypes, g)) for g in self.get_gamma()]
+		flux = [self.build_lookup(list(zip(self.ptypes, f))) for f in self.get_flux()]
+		gamma = [self.build_lookup(list(zip(self.ptypes, g))) for g in self.get_gamma()]
 		rigidity = self.get_rigidity()
 		CompiledFlux.__init__(self, "+".join([self.get_expression(f, g, r) for f, g, r in zip(flux, gamma, rigidity)]))
 

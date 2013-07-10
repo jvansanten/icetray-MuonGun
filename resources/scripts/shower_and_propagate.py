@@ -25,7 +25,7 @@ opts.primary = dict(H=14, He=402, N=1407, Al=2713, Fe=5626)[opts.primary]
 if opts.primary > 100:
 	opts.emin *= (opts.primary % 100)
 
-print repr(opts)
+print(repr(opts))
 
 from icecube import icetray, dataclasses, dataio
 from icecube.icetray import I3Units

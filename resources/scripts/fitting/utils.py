@@ -9,7 +9,7 @@ def histload(hdf, where):
 	node = hdf.getNode(where)
 	if 'count' in node._v_attrs:
 		h /= node._v_attrs['count']
-		print 'norm: %.1f' % node._v_attrs['count']
+		print('norm: %.1f' % node._v_attrs['count'])
 	return h
 
 # Monkey-patch some handy features into dashi
@@ -292,5 +292,5 @@ def plot_radial_slice(h, spline, slice_=(3,10,1), **kwargs):
 			axis = [axis]
 		coords.append(axis)
 	sub.scatter(**kwargs)
-	print grideval(spline, coords).flatten()
+	print(grideval(spline, coords).flatten())
 	pylab.plot(coords[-1], grideval(spline, coords).flatten(), **kwargs)

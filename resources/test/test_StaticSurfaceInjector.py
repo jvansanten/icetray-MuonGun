@@ -8,7 +8,7 @@ from utils import get_propagator
 propagator = get_propagator(seed=1337)
 if not propagator:
 	import sys
-	print 'Skipping test'
+	print('Skipping test')
 	sys.exit(0)
 
 tray = I3Tray()

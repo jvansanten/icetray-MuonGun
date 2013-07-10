@@ -77,7 +77,7 @@ ucr_opts = expandvars('$I3_BUILD/bin/ucr-icetray-ucr ')
 for fn in infiles:
 	ucr_opts += fn + ' '
 ucr_opts += ("-DEPTH=1950 -LENGTH=1600 -RADIUS=800 -over=%d" % (opts.oversample))
-print 'ucr_opts: "%s"' % ucr_opts
+print('ucr_opts: "%s"' % ucr_opts)
 tray.AddModule('I3InfiniteSource', 'driver')
 tray.AddModule('I3GeneratorUCR', 'reader', EventsToIssue=int(1e9), UCROpts=ucr_opts)
 
@@ -85,7 +85,7 @@ from icecube.MuonGun import MuonPropagator, Crust, Sphere
 
 import random
 seed = random.randint(0, (1<<31) - 1)
-print 'Seed: %d' % seed
+print('Seed: %d' % seed)
 MuonPropagator.set_seed(seed)
 
 crust = Crust(MuonPropagator("air", ecut=-1, vcut=5e-2, rho=0.673))

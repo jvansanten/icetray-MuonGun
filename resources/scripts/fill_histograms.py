@@ -134,9 +134,9 @@ class Filla(icetray.I3Module):
 		self.radius = dashi.histogram.histogram(4, (zenbins, depthbins, multbins, numpy.linspace(0, numpy.sqrt(250), 101)**2))
 		self.energy = dashi.histogram.histogram(5, (zenbins, depthbins, multbins, rbins, numpy.logspace(0, 6, 101)))
 		
-		self.multiplicity_slices = tuple([tuple([buffering_histogram(1, (numpy.arange(1, 100),)) for j in xrange(len(depthbins))]) for i in xrange(len(zenbins_fine))])
-		self.radius_slices = tuple([tuple([buffering_histogram(2, (multbins, numpy.linspace(0, numpy.sqrt(250), 101)**2)) for j in xrange(len(depthbins))]) for i in xrange(len(zenbins))])
-		self.energy_slices = tuple([tuple([buffering_histogram(3, (multbins, rbins, numpy.logspace(0, 6, 101))) for j in xrange(len(depthbins))]) for i in xrange(len(zenbins))])
+		self.multiplicity_slices = tuple([tuple([buffering_histogram(1, (numpy.arange(1, 100),)) for j in range(len(depthbins))]) for i in range(len(zenbins_fine))])
+		self.radius_slices = tuple([tuple([buffering_histogram(2, (multbins, numpy.linspace(0, numpy.sqrt(250), 101)**2)) for j in range(len(depthbins))]) for i in range(len(zenbins))])
+		self.energy_slices = tuple([tuple([buffering_histogram(3, (multbins, rbins, numpy.logspace(0, 6, 101))) for j in range(len(depthbins))]) for i in range(len(zenbins))])
 		
 		self.depthbins = depthbins
 		self.zenbins = zenbins
@@ -185,7 +185,7 @@ class Filla(icetray.I3Module):
 		radius=self.radius_slices[zi]
 		energy=self.energy_slices[zi]
 		
-		for di, (depth, tracks) in enumerate(frame['Tracks'].iteritems()):
+		for di, (depth, tracks) in enumerate(frame['Tracks'].items()):
 			kmwe = depth/I3Units.km
 			mult = len(tracks)
 			values = numpy.asarray([(mult, p.radius, p.energy) for p in tracks])
@@ -196,18 +196,18 @@ class Filla(icetray.I3Module):
 		
 		self.nevents += 1
 		if self.nevents % 10000 == 0:
-			print '%d events' % self.nevents
+			print('%d events' % self.nevents)
 		
 		self.PushFrame(frame)
 		
 	def Finish(self):
-		for i in xrange(len(self.zenbins_fine)):
-			for j in xrange(len(self.depthbins)):
+		for i in range(len(self.zenbins_fine)):
+			for j in range(len(self.depthbins)):
 				self.multiplicity_slices[i][j].flush()
 				self.multiplicity._h_bincontent[i+1,j+1,:] += self.multiplicity_slices[i][j]._h_bincontent
 				self.multiplicity._h_squaredweights[i+1,j+1,:] += self.multiplicity_slices[i][j]._h_squaredweights
-		for i in xrange(len(self.zenbins)):
-			for j in xrange(len(self.depthbins)):
+		for i in range(len(self.zenbins)):
+			for j in range(len(self.depthbins)):
 				self.radius_slices[i][j].flush()
 				self.energy_slices[i][j].flush()
 				self.radius._h_bincontent[i+1,j+1,:,:] += self.radius_slices[i][j]._h_bincontent

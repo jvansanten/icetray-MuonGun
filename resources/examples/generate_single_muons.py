@@ -53,7 +53,7 @@ tray.AddModule('I3PropagatorModule', 'propagator', PropagatorServices=make_propa
     RandomService=randomService, RNGStateName="RNGState")
 
 tray.AddModule('I3Writer', 'writer',
-    Streams=map(icetray.I3Frame.Stream, "SQP"),
+    Streams=list(map(icetray.I3Frame.Stream, "SQP")),
     filename=outfile)
 
 tray.AddModule('TrashCan', 'YesWeCan')

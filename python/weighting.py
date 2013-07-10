@@ -97,7 +97,7 @@ class GenerationProbability(object):
 			globalvars = dict([(subcls.__name__, subcls) for subcls in cls.__subclasses__()])
 			try:
 				genprob = eval(value, dict(), globalvars)
-			except Exception, e:
+			except Exception as e:
 				raise OptionValueError(str(e))
 			if isinstance(genprob, GenerationProbability) or isinstance(genprob, CombinedSample):
 				return genprob
@@ -124,7 +124,7 @@ class GenerationProbabilityCollection(object):
 		
 	def __call__(self, E, particle_type=None):
 		if particle_type is None:
-			return sum([prob(E) for spectra in self.spectra.itervalues() for prob in spectra])
+			return sum([prob(E) for spectra in self.spectra.values() for prob in spectra])
 		else:
 			if numpy.ndim(particle_type) == 0:
 				return sum([prob(E) for prob in self.spectra[particle_type]])
@@ -139,7 +139,7 @@ class GenerationProbabilityCollection(object):
 			return count
 	
 	def __imul__(self, factor):
-		for spectra in self.spectra.itervalues():
+		for spectra in self.spectra.values():
 			for prob in spectra:
 				prob *= factor
 		return self
@@ -161,7 +161,7 @@ class GenerationProbabilityCollection(object):
 	
 	def __iadd__(self, other):
 		if isinstance(other, type(self)):
-			for pt, ospectra in other.spectra.iteritems():
+			for pt, ospectra in other.spectra.items():
 				for ospec in ospectra:
 					for spec in self.spectra[pt]:
 						if spec.is_compatible(ospec):

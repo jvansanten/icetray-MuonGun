@@ -39,7 +39,7 @@ hists = dict()
 counts = defaultdict(int)
 
 for fname in infiles:
-	print fname
+	print(fname)
 	with tables.openFile(fname) as hdf:
 		for group in hdf.walkNodes(where=root, classname='Group'):
 			if 'ndim' in group._v_attrs: # a dashi histogram
@@ -64,11 +64,11 @@ with tables.openFile(outfile, 'a') as hdf:
 		try:
 			hdf.getNode(opts.group)
 			hdf.removeNode(opts.group, recursive=True)
-			print "removed %s" % (opts.group)
+			print("removed %s" % (opts.group))
 		except:
 			pass
 		hdf.createGroup("/", opts.group[1:])
-	for path, h in hists.iteritems():
+	for path, h in hists.items():
 		where = os.path.dirname(path)
 		name = os.path.basename(path)
 		if len(where) > 0:
@@ -82,5 +82,5 @@ with tables.openFile(outfile, 'a') as hdf:
 		if opts.norm is not None:
 			counts[path] = opts.norm
 		hdf.getNode(opts.group+where+"/"+name)._v_attrs['count'] = counts[path]
-		print "%s: %d entries" % (opts.group+where+"/"+name, counts[path])
+		print("%s: %d entries" % (opts.group+where+"/"+name, counts[path]))
 

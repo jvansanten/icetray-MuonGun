@@ -2,8 +2,8 @@ from icecube.load_pybindings import load_pybindings
 import icecube.icetray, icecube.dataclasses # be nice and pull in our dependencies
 load_pybindings(__name__,__path__)
 
-import weighting
-import fluxes
+from icecube.MuonGun import weighting
+from icecube.MuonGun import fluxes
 
 def load_model(base):
 	from os.path import exists, expandvars, join

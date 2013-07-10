@@ -10,7 +10,7 @@ os.mkdir(outdir)
 
 filesets = dict()
 basedir = "/data/sim/IceCube/2011/generated/dcorsika/length_1600_radius_800_v6960-5comp_sibyll_5-component/emin_600_emax_1e11_dslope_0_pgam_E2.0E2.0E2.0E2.0E2.0"
-print '%(basedir)s/atmod_%(atmod)d/*/corsika_2500000_*.gz' % locals()
+print('%(basedir)s/atmod_%(atmod)d/*/corsika_2500000_*.gz' % locals())
 filesets['standard'] = dict(
     files=sorted(glob.glob('%(basedir)s/atmod_%(atmod)d/*/corsika_2500000_*.gz' % locals())),
     # chunk=100,
@@ -24,17 +24,17 @@ filesets['he'] = dict(
     chunk=1,
 )
 
-weight_args = " ".join(['--n-%s=%d' % (k, len(fs['files'])) for k, fs in filesets.iteritems()])
-print 'weight_args: ', weight_args
+weight_args = " ".join(['--n-%s=%d' % (k, len(fs['files'])) for k, fs in filesets.items()])
+print('weight_args: ', weight_args)
 
 def chunks(l, n):
-	for i in xrange(0, len(l), n):
+	for i in range(0, len(l), n):
 		yield l[i:i+n]
 
 dag = DAG()
 i = 0;
 jobs = []
-for (label, fileset) in filesets.items():
+for (label, fileset) in list(filesets.items()):
 	for files in chunks(fileset['files'], fileset['chunk']):
 		i += 1
 		paths = " ".join(files)

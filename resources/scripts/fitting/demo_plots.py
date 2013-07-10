@@ -25,7 +25,7 @@ def plot_single_energy(histogram_fname, flux, efit, normed=False, log=True):
 	fig = pylab.figure()
 	fig.subplots_adjust(left=0.15)
 	di = 5
-	for color, zi in colorize(range(1, 11)):
+	for color, zi in colorize(list(range(1, 11))):
 		sub = h[zi,di,:]
 		zenith = h._h_bincenters[0][zi-1]
 		ct = numpy.cos(zenith)
@@ -57,7 +57,7 @@ def plot_single_energy(histogram_fname, flux, efit, normed=False, log=True):
 	fig = pylab.figure()
 	fig.subplots_adjust(left=0.15)
 	zi = 3
-	for color, di in colorize(range(4, 19, 2)):
+	for color, di in colorize(list(range(4, 19, 2))):
 		sub = h[zi,di,:]
 		zenith = h._h_bincenters[0][zi-1]
 		ct = numpy.cos(zenith)
@@ -100,7 +100,7 @@ def plot_single_flux_impl(h, flux, log=True):
 	
 	h._h_binedges[0] /= (numpy.pi/180)
 	
-	depths = lambda: range(1, 19, 2)
+	depths = lambda: list(range(1, 19, 2))
 	
 	fig = pylab.figure()
 	grid = GridSpec(2,1,height_ratios=[2,1], hspace=0.05)
@@ -157,7 +157,7 @@ def plot_bundle_flux_impl(h, flux, log=True):
 	
 	h._h_binedges[0] /= (numpy.pi/180)
 	
-	depths = lambda: range(4, 19, 2)
+	depths = lambda: list(range(4, 19, 2))
 	
 	for zi, ylim in zip((2, 45, 60, 75), ((1e-11,1e-2), (1e-12,1e-3), (1e-15,1e-3), (1e-18,1e-4))):
 	
@@ -167,7 +167,7 @@ def plot_bundle_flux_impl(h, flux, log=True):
 		ax2 = pylab.subplot(grid[1])
 		
 		maxval = -1
-		for color, di in colorize(range(4, 19, 2)):
+		for color, di in colorize(list(range(4, 19, 2))):
 			sub = h[zi,di,:]
 			coszen = numpy.cos(numpy.pi*h._h_bincenters[0][zi-1]/180)
 			depth = h._h_bincenters[1][di-1]
@@ -213,7 +213,7 @@ def plot_radial_distribution(fname, rdist, log=True):
 	coszencenter = (numpy.cos(h._h_binedges[0][2:-1]) + numpy.cos(h._h_binedges[0][1:-2]))/2
 	h._h_binedges[0] /= (numpy.pi/180)
 	
-	depths = lambda: range(4, 19, 2)
+	depths = lambda: list(range(4, 19, 2))
 	zif, dif, mif = 4, 10, 4
 	
 	grid = GridSpec(2,1,height_ratios=[2,1], hspace=0.05)
@@ -261,19 +261,19 @@ def plot_radial_distribution(fname, rdist, log=True):
 	
 	make_axis()
 	zi, di, mi = zif, dif, mif
-	for color, di in colorize(range(4, 19, 2)):
+	for color, di in colorize(list(range(4, 19, 2))):
 		plot_rdist(label='%d m' % numpy.round(h._h_bincenters[1][di-1]*1000))
 	format_axis('%d-muon radial distribution at %d deg' % (h._h_bincenters[2][mi-1], h._h_bincenters[0][zi-1]))
 
 	make_axis()
 	zi, di, mi = zif, dif, mif
-	for color, zi in colorize(range(1, 8)):
+	for color, zi in colorize(list(range(1, 8))):
 		plot_rdist(label='%d deg' % (h._h_bincenters[0][zi-1]))
 	format_axis('%d-muon radial distribution at %d m' % (h._h_bincenters[2][mi-1], numpy.round(h._h_bincenters[1][di-1]*1000)))
 	
 	make_axis()
 	zi, di, mi = zif, dif, mif
-	for color, mi in colorize(range(2, 8)):
+	for color, mi in colorize(list(range(2, 8))):
 		plot_rdist(label='$%d \\leq N_{\\mu} < %d$' % (h._h_binedges[2][mi]+0.5, h._h_binedges[2][mi+1]+0.5))
 	format_axis('Bundle radial distribution at %d m/%d deg' % (numpy.round(h._h_bincenters[1][di-1]*1000), h._h_bincenters[0][zi-1]))
 
@@ -364,13 +364,13 @@ def plot_bundle_energy_distribution(fname, edist, log=True):
 	# """
 	fig = pylab.figure()
 	di, zi, ri, mi = dif, zif, rif, mif
-	for color, mi in colorize(range(2, 8)):
+	for color, mi in colorize(list(range(2, 8))):
 		plot_edist('$%d \\leq N_{\\mu} < %d$' % (h._h_binedges[2][mi]+0.5, h._h_binedges[2][mi+1]+0.5))
 	format_axis('Bundle energy distribution at %d m/%d deg/%d m off axis' % (numpy.round(h._h_bincenters[1][di-1]*1000), h._h_bincenters[0][zi-1], h._h_bincenters[3][ri-1]))
 	
 	fig = pylab.figure()
 	di, zi, ri, mi = dif, zif, rif, mif
-	for color, ri in colorize(range(1, 31, 2)):
+	for color, ri in colorize(list(range(1, 31, 2))):
 		try:
 			label = '$%d \\, m \\, \\leq r < %.0f \\, m$' % (h._h_binedges[3][ri], h._h_binedges[3][ri+1])
 		except IndexError:
@@ -381,25 +381,25 @@ def plot_bundle_energy_distribution(fname, edist, log=True):
 	
 	fig = pylab.figure()
 	di, zi, ri, mi = dif, zif, rif, mif
-	for color, zi in colorize(range(1, 9)):
+	for color, zi in colorize(list(range(1, 9))):
 		plot_edist('%d deg' % (h._h_bincenters[0][zi-1]))
 	format_axis('%d-muon energy distribution at %d m/%d m off axis' % (h._h_bincenters[2][mi-1], numpy.round(h._h_bincenters[1][di-1]*1000), h._h_bincenters[3][ri-1]))
 	
 	fig = pylab.figure()
 	di, zi, ri, mi = dif, zif, rif, mif
-	for color, di in colorize(range(4, 10)):
+	for color, di in colorize(list(range(4, 10))):
 		plot_edist('%d m' % numpy.round(h._h_bincenters[1][di-1]*1000))
 	format_axis('%d-muon energy distribution at %d deg/%d m off axis' % (h._h_bincenters[2][mi-1], h._h_bincenters[0][zi-1], h._h_bincenters[3][ri-1]))
 	# """
 	fig = pylab.figure()
 	di, zi, ri, mi, ei = dif, zif, rif, mif, eif
-	for color, ei in colorize(range(1, 100, 10)):
+	for color, ei in colorize(list(range(1, 100, 10))):
 		plot_rdist('%.1e GeV' % numpy.round(h._h_bincenters[4][ei-1]))
 	format_axis('%d-muon radial distribution at %d m/%d deg/' % (h._h_bincenters[2][mi-1], numpy.round(h._h_bincenters[1][di-1]*1000), h._h_bincenters[0][zi-1]), kind='radius')
 	
 	fig = pylab.figure()
 	di, zi, ri, mi, ei = dif, zif, rif, mif, eif
-	for color, ei in colorize(range(1, 100, 10)):
+	for color, ei in colorize(list(range(1, 100, 10))):
 		plot_mdist('%.1e GeV' % numpy.round(h._h_bincenters[4][ei-1]))
 	format_axis('multiplicity distribution at %d m/%d deg/%.1e GeV/%d m off axis' % (numpy.round(h._h_bincenters[1][di-1]*1000), h._h_bincenters[0][zi-1], h._h_bincenters[4][ei-1], h._h_bincenters[3][ri-1]), kind='multiplicity')
 	

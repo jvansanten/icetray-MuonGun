@@ -1,3 +1,4 @@
+from __future__ import print_function
 
 from icecube.icetray import I3Units
 from icecube import icetray
@@ -55,7 +56,7 @@ def dcorsika_spectra(gamma=[-2.]*5, normalization=[10., 5., 3., 2., 1.], emin=6e
 	masses = [1, 4, 14, 27, 56] 
 	fluxsums = numpy.array([n*fluxsum(emin*m, emax, g) for m, g, n in zip(masses, gamma, normalization)])
 	nshower = nevents*fluxsums/fluxsums.sum()
-	print nshower
+	print(nshower)
 	return [PowerLaw(n, emin*m, emax, g) for n, m, g in zip(nshower, masses, gamma)]
 
 
@@ -165,7 +166,7 @@ def MuonitronPropagator(tray, name):
 	def patch_mctree(frame):
 		tracks = frame['Tracks']
 		if len(tracks) > 0:
-			ntracks = len(frame['Tracks'].values()[0])
+			ntracks = len(list(frame['Tracks'].values())[0])
 		else:
 			ntracks = 0
 		i = 0
@@ -213,7 +214,7 @@ class Router(icetray.I3Module):
 		self.routes = self.GetParameter("Routes")
 		
 		slots = set()
-		for ptype, boxes in self.routes.iteritems():
+		for ptype, boxes in self.routes.items():
 			for box in boxes:
 				if not box in slots:
 					self.AddOutBox(box)
@@ -253,9 +254,9 @@ class Filler(icetray.I3ConditionalModule):
 		self.radius = dashi.histogram.histogram(4, (zenbins, depthbins, multbins, numpy.linspace(0, numpy.sqrt(250), 101)**2))
 		self.energy = dashi.histogram.histogram(5, (zenbins, depthbins, multbins, rbins, numpy.logspace(0, 6, 101)))
 		
-		self.multiplicity_slices = tuple([tuple([buffering_histogram(1, (numpy.arange(1, 100),)) for j in xrange(len(depthbins))]) for i in xrange(len(zenbins_fine))])
-		self.radius_slices = tuple([tuple([buffering_histogram(2, (multbins, numpy.linspace(0, numpy.sqrt(250), 101)**2)) for j in xrange(len(depthbins))]) for i in xrange(len(zenbins))])
-		self.energy_slices = tuple([tuple([buffering_histogram(3, (multbins, rbins, numpy.logspace(0, 6, 101))) for j in xrange(len(depthbins))]) for i in xrange(len(zenbins))])
+		self.multiplicity_slices = tuple([tuple([buffering_histogram(1, (numpy.arange(1, 100),)) for j in range(len(depthbins))]) for i in range(len(zenbins_fine))])
+		self.radius_slices = tuple([tuple([buffering_histogram(2, (multbins, numpy.linspace(0, numpy.sqrt(250), 101)**2)) for j in range(len(depthbins))]) for i in range(len(zenbins))])
+		self.energy_slices = tuple([tuple([buffering_histogram(3, (multbins, rbins, numpy.logspace(0, 6, 101))) for j in range(len(depthbins))]) for i in range(len(zenbins))])
 		
 		self.depthbins = depthbins
 		self.zenbins = zenbins
@@ -291,7 +292,7 @@ class Filler(icetray.I3ConditionalModule):
 		radius=self.radius_slices[zi]
 		energy=self.energy_slices[zi]
 		
-		for di, (depth, tracks) in enumerate(frame['Tracks'].iteritems()):
+		for di, (depth, tracks) in enumerate(frame['Tracks'].items()):
 			kmwe = depth/I3Units.km
 			mult = len(tracks)
 			values = numpy.asarray([(mult, p.radius, p.energy) for p in tracks])
@@ -307,13 +308,13 @@ class Filler(icetray.I3ConditionalModule):
 		# self.PushFrame(frame)
 		
 	def Finish(self):
-		for i in xrange(len(self.zenbins_fine)):
-			for j in xrange(len(self.depthbins)):
+		for i in range(len(self.zenbins_fine)):
+			for j in range(len(self.depthbins)):
 				self.multiplicity_slices[i][j].flush()
 				self.multiplicity._h_bincontent[i+1,j+1,:] += self.multiplicity_slices[i][j]._h_bincontent
 				self.multiplicity._h_squaredweights[i+1,j+1,:] += self.multiplicity_slices[i][j]._h_squaredweights
-		for i in xrange(len(self.zenbins)):
-			for j in xrange(len(self.depthbins)):
+		for i in range(len(self.zenbins)):
+			for j in range(len(self.depthbins)):
 				self.radius_slices[i][j].flush()
 				self.energy_slices[i][j].flush()
 				self.radius._h_bincontent[i+1,j+1,:,:] += self.radius_slices[i][j]._h_bincontent
@@ -383,7 +384,7 @@ class MultiFiller(icetray.I3Module):
 		
 		self.workers = dict()
 		
-		for label, weight in fluxes.iteritems():
+		for label, weight in fluxes.items():
 			worker = FillWorker(weight, make_binner(), outfile, '/%s' % label)
 			self.workers[label] = worker
 		
@@ -391,7 +392,7 @@ class MultiFiller(icetray.I3Module):
 		primary = frame['MCPrimary']
 		tracks = frame['Tracks']
 		norm = self.generator(primary.energy, primary.type, primary.dir.zenith)
-		for worker in self.workers.itervalues():
+		for worker in self.workers.values():
 			worker.consume(primary, tracks, norm)
 		
 		self.nevents += 1
@@ -399,7 +400,7 @@ class MultiFiller(icetray.I3Module):
 			sys.stderr.write('%d events\n' % self.nevents)
 	
 	def Finish(self):
-		for worker in self.workers.itervalues():
+		for worker in self.workers.values():
 			worker.finish()
 		
 
@@ -507,14 +508,14 @@ class CylinderWeighter(object):
 				return self.timescale*self.f(ct, self.r, self.l)
 		self.weights = []
 		for zhi, zlo in zip(z[:-1], z[1:]):
-			print zlo, zhi,
+			print(zlo, zhi, end=' ')
 			if zlo > height/2. or zhi < -height/2.:
 				# outside the cylinder
 				weight = None
 			elif zhi > height/2. and zlo <= height/2.:
 				# this layer includes the top of the cylinder
 				sideheight = (height/2.-zlo)
-				print sideheight,
+				print(sideheight, end=' ')
 				weight = weighter(diffarea, timescale, radius, sideheight)
 			else:
 				# a side layer has no top surface
@@ -527,7 +528,7 @@ class CylinderWeighter(object):
 					sideheight = zhi-zlo
 				weight = weighter(bandarea, timescale, radius, sideheight)
 				
-			print ''
+			print('')
 			self.weights.append(weight)
 		
 	def __call__(self, depthidx, zenith):
