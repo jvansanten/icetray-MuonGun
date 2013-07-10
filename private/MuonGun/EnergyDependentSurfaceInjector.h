@@ -23,7 +23,7 @@ I3_FORWARD_DECLARATION(RadialDistribution);
 
 class SurfaceScalingFunction {
 public:
-	~SurfaceScalingFunction();
+	virtual ~SurfaceScalingFunction();
 	
 	/** @brief Propose a target surface for the given energy */
 	virtual SamplingSurfacePtr GetSurface(double energy) const = 0;
@@ -41,7 +41,7 @@ I3_POINTER_TYPEDEFS(SurfaceScalingFunction);
 class ConstantSurfaceScalingFunction : public SurfaceScalingFunction {
 public:
 	ConstantSurfaceScalingFunction(SamplingSurfacePtr surface);
-	~ConstantSurfaceScalingFunction();
+	virtual ~ConstantSurfaceScalingFunction();
 	
 	virtual SamplingSurfacePtr GetSurface(double energy) const;
 	virtual bool operator==(const SurfaceScalingFunction&) const;
@@ -59,7 +59,7 @@ I3_POINTER_TYPEDEFS(ConstantSurfaceScalingFunction);
 class BasicSurfaceScalingFunction : public SurfaceScalingFunction {
 public:
 	BasicSurfaceScalingFunction();
-	~BasicSurfaceScalingFunction();
+	virtual ~BasicSurfaceScalingFunction();
 	
 	virtual SamplingSurfacePtr GetSurface(double energy) const;
 	virtual bool operator==(const SurfaceScalingFunction&) const;
