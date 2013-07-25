@@ -14,6 +14,7 @@
 #include <icetray/I3Units.h>
 
 #include <gsl/gsl_integration.h>
+#include <gsl/gsl_errno.h>
 #include <cubature/cubature.h>
 
 namespace I3MuonGun {
@@ -35,12 +36,25 @@ double gsl_thunk(double x, void *p)
 	return (*f)(x);
 }
 
+struct disable_gsl_errors {
+	disable_gsl_errors() 
+	{
+		handler_ = gsl_set_error_handler_off();
+	}
+	~disable_gsl_errors()
+	{
+		gsl_set_error_handler(handler_);
+	}
+	gsl_error_handler_t *handler_;
+};
+
 }
 
 double Integrate(boost::function<double (double)> f, double low, double high, double epsabs, double epsrel, size_t limit)
 {
 	assert(std::isfinite(low));
 	assert(std::isfinite(high));
+	disable_gsl_errors handle;
 	
 	gsl_function gf;
 	gf.function = &gsl_thunk;
@@ -51,7 +65,7 @@ double Integrate(boost::function<double (double)> f, double low, double high, do
 	
 	gsl_integration_workspace *workspace = gsl_integration_workspace_alloc(limit);
 	// Adaptive Gauss-Kronrod 21-point integration rule
-	int err = gsl_integration_qags(&gf, low, high, epsabs, epsrel, limit, workspace, &result, &abserr);
+	gsl_integration_qags(&gf, low, high, epsabs, epsrel, limit, workspace, &result, &abserr);
 	gsl_integration_workspace_free(workspace);
 	
 	return result;

@@ -95,13 +95,13 @@ integrate_thunk(unsigned ndims, const double *x, void *p, unsigned fdims, double
 
 
 // 1-dimensional quadtature via GSL QAGS implementation
-double Integrate(boost::function<double (double)> f, double low, double high, double epsabs=1.49e-8, double epsrel=1.49e-8, size_t limit=50);
+double Integrate(boost::function<double (double)> f, double low, double high, double epsabs=1.49e-6, double epsrel=1.49e-6, size_t limit=50);
 
 // N-dimensional adaptive cubature
 template <typename Signature>
 double
 Integrate(boost::function<Signature> f, typename detail::traits<Signature>::array_type low, typename detail::traits<Signature>::array_type high,
-    double epsabs=1.49e-8, double epsrel=1.49e-8, size_t limit=0)
+    double epsabs=1.49e-6, double epsrel=1.49e-6, size_t limit=0)
 {
 	double result, error;
 	unsigned fdims = 1;
