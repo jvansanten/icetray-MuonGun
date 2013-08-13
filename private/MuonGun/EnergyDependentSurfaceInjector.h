@@ -69,6 +69,9 @@ public:
 	void SetRadiusBounds(double rmin, double rmax);
 	void SetZBounds(double zmin, double zmax);
 	
+	void SetCenterMin(double x, double y);
+	void SetCenterMax(double x, double y);
+	
 private:
 	friend class boost::serialization::access;
 	template <typename Archive>

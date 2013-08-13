@@ -31,6 +31,12 @@ register_CanCan()
 	;
 	
 	class_<BasicSurfaceScalingFunction, BasicSurfaceScalingFunctionPtr, bases<SurfaceScalingFunction> >("BasicSurfaceScalingFunction")
+		.def("SetSideScaling", &BasicSurfaceScalingFunction::SetSideScaling)
+		.def("SetCapScaling", &BasicSurfaceScalingFunction::SetCapScaling)
+		.def("SetRadiusBounds", &BasicSurfaceScalingFunction::SetRadiusBounds)
+		.def("SetZBounds", &BasicSurfaceScalingFunction::SetZBounds)
+		.def("SetCenterMin", &BasicSurfaceScalingFunction::SetCenterMin)
+		.def("SetCenterMax", &BasicSurfaceScalingFunction::SetCenterMax)
 	;
 	class_<ConstantSurfaceScalingFunction, ConstantSurfaceScalingFunctionPtr, bases<SurfaceScalingFunction> >("ConstantSurfaceScalingFunction",
 	    init<SamplingSurfacePtr>())

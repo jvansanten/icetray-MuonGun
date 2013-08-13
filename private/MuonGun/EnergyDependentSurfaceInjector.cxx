@@ -282,6 +282,18 @@ BasicSurfaceScalingFunction::SetZBounds(double zmin, double zmax)
 	zBounds_ = std::make_pair(zmin, zmax);
 }
 
+void
+BasicSurfaceScalingFunction::SetCenterMin(double x, double y)
+{
+	centerBounds_.first = std::make_pair(x, y);
+}
+
+void
+BasicSurfaceScalingFunction::SetCenterMax(double x, double y)
+{
+	centerBounds_.second = std::make_pair(x, y);
+}
+
 bool
 BasicSurfaceScalingFunction::operator==(const SurfaceScalingFunction &o) const
 {

@@ -45,7 +45,9 @@ double
 SplineEnergyDistribution::GetLog(double depth, double cos_theta, 
     unsigned multiplicity, double radius, double energy) const
 {
-	double coords[5] = {cos_theta, depth, multiplicity, radius, std::max(minLogEnergy_, std::log(energy))};
+	double coords[5] = {cos_theta, depth, multiplicity,
+	    std::min(radius, bundles_.GetExtents(3).second),
+	    std::max(minLogEnergy_, std::log(energy))};
 	double logprob;
 	
 	if (multiplicity < 2) {
