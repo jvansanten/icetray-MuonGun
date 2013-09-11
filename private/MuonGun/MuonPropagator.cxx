@@ -19,6 +19,7 @@
 #include "PROPOSAL/PhotoStochastic.h"
 #include "PROPOSAL/IonizStochastic.h"
 
+#include <boost/assign.hpp>
 #include <boost/foreach.hpp>
 
 namespace I3MuonGun {
@@ -88,11 +89,50 @@ MuonPropagator::GetName(const I3Particle &p)
 	return GetMMCName(p.GetType());
 }
 
+typedef boost::bimaps::bimap<boost::bimaps::multiset_of<I3Particle::ParticleType>, boost::bimaps::multiset_of<int> > particle_type_conversion_t;
+
+static const particle_type_conversion_t fromRDMCTable =
+boost::assign::list_of<particle_type_conversion_t::relation>
+(I3Particle::unknown, -100)
+(I3Particle::Gamma, 1)
+(I3Particle::EPlus, 2)
+(I3Particle::EMinus, 3)
+(I3Particle::Nu, 4)
+(I3Particle::MuPlus, 5)
+(I3Particle::MuMinus, 6)
+(I3Particle::Pi0, 7)
+(I3Particle::PiPlus, 8)
+(I3Particle::PiMinus, 9)
+(I3Particle::KPlus, 11)
+(I3Particle::KMinus, 12)
+(I3Particle::PPlus, 14)
+(I3Particle::PMinus, 15)
+(I3Particle::TauPlus, 33)
+(I3Particle::TauMinus, 34)
+(I3Particle::Monopole, 41)
+(I3Particle::NuE, 201)
+(I3Particle::NuMu, 202)
+(I3Particle::NuTau, 203)
+(I3Particle::NuEBar, 204)
+(I3Particle::NuMuBar, 205)
+(I3Particle::NuTauBar, 206)
+(I3Particle::Brems, 1001)
+(I3Particle::DeltaE, 1002)
+(I3Particle::PairProd, 1003)
+(I3Particle::NuclInt, 1004)
+(I3Particle::MuPair, 1005)
+(I3Particle::Hadrons, 1006);
+
 inline I3Particle
 to_I3Particle(const PROPOSALParticle *pp)
 {
 	I3Particle p;
-	p.SetRDMCType(static_cast<I3Particle::ParticleType>(abs(pp->type)));
+	particle_type_conversion_t::right_const_iterator it =
+	    fromRDMCTable.right.find(abs(pp->type));
+	if (it == fromRDMCTable.right.end())
+		log_fatal("unknown RDMC code \"%i\" cannot be converted to a I3Particle::ParticleType.", pp->type);
+	else
+		p.SetType(it->second);
 	p.SetLocationType(I3Particle::InIce);
 	p.SetPos(pp->x*I3Units::cm, pp->y*I3Units::cm, pp->z*I3Units::cm);
 	p.SetTime(pp->t*I3Units::s);
