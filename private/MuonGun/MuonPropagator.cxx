@@ -6,6 +6,11 @@
  * $Date$
  */
 
+#include <boost/assign.hpp>
+#include <boost/foreach.hpp>
+#include <boost/bimap/bimap.hpp>
+#include <boost/bimap/multiset_of.hpp>
+
 #include "MuonGun/MuonPropagator.h"
 
 #include "PROPOSAL/Propagate.h"
@@ -18,9 +23,6 @@
 #include "PROPOSAL/EpairStochastic.h"
 #include "PROPOSAL/PhotoStochastic.h"
 #include "PROPOSAL/IonizStochastic.h"
-
-#include <boost/assign.hpp>
-#include <boost/foreach.hpp>
 
 namespace I3MuonGun {
 
