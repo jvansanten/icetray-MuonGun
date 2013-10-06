@@ -111,5 +111,5 @@ SplineTable::load(Archive &ar, unsigned version)
 
 }
 
-I3_SERIALIZABLE(I3MuonGun::SplineTable);
+I3_SPLIT_SERIALIZABLE(I3MuonGun::SplineTable);
 
