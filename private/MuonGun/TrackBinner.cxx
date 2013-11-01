@@ -79,19 +79,26 @@ void TrackBinner::Consume(boost::shared_ptr<const TrackBundle> tracks,
 NeutrinoBinner::NeutrinoBinner()
 {
 	using namespace histogram::binning;
-	// Zenith angle, bundle energy, neutrino energy
+	// Zenith angle, bundle energy, neutrino energy, parent type
 	histogram::histogram<3>::bin_specification mspecs;
 	mspecs[0] = uniform<cosine>::create(0, M_PI/2, 101);
 	mspecs[1] = uniform<histogram::binning::log10>::create(1, 1e8, 101);
 	mspecs[2] = uniform<histogram::binning::log10>::create(1e2, 1e8, 101);
 	
-	nu_e_ = boost::make_shared<histogram::histogram<3> >(mspecs);
-	nu_mu_ = boost::make_shared<histogram::histogram<3> >(mspecs);
+	boost::array<I3Particle::ParticleType, 3> nutypes = {{I3Particle::NuE, I3Particle::NuMu, I3Particle::NuTau}};
+	BOOST_FOREACH(I3Particle::ParticleType ptype, nutypes) {
+		histmap::mapped_type &vec = histograms_[ptype];
+		for (int i=0; i < 4; i++)
+			vec.push_back(boost::make_shared<hist>(mspecs));
+	}
 }
 
 void NeutrinoBinner::Consume(boost::shared_ptr<const TrackBundle> tracks,
-    I3MCTreeConstPtr tree, double weight)
+    I3MCTreeConstPtr tree, I3ParticleIDMapConstPtr particle_weights, double flux_weight)
+    // I3MCTreeConstPtr tree, double flux_weight)
+
 {
+	// I3ParticleIDMapConstPtr particle_weights;
 	if (tree->size() == 0)
 		return;
 	double zenith = tree->begin()->GetZenith();
@@ -103,21 +110,44 @@ void NeutrinoBinner::Consume(boost::shared_ptr<const TrackBundle> tracks,
 		total_energy = 0;
 	
 	boost::array<double, 3> values = {{zenith, total_energy, 0.}};
-	BOOST_FOREACH(const I3Particle &p, std::make_pair(tree->begin(), tree->end())) {
+	for (I3MCTree::iterator it = tree->begin(); it != tree->end(); it++) {
+		const I3Particle &p = *it;
 		if (p.IsNeutrino()) {
+			double weight = flux_weight;
+			if (particle_weights != NULL) {
+				I3ParticleIDMap::const_iterator w = particle_weights->find(p.GetID());
+				if (w != particle_weights->end())
+					weight *= w->second;
+			}
 			values[2] = p.GetEnergy();
-			switch (p.GetPdgEncoding()) {
-				case 12:
-				case -12:
-					nu_e_->fill(values, weight);
-					break;
-				case 14:
-				case -14:
-					nu_mu_->fill(values, weight);
-					break;
-				default:
-					log_fatal("Unknown neutrino type %d!", p.GetPdgEncoding());
-			}	
+			
+			// Find neutrino type
+			histmap::iterator ptype = histograms_.find(std::abs(p.GetPdgEncoding()));
+			if (ptype == histograms_.end())
+				log_fatal("Unknown neutrino type %s!", p.GetTypeString().c_str());
+			
+			histmap::mapped_type::iterator target;
+			
+			// Find parent type
+			I3MCTree::iterator parent = tree->parent(it);
+			int pcode = tree->is_valid(it) ? std::abs(parent->GetPdgEncoding()) : 0;
+			// Classify mesons by heaviest consituent quark
+			if (pcode/1000 == 0 && pcode/100 > 0 /* mesons */) {
+				// charm
+				if (pcode/100 == 4)
+					target = ptype->second.begin()+2;
+				// strange (including K_long)
+				else if (pcode/100 == 3 || pcode == 130)
+					target = ptype->second.begin()+1;
+				// all other mesons (almost entirely pions)
+				else
+					target = ptype->second.begin();
+			// Put everything else in a big jug
+			} else {
+				target = ptype->second.begin()+3;
+			}
+			
+			(*target)->fill(values, weight);
 		}
 	}
 }
