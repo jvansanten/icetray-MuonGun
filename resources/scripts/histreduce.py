@@ -49,7 +49,7 @@ def histadd(sourceGroup, destGroup, blocksize=1):
 
 with tables.openFile(outfile, 'a') as ohdf:
 	for path, fnames in paths.iteritems():
-		print path
+		print(path)
 		destGroup = ohdf.getNode(path)
 		for fname in fnames:
 			with tables.openFile(fname) as hdf:
