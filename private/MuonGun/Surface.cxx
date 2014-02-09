@@ -111,7 +111,7 @@ static double integrate_area(double a, double b, double radius, double length)
 {
 	return (M_PI/2)*radius*(radius*(b*b - a*a)
 	    + (2*length/M_PI)*(acos(a) - acos(b) -
-	      (sqrt(1-a*a)*a) - sqrt(1-b*b)*b));
+	      (sqrt(1-a*a)*a) + sqrt(1-b*b)*b));
 }
 
 double
