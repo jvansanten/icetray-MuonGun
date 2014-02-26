@@ -143,11 +143,9 @@ Muonitron::DAQ(I3FramePtr frame)
 			if (track.GetEnergy() > 0)
 				tracks.push_back(track);
 		}	
-	// std::cout << "Surface: " << (tracks.size()) << " muons" << std::endl;
 	
 	I3MuonGun::TrackBundlePtr bundle = boost::make_shared<I3MuonGun::TrackBundle>();
 	double traveled = 0;
-	// std::cout << "*" << std::endl;
 	BOOST_FOREACH(double vdepth, depths_) {
 		
 		// Find the slant depth from the surface of the glacier to
@@ -155,7 +153,6 @@ Muonitron::DAQ(I3FramePtr frame)
 		double dx = GetOverburden(primary.GetDir().GetZenith(), vdepth, 6374134);
 		std::vector<I3MuonGun::CompactTrack> deep_tracks;
 		for (std::list<I3Particle>::iterator pit = tracks.begin(); pit != tracks.end(); ) {
-			// std::cout << "h: " << vdepth << " slant: " << dx << " l: " << pit->GetLength() << std::endl;
 			
 			// Propagate the muon the remaining distance to reach the desired depth.
 			if (PropagateTrack(*pit, dx-pit->GetLength())) {
@@ -166,13 +163,8 @@ Muonitron::DAQ(I3FramePtr frame)
 			}
 		}
 		
-		// std::cout << "zenith: " << primary.GetDir().GetZenith() << " ice depth: " << vdepth/IceDensity << std::endl;
-		// std::cout << vdepth << " mwe (" << traveled << " slant): " << (deep_tracks.size()) << " muons" << std::endl;
-		
-		if (deep_tracks.size() > 0)
-			(*bundle)[vdepth].swap(deep_tracks); 
+		(*bundle)[vdepth].swap(deep_tracks); 
 	}
-	// std::cout << "*" << std::endl;
 	
 	frame->Put("MCPrimary", boost::make_shared<I3Particle>(primary));
 	frame->Put("Tracks", bundle);
