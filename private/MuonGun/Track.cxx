@@ -23,8 +23,9 @@ Track::Track(const I3MMCTrack &mmctrack,
 	if (mmctrack.GetEi() > 0) {
 		// Track started outside the MMC volume; we get an extra
 		// measurement point (but no stochastics)
-		checkpoints_.push_back(Checkpoint((mmctrack.GetTi()-I3Particle::GetTime())*I3Particle::GetSpeed(),
-		    mmctrack.GetEi(), losses_.size()));
+		double d = (I3Position(mmctrack.GetXi(), mmctrack.GetYi(),
+		    mmctrack.GetZi())-I3Particle::GetPos()).Magnitude();
+		checkpoints_.push_back(Checkpoint(d, mmctrack.GetEi(), losses_.size()));
 	}
 	
 	// Sum energy losses between entry and exit
@@ -32,20 +33,17 @@ Track::Track(const I3MMCTrack &mmctrack,
 	BOOST_FOREACH(const I3Particle &p, std::make_pair(sbegin, send)) {
 		if (p.GetShape() == I3Particle::Dark)
 			continue;
-		if (p.GetTime() < mmctrack.GetTi()-10 || p.GetTime() > mmctrack.GetTf()+10)
-			log_fatal("Stochastic loss at %.1f ns is outside the simulation volume "
-			    "(%.1f, %.1f) ns. Did you forget to time-shift the MMCTrackList?",
-			    p.GetTime(), mmctrack.GetTi(), mmctrack.GetTf());
 		elost += p.GetEnergy();
-		losses_.push_back(LossSum((p.GetTime()-I3Particle::GetTime())*GetSpeed(),
-		    elost));
+		double d = (p.GetPos()-I3Particle::GetPos()).Magnitude();
+		losses_.push_back(LossSum(d, elost));
 	}
 	
 	if (mmctrack.GetEf() > 0) {
 		// Track made it to the edge of the MMC volume
 		losses_.push_back(LossSum(checkpoints_.back().length, elost));
-		checkpoints_.push_back(Checkpoint((mmctrack.GetTf()-I3Particle::GetTime())*I3Particle::GetSpeed(),
-		    mmctrack.GetEf(), losses_.size()));
+		double d = (I3Position(mmctrack.GetXf(), mmctrack.GetYf(),
+		    mmctrack.GetZf())-I3Particle::GetPos()).Magnitude();
+		checkpoints_.push_back(Checkpoint(d, mmctrack.GetEf(), losses_.size()));
 		elost = 0.;
 	}
 	
@@ -130,9 +128,9 @@ inline I3MMCTrack
 TimeShift(const I3Particle &p, const I3MMCTrack mmctrack)
 {
 	I3MMCTrack shifted(mmctrack);
-	double dt = p.GetTime() + p.GetPos().CalcDistance(I3Position(
-	    mmctrack.GetXi(), mmctrack.GetYi(), mmctrack.GetZi()))/p.GetSpeed()
-	    - mmctrack.GetTi();
+	double d = (p.GetPos()-I3Position(mmctrack.GetXi(), mmctrack.GetYi(),
+	    mmctrack.GetZi())).Magnitude();
+	double dt = p.GetTime() + d/p.GetSpeed() - mmctrack.GetTi();
 	shifted.SetEnter( mmctrack.GetXi(), mmctrack.GetYi(), mmctrack.GetZi(), mmctrack.GetTi() + dt, mmctrack.GetEi());
 	shifted.SetCenter(mmctrack.GetXc(), mmctrack.GetYc(), mmctrack.GetZc(), mmctrack.GetTc() + dt, mmctrack.GetEc());
 	shifted.SetExit(  mmctrack.GetXf(), mmctrack.GetYf(), mmctrack.GetZf(), mmctrack.GetTf() + dt, mmctrack.GetEf());
