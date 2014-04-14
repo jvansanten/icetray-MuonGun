@@ -1,6 +1,7 @@
 
 import numpy
 import copy
+import sys
 from optparse import Option, OptionValueError
 
 # hobo versions of IceTray enumerations
@@ -97,7 +98,8 @@ class GenerationProbability(object):
 			globalvars = dict([(subcls.__name__, subcls) for subcls in cls.__subclasses__()])
 			try:
 				genprob = eval(value, dict(), globalvars)
-			except Exception as e:
+			except Exception:
+				e = sys.exc_info()[1]
 				raise OptionValueError(str(e))
 			if isinstance(genprob, GenerationProbability) or isinstance(genprob, CombinedSample):
 				return genprob
