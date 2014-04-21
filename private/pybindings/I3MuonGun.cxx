@@ -16,4 +16,5 @@ register_I3MuonGun()
 	using namespace I3MuonGun;
 	namespace bp = boost::python;
 	
+	bp::def("depth", &GetDepth, "Convert a z coordinate to a depth.");
 }
