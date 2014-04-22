@@ -44,7 +44,7 @@ void register_EnergyDistribution()
 	using namespace I3MuonGun;
 	
 	class_<EnergyDistribution, EnergyDistributionPtr, boost::noncopyable>("EnergyDistribution", no_init)
-	    .def("__call__", &EnergyDistribution::operator(), (arg("depth"), "cos_theta", "radius", "multiplicity", "energy"))
+	    .def("__call__", &EnergyDistribution::operator(), (arg("depth"), "cos_theta", "multiplicity", "radius", "energy"))
 	    .def("generate", &EnergyDistribution::Generate, (arg("rng"), arg("depth"), "cos_theta", "multiplicity", "radius"))
 	;
 	
@@ -58,7 +58,7 @@ void register_EnergyDistribution()
 	;
 	
 	class_<PyEnergyDistribution, boost::noncopyable>("EnergyDistributionBase")
-    	    .def("__call__", &EnergyDistribution::operator(), (arg("depth"), "cos_theta", "radius", "multiplicity", "energy"))
+    	    .def("__call__", &EnergyDistribution::operator(), (arg("depth"), "cos_theta", "multiplicity", "radius", "energy"))
     	    .def("generate", &EnergyDistribution::Generate, (arg("rng"), arg("depth"), "cos_theta", "multiplicity", "radius"))
 		    ;
 	
