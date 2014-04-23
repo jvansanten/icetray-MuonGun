@@ -1,7 +1,7 @@
 
 # a collection of cosmic-ray fluxes
 
-from .weighting import I3Units, ParticleType
+from weighting import I3Units, ParticleType
 import numpy
 import operator
 
