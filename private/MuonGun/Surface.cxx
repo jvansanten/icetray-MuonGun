@@ -206,7 +206,7 @@ Cylinder::SampleImpactRay(I3Position &impact, I3Direction &dir, I3RandomService 
 	// minor axis r*cos(theta). Pick a point from a uniform
 	// distribution over this area.
 	double a = sin(dir.GetZenith())*length_/2.;
-	double b = cos(dir.GetZenith())*radius_;
+	double b = fabs(cos(dir.GetZenith()))*radius_;
 	double x, y;
 	do {
 		x = radius_*rng.Uniform(-1, 1);
