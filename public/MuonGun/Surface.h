@@ -74,6 +74,9 @@ namespace I3MuonGun {
 		 */
 		virtual double IntegrateFlux(boost::function<double (double, double)> flux, double cosMin=0, double cosMax=1) const = 0;
 	
+		virtual I3Direction SampleDirection(I3RandomService &rng, double cosMin=0, double cosMax=1) const = 0;
+		virtual I3Position SampleImpactPosition(const I3Direction &dir, I3RandomService &rng) const = 0;		
+	
 		 /**
 		  * Sample an impact point and direction from an isotropic flux
 		  *
@@ -84,7 +87,7 @@ namespace I3MuonGun {
 		  * @param[in]  cosMax cosine of the minimum zenith angle to consider
 		  * @returns the projected area along the chosen zenith angle
 		  */ 
-		virtual double SampleImpactRay(I3Position &pos, I3Direction &dir, I3RandomService &rng, double cosMin=0, double cosMax=1) const = 0;
+		virtual double SampleImpactRay(I3Position &pos, I3Direction &dir, I3RandomService &rng, double cosMin=0, double cosMax=1) const;
 	
 	private:
 		friend class boost::serialization::access;
@@ -111,8 +114,8 @@ namespace I3MuonGun {
 		double GetMaxDifferentialArea() const;
 		double GetMinDepth() const;
 		double IntegrateFlux(boost::function<double (double, double)> flux, double cosMin=0, double cosMax=1) const;
-		double SampleImpactRay(I3Position &pos, I3Direction &dir, I3RandomService &rng, double cosMin=0, double cosMax=1) const;
-		
+		virtual I3Direction SampleDirection(I3RandomService &rng, double cosMin=0, double cosMax=1) const;
+		virtual I3Position SampleImpactPosition(const I3Direction &dir, I3RandomService &rng) const;		
 		void SetLength(double v) { length_ = v; }
 		double GetLength() const { return length_; }
 		
@@ -138,6 +141,8 @@ namespace I3MuonGun {
 
 	I3_POINTER_TYPEDEFS(Cylinder);
 
+	
+
 	/**
 	 * @brief A sphere with its origin at a given vertical depth
 	 */
@@ -158,6 +163,39 @@ namespace I3MuonGun {
 		
 
 	};
+	
+	/**
+	 * @brief A cylinder aligned with the incoming particle axis a la NuGen
+	 */
+	class AxialCylinder : public SamplingSurface {
+	public:
+		AxialCylinder(double length, double radius, I3Position center=I3Position(0,0,0) );
+		AxialCylinder(double lengthBefore, double lengthAfter, double radius, I3Position center=I3Position(0,0,0) );
+		
+		virtual std::pair<double, double> GetIntersection(const I3Position &p, const I3Direction &dir) const;
+		virtual bool operator==(const Surface&) const;
+		
+		// SamplingSurface interface
+		double GetDifferentialArea(double coszen) const;
+		double GetTotalArea(double cosMin=0, double cosMax=1) const;
+		double GetMaxDifferentialArea() const;
+		double GetMinDepth() const;
+		double IntegrateFlux(boost::function<double (double, double)> flux, double cosMin=0, double cosMax=1) const;
+		virtual I3Direction SampleDirection(I3RandomService &rng, double cosMin=0, double cosMax=1) const;
+		virtual I3Position SampleImpactPosition(const I3Direction &dir, I3RandomService &rng) const;
+	private:
+		AxialCylinder() {}
+		
+		friend class boost::serialization::access;
+		template <typename Archive>
+		void serialize(Archive &, unsigned);
+		
+		std::pair<double, double> length_;
+		double radius_;
+		I3Position center_;
+	};
+	
+	I3_POINTER_TYPEDEFS(AxialCylinder);
 
 }
 
