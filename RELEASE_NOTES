@@ -4,4 +4,16 @@
 
 July 11, 2014 Alex Olivas  (olivas@icecube.umd.edu)
 --------------------------------------------------------------------
-Added release notes for this project.
+Added release notes for this project. Enhancements and bugfixes since 00-00-03:
+
+- Add an axial cylinder sampling surface for use in NeutrinoGenerator
+- Add pybindings for I3MuonGun::GetDepth() and fix up argument order in
+  EnergyDistribution
+- Fix up various incompatibilities with Python 2.4 and 3
+- When choosing intersection points with a cylinder, allow up-going tracks to
+  intersect the bottom cap (reported by chaack)
+- Fix a sign error in the projected area term for cylinders. This was important
+  for extremely long cylinders. (reported by cweaver)
+- Check down-track distances of stochastic losses by distance rather than time
+  in Track
+
