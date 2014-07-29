@@ -17,7 +17,7 @@ def GenerateBundles(tray, name, Generator=None,
 	from icecube import icetray, dataclasses
 	from icecube import sim_services, MuonGun
 	
-	randomService = tray.context['I3RandomService']
+	RandomService = tray.context['I3RandomService']
 	
 	tray.AddModule("I3InfiniteSource",name+"_streams",
 	    Prefix=GCDFile, Stream=icetray.I3Frame.DAQ)
