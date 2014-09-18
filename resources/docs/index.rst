@@ -218,6 +218,7 @@ surface by dividing the differential flux by the differential number of
 simulated events:
 
 .. math::
+
 	w \,\, [\rm s^{-1}] = \frac{d\Phi/dE}{dN/dEdAd\Omega} \left[ \frac{\rm GeV^{-1} s^{-1} m^{-2} sr^{-1}}{ \rm GeV^{-1} m^{-2} sr^{-1}} \right]
 
 .. py:currentmodule:: icecube.MuonGun.fluxes
