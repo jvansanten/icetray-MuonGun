@@ -75,19 +75,11 @@ i3_add_library(MuonGun
     USE_PROJECTS ${LIB_${PROJECT_NAME}_PROJECTS}
 )
 
-IF (NUMPY_FOUND)
-    LIST (APPEND LIB_${PROJECT_NAME}_PYSOURCES
-        private/boost_numpy/dtype.cpp
-        private/boost_numpy/matrix.cpp
-        private/boost_numpy/ndarray.cpp
-        private/boost_numpy/numpy.cpp
-        private/boost_numpy/scalars.cpp
-        private/boost_numpy/ufunc.cpp
-    )
-    LIST (APPEND LIB_${PROJECT_NAME}_TOOLS numpy)
+IF (BOOSTNUMPY_FOUND)
+    LIST (APPEND LIB_${PROJECT_NAME}_TOOLS boostnumpy)
     ADD_DEFINITIONS(-DUSE_NUMPY)
     COLORMSG (CYAN "+-- boost::numpy")
-ENDIF (NUMPY_FOUND)
+ENDIF (BOOSTNUMPY_FOUND)
 
 i3_add_pybindings(MuonGun
   ${LIB_${PROJECT_NAME}_PYSOURCES}
