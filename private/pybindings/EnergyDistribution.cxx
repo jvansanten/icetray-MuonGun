@@ -8,6 +8,7 @@
 
 #include <MuonGun/EnergyDistribution.h>
 #include <phys-services/I3RandomService.h>
+#include "utils.h"
 
 #include <icetray/python/gil_holder.hpp>
 
@@ -44,7 +45,7 @@ void register_EnergyDistribution()
 	using namespace I3MuonGun;
 	
 	class_<EnergyDistribution, EnergyDistributionPtr, boost::noncopyable>("EnergyDistribution", no_init)
-	    .def("__call__", &EnergyDistribution::operator(), (arg("depth"), "cos_theta", "multiplicity", "radius", "energy"))
+	    DEF("__call__", &EnergyDistribution::operator(), (arg("depth"), "cos_theta", "multiplicity", "radius", "energy"))
 	    .def("generate", &EnergyDistribution::Generate, (arg("rng"), arg("depth"), "cos_theta", "multiplicity", "radius"))
 	;
 	
@@ -58,13 +59,13 @@ void register_EnergyDistribution()
 	;
 	
 	class_<PyEnergyDistribution, boost::noncopyable>("EnergyDistributionBase")
-    	    .def("__call__", &EnergyDistribution::operator(), (arg("depth"), "cos_theta", "multiplicity", "radius", "energy"))
+    	    DEF("__call__", &EnergyDistribution::operator(), (arg("depth"), "cos_theta", "multiplicity", "radius", "energy"))
     	    .def("generate", &EnergyDistribution::Generate, (arg("rng"), arg("depth"), "cos_theta", "multiplicity", "radius"))
 		    ;
 	
 	class_<OffsetPowerLaw, boost::shared_ptr<OffsetPowerLaw> >("OffsetPowerLaw",
 	    init<double,double,double,double>((arg("gamma"), "offset", "min", "max")))
-	    .def("__call__", &OffsetPowerLaw::operator())
+	    DEF("__call__", &OffsetPowerLaw::operator(), (arg("energy")))
 	    .def("generate", &OffsetPowerLaw::Generate)
 	;
 }

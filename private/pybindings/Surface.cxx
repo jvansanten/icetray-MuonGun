@@ -12,6 +12,7 @@
 #include <phys-services/I3RandomService.h>
 #include <icetray/python/dataclass_suite.hpp>
 #include <MuonGun/Flux.h>
+#include "utils.h"
 
 static double IntegrateFlux(const I3MuonGun::SamplingSurface &s, I3MuonGun::FluxPtr flux, unsigned m, double cosMin, double cosMax)
 {
@@ -38,8 +39,8 @@ void register_Surface()
 	implicitly_convertible<SurfacePtr, SurfaceConstPtr>();
 	
 	class_<SamplingSurface, SamplingSurfacePtr, bases<Surface>, boost::noncopyable>("SamplingSurface", no_init)
-	    .def("differential_area", &SamplingSurface::GetDifferentialArea)
-	    .def("total_area", &SamplingSurface::GetTotalArea, (arg("cosMin")=0., arg("cosMax")=1.))
+	    DEF("differential_area", &SamplingSurface::GetDifferentialArea, (arg("costheta")))
+	    DEF("total_area", &SamplingSurface::GetTotalArea, (arg("cosMin")=0., arg("cosMax")=1.))
 	    .def("integrate_flux", &IntegrateFlux, (arg("self"), arg("flux"), arg("m")=1u, arg("cosMin")=0, arg("cosMax")=1))
 	    .def("sample_impact_ray", &SampleImpactRay, (arg("self"), arg("rng"), arg("cosMin")=0, arg("cosMax")=1))
 	;

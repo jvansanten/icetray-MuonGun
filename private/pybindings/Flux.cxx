@@ -8,6 +8,7 @@
 
 #include <MuonGun/Flux.h>
 #include <icetray/python/gil_holder.hpp>
+#include "utils.h"
 
 namespace I3MuonGun {
 
@@ -30,7 +31,7 @@ void register_Flux()
 	using namespace boost::python;
 	
 	class_<Flux, boost::noncopyable>("Flux", no_init)
-	    .def("__call__", &Flux::operator(), (args("depth"), "cos_theta", "multiplicity"))
+	    DEF("__call__", &Flux::operator(), (args("depth"), "cos_theta", "multiplicity"))
 	    #define PROPS (MinMultiplicity)(MaxMultiplicity)
 	    BOOST_PP_SEQ_FOR_EACH(WRAP_PROP, Flux, PROPS)
 	    #undef PROPS
@@ -43,7 +44,7 @@ void register_Flux()
 	;
 	
 	class_<PyFlux, boost::noncopyable>("FluxBase")
-    	    .def("__call__", &Flux::operator(), (args("depth"), "cos_theta", "multiplicity"))
+    	    DEF("__call__", &Flux::operator(), (args("depth"), "cos_theta", "multiplicity"))
     	    #define PROPS (MinMultiplicity)(MaxMultiplicity)
     	    BOOST_PP_SEQ_FOR_EACH(WRAP_PROP, Flux, PROPS)
     	    #undef PROPS

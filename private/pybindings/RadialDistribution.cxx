@@ -8,6 +8,7 @@
 
 #include <MuonGun/RadialDistribution.h>
 #include <phys-services/I3RandomService.h>
+#include "utils.h"
 
 void
 register_RadialDistribution()
@@ -17,7 +18,8 @@ register_RadialDistribution()
 	
 	bp::class_<RadialDistribution, RadialDistributionPtr,
 	    boost::noncopyable>("RadialDistribution", bp::no_init)
-	    .def("__call__", &RadialDistribution::operator())
+	    DEF("__call__", &RadialDistribution::operator(),
+	        (bp::arg("depth"), "cos_theta", "multiplicity", "radius"))
 	    .def("generate", &RadialDistribution::Generate)
 	;
 	
