@@ -195,6 +195,10 @@ weight::
 		weights = weighter(axis['x'], axis['y'], axis['z'], axis['zenith'], axis['azimuth'],
 		    bundle['multiplicity'], bundle['energy'], bundle['radius'])
 
+.. note:: The weighter will only be able to accept Numpy arrays if you have `boost::numpy`_ installed. If you do not have `boost::numpy`_ it will simply be exposed as a scalar function.
+
+.. _`boost::numpy`: https://github.com/martwo/BoostNumpy/
+
 API
 ^^^
 
