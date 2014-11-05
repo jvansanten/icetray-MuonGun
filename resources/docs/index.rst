@@ -258,8 +258,11 @@ This class can be used, for example, to find the total energy losses
 	for track in MuonGun.Track.harvest(frame['I3MCTree'], frame['MMCTrackList']):
 		# Find distance to entrance and exit from sampling volume	
 		intersections = surface.intersection(track.pos, track.dir)
+		# Adjust endpoints for starting or contained tracks
+		d0 = max((0, intersections.first))
+		d1 = min((track.length, intersections.second))
 		# Get the corresponding energies
-		e0, e1 = track.get_energy(intersections.first), track.get_energy(intersections.second)
+		e0, e1 = track.get_energy(d0), track.get_energy(d1)
 		# Accumulate
 		edep +=  (e1-e0)
 
