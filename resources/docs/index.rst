@@ -251,6 +251,8 @@ a utility class, :py:class:`Track`, to automate this task.
 
 This class can be used, for example, to find the total energy losses
 (stochastic and continuous) of all muons within some volume::
+	from icecube import MuonGun, simclasses
+	
 	# A surface approximating the actual detector (make it smaller if you only care e.g. about DeepCore)
 	surface = MuonGun.Cylinder(1000,500)
 
