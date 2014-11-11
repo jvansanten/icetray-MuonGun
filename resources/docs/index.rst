@@ -298,7 +298,7 @@ simulated events:
 
 	w \,\, [\rm s^{-1}] = \frac{d\Phi/dE}{dN/dEdAd\Omega} \left[ \frac{\rm GeV^{-1} s^{-1} m^{-2} sr^{-1}}{ \rm GeV^{-1} m^{-2} sr^{-1}} \right]
 
-.. py:currentmodule:: icecube.MuonGun.fluxes
+.. py:currentmodule:: icecube.weighting.fluxes
 
 For the numerator, three parameterizations of the primary cosmic ray flux are provided:
 
@@ -308,7 +308,7 @@ For the numerator, three parameterizations of the primary cosmic ray flux are pr
 
 .. autoclass:: GaisserH4a
 
-.. py:currentmodule:: icecube.MuonGun.weighting
+.. py:currentmodule:: icecube.weighting.weighting
 
 The denominator is in principle easy to calculate, as it consists of a series
 of power laws for each primary nucleus. However, the bookkeeping becomes quite
@@ -322,11 +322,11 @@ calculate a differential number of events for each primary type.
 The notion of combining simulation sets can be expressed by addition and multiplication of the appropriate :py:class:`GenerationProbability` objects. For instance, to create a normalization term for two different 5-component sets, one with 100k files and one with 27k::
 	
 	>>> low = FiveComponent(10000000, 600, 1e5, [5, 2.25, 1.1, 1.2, 1.0], [-2.65, -2.6, -2.6, -2.6, -2.6], )
-	<icecube.MuonGun.weighting.GenerationProbabilityCollection object at 0x1099667d0>
+	<icecube.weighting.weighting.GenerationProbabilityCollection object at 0x1099667d0>
 	>>> high = FiveComponent(30000, 1e5, 1e11, [3, 2.25, 1.1, 1.2, 1.0], [-2.]*5,  spric=False)
-	<icecube.MuonGun.weighting.GenerationProbabilityCollection object at 0x109966990>
+	<icecube.weighting.weighting.GenerationProbabilityCollection object at 0x109966990>
 	>>> norm = 1e5*low + 2.7e4*high
-	<icecube.MuonGun.weighting.GenerationProbabilityCollection at 0x109966410>
+	<icecube.weighting.weighting.GenerationProbabilityCollection at 0x109966410>
 
 Since all of these functions operate on Numpy arrays, they can easily be used
 to calculate weights from HDF5 files. As an example, suppose there is an HDF5

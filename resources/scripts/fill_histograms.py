@@ -99,7 +99,7 @@ class buffering_histogram(dashi.histogram.histogram):
 
 # here we have heterogenous generation spectra, and have to be very
 # careful about the number of files generated for with each setting
-from cubicle.weighting import PowerLaw
+from icecube.weighting.weighting import PowerLaw
 spectra = {
 	dataclasses.I3Particle.PPlus :  (1000 + 64)*PowerLaw(1e6, 5e2, 1e10, -2) + 1000*PowerLaw(1e6, 1e4, 1e10, -2) + 521*PowerLaw(1e3, 1e4, 1e10, -1),
 	dataclasses.I3Particle.He4Nucleus : 64*PowerLaw(1e6, 2e3, 1e10, -2) + 731*PowerLaw(1e6, 4e4, 1e10, -2) + 525*PowerLaw(1e3, 1e4, 1e10, -1),

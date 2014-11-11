@@ -52,7 +52,7 @@ def dcorsika_spectra(gamma=[-2.]*5, normalization=[10., 5., 3., 2., 1.], emin=6e
 	"""
 	Calculate the generation spectra for the H, He, N, Al, and Fe components of 5-component dCORSIKA
 	"""
-	from cubicle.weighting import PowerLaw
+	from icecube.weighting.weighting import PowerLaw
 	masses = [1, 4, 14, 27, 56] 
 	fluxsums = numpy.array([n*fluxsum(emin*m, emax, g) for m, g, n in zip(masses, gamma, normalization)])
 	nshower = nevents*fluxsums/fluxsums.sum()

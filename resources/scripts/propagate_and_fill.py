@@ -6,8 +6,8 @@ from icecube import icetray, dataclasses, dataio
 from icecube.icetray import I3Units
 from icecube import MuonGun
 from I3Tray import I3Tray
-from icecube.MuonGun.weighting import GenerationProbability, PowerLaw, EnergyWeight, FiveComponent
-from icecube.MuonGun import fluxes
+from icecube.weighting.weighting import GenerationProbability, PowerLaw, EnergyWeight, FiveComponent
+from icecube.weighting import fluxes
 import numpy
 import os, subprocess, operator
 from optparse import OptionParser
