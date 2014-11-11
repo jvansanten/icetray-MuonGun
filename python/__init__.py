@@ -2,8 +2,6 @@ from icecube.load_pybindings import load_pybindings
 import icecube.icetray, icecube.dataclasses # be nice and pull in our dependencies
 load_pybindings(__name__,__path__)
 
-from icecube.weighting import fluxes,weighting
-
 def load_model(base):
 	from os.path import exists, expandvars, join
 	if not exists(base+'.single_flux.fits'):
