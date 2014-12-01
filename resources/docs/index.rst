@@ -163,7 +163,7 @@ represent a larger number of identically-configured generators. You can pass
 this combined generator to :cpp:class:`WeightCalculatorModule` to calculate a
 weight appropriate for the combined set of files::
 	
-	model = MuonGun.load_model(model)
+	model = MuonGun.load_model('GaisserH4a_atmod12_SIBYLL')
 	generator = harvest_generators(infiles)
 	tray.AddModule('I3MuonGun::WeightCalculatorModule', 'MuonWeight', Model=model,
 	    Surface=generator.surface, Generator=generator)
@@ -198,6 +198,40 @@ weight::
 .. note:: The weighter will only be able to accept Numpy arrays if you have `boost::numpy`_ installed. If you do not have `boost::numpy`_ it will simply be exposed as a scalar function.
 
 .. _`boost::numpy`: https://github.com/martwo/BoostNumpy/
+
+Available flux parameterizations
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The following models are distributed with MuonGun, and are valid arguments for
+:py:func:`icecube.MuonGun.load_model`:
+
+.. table:: Primary cosmic-ray flux parameterizations
+
+	+--------------------------------+---------+-----------+----------------+
+	| Model string                   |CR flux  |Atmosphere | Hadronic model |
+	+================================+=========+===========+================+
+	| Hoerandel5_atmod12_SIBYLL      |Hoerandel|12 (winter)|SIBYLL          |
+	+--------------------------------+---------+           |                |
+	| GaisserH4a_atmod12_SIBYLL      |Gaisser  |           |                |
+	+--------------------------------+         |           +----------------+
+	| GaisserH4a_atmod12_DPMJET      |         |           |DPMJET (conv.)  |
+	+--------------------------------+         |           +----------------+
+	| GaisserH4a_atmod12_DPMJET-C    |         |           |DPMJET (prompt) |
+	+--------------------------------+---------+-----------+----------------+
+
+In addition to the cosmic-ray flux models there are also two 'pseudofluxes' that
+parameterize the output of dCORSIKA in two configurations used to generate most
+of the IC79 penetrating muon simulation.
+
+.. table:: CORSIKA output parameterizations
+	
+	+--------------------------------------+
+	| Model string                         |
+	+======================================+
+	| Standard5Comp_atmod12_SIBYLL         |
+	+--------------------------------------+
+	| CascadeOptimized5Comp_atmod12_SIBYLL |
+	+--------------------------------------+
 
 API
 ^^^
@@ -282,65 +316,3 @@ This can be used to quickly obtain the true multiplicity of a muon bundle when
 it enters the detector::
 	surface = MuonGun.Cylinder(1000,500)
 	multiplicity = len(MuonGun.muons_at_surface(frame, surface))
-
-Weighting CORSIKA simulation
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-
-In order to make the parameterization it was necessary to weight CORSIKA
-air-shower simulation to a number of different flux models. The Python code to
-do this is included in MuonGun for reference. We calculate a weight that turns
-a number of simulated events into a rate of muon bundles crossing a sampling
-surface by dividing the differential flux by the differential number of
-simulated events:
-
-.. math::
-
-	w \,\, [\rm s^{-1}] = \frac{d\Phi/dE}{dN/dEdAd\Omega} \left[ \frac{\rm GeV^{-1} s^{-1} m^{-2} sr^{-1}}{ \rm GeV^{-1} m^{-2} sr^{-1}} \right]
-
-.. py:currentmodule:: icecube.weighting.fluxes
-
-For the numerator, three parameterizations of the primary cosmic ray flux are provided:
-
-.. autoclass:: Hoerandel5
-
-.. autoclass:: GaisserH3a
-
-.. autoclass:: GaisserH4a
-
-.. py:currentmodule:: icecube.weighting.weighting
-
-The denominator is in principle easy to calculate, as it consists of a series
-of power laws for each primary nucleus. However, the bookkeeping becomes quite
-involved once simulation sets with different settings are combined. The
-:py:func:`FiveComponent` factory function simplifies the calculation by
-creating a :py:class:`GenerationProbabilityCollection` object that can
-calculate a differential number of events for each primary type.
-
-.. autofunction:: FiveComponent
-
-The notion of combining simulation sets can be expressed by addition and multiplication of the appropriate :py:class:`GenerationProbability` objects. For instance, to create a normalization term for two different 5-component sets, one with 100k files and one with 27k::
-	
-	>>> low = FiveComponent(10000000, 600, 1e5, [5, 2.25, 1.1, 1.2, 1.0], [-2.65, -2.6, -2.6, -2.6, -2.6], )
-	<icecube.weighting.weighting.GenerationProbabilityCollection object at 0x1099667d0>
-	>>> high = FiveComponent(30000, 1e5, 1e11, [3, 2.25, 1.1, 1.2, 1.0], [-2.]*5,  spric=False)
-	<icecube.weighting.weighting.GenerationProbabilityCollection object at 0x109966990>
-	>>> norm = 1e5*low + 2.7e4*high
-	<icecube.weighting.weighting.GenerationProbabilityCollection at 0x109966410>
-
-Since all of these functions operate on Numpy arrays, they can easily be used
-to calculate weights from HDF5 files. As an example, suppose there is an HDF5
-file with tables /MCPrimary (for the primary nucleus) and /CorsikaWeightMap
-(for the sampling surface area). The normalization calculated above can be used
-to make a weight::
-	
-	energy = hdf.root.MCPrimary.cols.energy[:]
-	ptype = hdf.root.MCPrimary.cols.type[:]
-	area = hdf.root.CorsikaWeightMap.cols.AreaSum[:]
-	flux = MuonGun.Hoerandel5()
-	
-	weight = area*flux(energy, ptype)/norm(energy, ptype)
-
-
-
-
