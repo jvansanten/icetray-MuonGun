@@ -132,7 +132,7 @@ Muonitron::DAQ(I3FramePtr frame)
 	if (!mctree)
 		log_fatal("No MCTree!");
 	
-	I3MCTree::iterator it = mctree->begin();
+	I3MCTree::const_iterator it = mctree->begin();
 	const I3Particle &primary = *it;
 	
 	std::list<I3Particle> tracks;
@@ -145,7 +145,6 @@ Muonitron::DAQ(I3FramePtr frame)
 		}	
 	
 	I3MuonGun::TrackBundlePtr bundle = boost::make_shared<I3MuonGun::TrackBundle>();
-	double traveled = 0;
 	BOOST_FOREACH(double vdepth, depths_) {
 		
 		// Find the slant depth from the surface of the glacier to

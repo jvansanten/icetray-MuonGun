@@ -16,11 +16,15 @@
 #include <icetray/I3PointerTypedefs.h>
 #include <icetray/I3FrameObject.h>
 #include <icetray/serialization.h>
+#include <I3/hash_map.h>
 
 class I3Particle;
+class I3ParticleID;
 class I3RandomService;
-template <typename T> class I3Tree;
-typedef I3Tree<I3Particle> I3MCTree;
+namespace TreeBase {
+    template <typename T,typename K,typename H> class Tree;
+}
+typedef TreeBase::Tree<I3Particle, I3ParticleID, hash<I3ParticleID> > I3MCTree;
 
 namespace I3MuonGun {
 

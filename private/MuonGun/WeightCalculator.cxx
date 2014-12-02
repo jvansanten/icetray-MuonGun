@@ -155,7 +155,7 @@ MuonBundleConverter::FillRows(const I3MCTree &mctree, I3TableRowPtr rows)
 	if (!mmctracks)
 		log_fatal("I3MMCTrackList missing!");
 	
-	const I3MCTree::iterator primary = mctree.begin();
+	const I3MCTree::const_iterator primary = mctree.begin();
 	std::pair<double, double> steps =
 	    surface_->GetIntersection(primary->GetPos(), primary->GetDir());
 	if (steps.first > 0) {
@@ -234,7 +234,7 @@ public:
 		// if (!mmctracks)
 		// 	log_fatal("I3MMCTrackList missing!");
 		
-		const I3MCTree::iterator primary = mctree->begin();
+		const I3MCTree::const_iterator primary = mctree->begin();
 		std::pair<double, double> steps =
 		    surface_->GetIntersection(primary->GetPos(), primary->GetDir());
 		BundleConfiguration bundlespec;

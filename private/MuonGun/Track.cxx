@@ -14,8 +14,8 @@
 namespace I3MuonGun {
 
 Track::Track(const I3MMCTrack &mmctrack,
-    const I3MCTree::sibling_iterator &sbegin,
-    const I3MCTree::sibling_iterator &send) : I3Particle(mmctrack.GetI3Particle())
+    const I3MCTree::sibling_const_iterator &sbegin,
+    const I3MCTree::sibling_const_iterator &send) : I3Particle(mmctrack.GetI3Particle())
 {
 	// In the beginning, the particle is at its vertex with the given energy
 	checkpoints_.push_back(Checkpoint(0., I3Particle::GetEnergy(), 0u));
@@ -145,17 +145,15 @@ std::list<Track>
 Track::Harvest(const I3MCTree &mctree, const I3MMCTrackList &mmctracks)
 {
 	std::list<Track> tracks;
-	I3MCTree::iterator p = mctree.begin();
+	I3MCTree::const_iterator p = mctree.end();
 	BOOST_FOREACH(const I3MMCTrack &mmctrack, mmctracks) {
-		// Walk the MCTree for an entry corresponding to this MMCTrack
-		while (p != mctree.end() && mmctrack != *p)
-			p++;
+	    p = mctree.find(mmctrack.GetI3Particle());
 		if (p != mctree.end()) {
 			// Get energy checkpoints from the MMCTrack and stochastic losses
 			// from the direct daughters of the corresponding MCTree node
-			tracks.push_back(Track(TimeShift(*p, mmctrack), mctree.begin(p), mctree.end(p)));
-			// Fast-forward past the secondaries
-			p = mctree.end(p);
+			p = mctree.first_child(p);
+			if (p != mctree.end())
+			    tracks.push_back(Track(TimeShift(*p, mmctrack), mctree.begin(p), mctree.end(p)));
 		}
 	}
 	

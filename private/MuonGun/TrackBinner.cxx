@@ -110,7 +110,7 @@ void NeutrinoBinner::Consume(boost::shared_ptr<const TrackBundle> tracks,
 		total_energy = 0;
 	
 	boost::array<double, 3> values = {{zenith, total_energy, 0.}};
-	for (I3MCTree::iterator it = tree->begin(); it != tree->end(); it++) {
+	for (I3MCTree::const_iterator it = tree->begin(); it != tree->end(); it++) {
 		const I3Particle &p = *it;
 		if (p.IsNeutrino()) {
 			double weight = flux_weight;
@@ -129,8 +129,8 @@ void NeutrinoBinner::Consume(boost::shared_ptr<const TrackBundle> tracks,
 			histmap::mapped_type::iterator target;
 			
 			// Find parent type
-			I3MCTree::iterator parent = tree->parent(it);
-			int pcode = tree->is_valid(it) ? std::abs(parent->GetPdgEncoding()) : 0;
+			I3MCTree::const_iterator parent = tree->parent(it);
+			int pcode = parent != tree->end() ? std::abs(parent->GetPdgEncoding()) : 0;
 			// Classify mesons by heaviest consituent quark
 			if (pcode/1000 == 0 && pcode/100 > 0 /* mesons */) {
 				// charm

@@ -25,8 +25,8 @@ class Track : public I3Particle {
 public:
 	Track() {};
 	Track(const I3MMCTrack &mmctrack,
-	    const I3MCTree::sibling_iterator &secondaries_begin,
-	    const I3MCTree::sibling_iterator &secondaries_end);
+	    const I3MCTree::sibling_const_iterator &secondaries_begin,
+	    const I3MCTree::sibling_const_iterator &secondaries_end);
 	
 	/**
 	 * Get the energy of the particle at the given down-track distance,
