@@ -51,7 +51,7 @@ Floodlight::Generate(I3RandomService &rng, I3MCTree &tree, BundleConfiguration &
 	primary.SetTime(0);
 	primary.SetEnergy(energyGenerator_->Generate(rng));
 	
-	I3Particle muon(primary);
+	I3Particle muon = primary.Clone();
 	muon.SetType(I3Particle::MuMinus);
 	muon.SetLocationType(I3Particle::InIce);
 	muon.SetShape(I3Particle::Null);
