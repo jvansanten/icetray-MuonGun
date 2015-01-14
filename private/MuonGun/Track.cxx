@@ -144,18 +144,23 @@ TimeShift(const I3Particle &p, const I3MMCTrack mmctrack)
 std::list<Track>
 Track::Harvest(const I3MCTree &mctree, const I3MMCTrackList &mmctracks)
 {
-	std::list<Track> tracks;
-	I3MCTree::const_iterator p = mctree.end();
-	BOOST_FOREACH(const I3MMCTrack &mmctrack, mmctracks) {
-	    p = mctree.find(mmctrack.GetI3Particle());
-		if (p != mctree.end()) {
-			// Get energy checkpoints from the MMCTrack and stochastic losses
-			// from the direct daughters of the corresponding MCTree node
-			p = mctree.first_child(p);
-			if (p != mctree.end())
-			    tracks.push_back(Track(TimeShift(*p, mmctrack), mctree.begin(p), mctree.end(p)));
-		}
-	}
+    std::list<Track> tracks;
+    I3MCTree::const_iterator p = mctree.end();
+    I3MCTree::sibling_const_iterator daughters = mctree.end_sibling();
+    BOOST_FOREACH(const I3MMCTrack &mmctrack, mmctracks) {
+        // For each track, find the particle it corresponds to
+        p = mctree.find(mmctrack.GetI3Particle());
+        if (p != mctree.end()) {
+            // Get energy checkpoints from the MMCTrack and stochastic losses
+            // from the direct daughters of the corresponding MCTree node
+            daughters = mctree.children(p);
+            // Make sure we have daughters first
+            if (daughters != mctree.end_sibling())
+                // Timeshift the particle the track corresponds to, then make a track with that
+                // timeshifted particle and its daughters
+                tracks.push_back(Track(TimeShift(*p, mmctrack), daughters, mctree.end_sibling() ) );
+        }
+    }
 	
 	return tracks;
 }
