@@ -41,7 +41,7 @@ public:
 	int Eval(double *x, double *result) const;
 
 	/** @brief Return the number of dimensions of the spline surface */
-	unsigned GetNDim() const { return table_.ndim; };
+	unsigned GetNDim() const { return unsigned(table_.ndim); };
 	
 	/**
 	 * @brief Return the smallest and largest coordinates along the
@@ -68,5 +68,7 @@ private:
 };
 
 }
+
+BOOST_CLASS_VERSION(I3MuonGun::SplineTable, 0);
 
 #endif

@@ -55,13 +55,13 @@ SplineFlux::SplineFlux(const std::string &singles, const std::string &bundles)
     : singles_(singles), bundles_(bundles)
 {
 	SetMinMultiplicity(1);
-	SetMaxMultiplicity(bundles_.GetExtents(2).second);
+	SetMaxMultiplicity(static_cast<unsigned>(bundles_.GetExtents(2).second));
 }
 
 double
 SplineFlux::GetLog(double depth, double cos_theta, unsigned multiplicity) const
 {
-	double coords[3] = {cos_theta, depth, multiplicity};
+	double coords[3] = {cos_theta, depth, static_cast<double>(multiplicity)};
 	double logflux;
 	
 	if (multiplicity < GetMinMultiplicity() || multiplicity > GetMaxMultiplicity())

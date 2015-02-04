@@ -33,9 +33,9 @@ namespace binning {
 class scheme {
 public:
 	/** Get the bin index of the given value */
-	virtual const size_t index(double value) const = 0;
+	virtual long index(double value) const = 0;
 	
-	virtual ~scheme() {};
+	virtual ~scheme();
 	
 	/** Return the edges of the bins */
 	const std::vector<double>& edges() const
@@ -64,17 +64,18 @@ public:
 		if (edges.back() < std::numeric_limits<double>::infinity())
 			edges_.push_back(std::numeric_limits<double>::infinity());
 	}
+	virtual ~general();
 	
 	static boost::shared_ptr<general> create(const std::vector<double> &edges)
 	{
 		return boost::make_shared<general>(edges);
 	}
 	
-	const size_t index(double value) const
+	long index(double value) const
 	{
-		size_t j = std::distance(edges_.begin(),
+		long j = /*static_cast<long>*/(std::distance(edges_.begin(),
 		    std::upper_bound(edges_.begin(),
-		    edges_.end(), value));
+		    edges_.end(), value)));
 		assert(j > 0);
 		return j-1;
 	}
@@ -147,6 +148,7 @@ public:
 			edges_.push_back(map(i/double(nsteps_-1)));
 		edges_.push_back(std::numeric_limits<double>::infinity());
 	}
+	virtual ~uniform() {};
 	
 	static boost::shared_ptr<uniform<Transformation> > create(double low,
 	    double high, size_t nsteps)
@@ -154,14 +156,14 @@ public:
 		return boost::make_shared<uniform<Transformation> >(low, high, nsteps);
 	}
 	
-	const size_t index(double value) const
+	long index(double value) const
 	{
 		if (value < min_)
 			return 0;
 		else if (value >= max_)
-			return edges_.size()-2;
+			return static_cast<long>(edges_.size()-2);
 		else {
-			return size_t(floor((nsteps_-1)*imap(value)))+1;
+			return static_cast<long>(floor((nsteps_-1)*imap(value)))+1;
 		}
 	}
 private:
@@ -283,12 +285,12 @@ public:
 	// template-agnostic part of the interface
 	const char* raw_bincontent() const
 	{
-		return (char*)bincontent_.data();
+		return reinterpret_cast<const char*>(bincontent_.data());
 	}
 	
 	const char* raw_squaredweights() const
 	{
-		return (char*)squaredweights_.data();
+		return reinterpret_cast<const char*>(squaredweights_.data());
 	}
 	
 	std::vector<std::vector<double> > binedges() const

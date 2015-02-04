@@ -26,6 +26,9 @@ template <typename Archive>
 void
 GenerationProbability::serialize(Archive &ar, unsigned version)
 {
+	if (version > 0)
+		log_fatal_stream("Version "<<version<<" is from the future");
+
 	ar & make_nvp("I3FrameObject", base_object<I3FrameObject>(*this));
 	ar & make_nvp("NEvents", numEvents_);
 }
@@ -34,6 +37,9 @@ template <typename Archive>
 void
 Generator::serialize(Archive &ar, unsigned version)
 {
+	if (version > 0)
+		log_fatal_stream("Version "<<version<<" is from the future");
+
 	ar & make_nvp("GenerationProbability", base_object<GenerationProbability>(*this));
 }
 
@@ -71,7 +77,6 @@ bool
 GenerationProbabilityCollection::IsCompatible(GenerationProbabilityConstPtr) const
 {
 	log_fatal("I should never be called.");
-	return false;
 }
 
 double
@@ -119,6 +124,9 @@ template <typename Archive>
 void
 GenerationProbabilityCollection::serialize(Archive &ar, unsigned version)
 {
+	if (version > 0)
+		log_fatal_stream("Version "<<version<<" is from the future");
+
 	ar & make_nvp("GenerationProbability", base_object<GenerationProbability>(*this));
 	ar & make_nvp("Vector", base_object<std::vector<GenerationProbabilityPtr> >(*this));
 }
@@ -234,7 +242,7 @@ public:
 		rng_ = context_.Get<I3RandomServicePtr>();
 		if (!rng_)
 			log_fatal("No RandomService configured!");
-		maxEvents_ = generator_->GetTotalEvents();
+		maxEvents_ = size_t(std::floor(generator_->GetTotalEvents()));
 		
 		firstFrame_ = true;
 	}
@@ -259,6 +267,8 @@ public:
 		if (++numEvents_ >= maxEvents_)
 			RequestSuspension();
 	}
+	
+	void Finish();
 private:
 	GeneratorPtr generator_;
 	I3RandomServicePtr rng_;
@@ -266,6 +276,9 @@ private:
 	std::string mctreeName_;
 	bool firstFrame_;
 };
+
+// Out-of-line virtual method definition to force the vtable into this translation unit
+void GeneratorModule::Finish() {}
 
 }
 

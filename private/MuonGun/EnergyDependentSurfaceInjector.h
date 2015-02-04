@@ -138,4 +138,9 @@ private:
 
 }
 
+BOOST_CLASS_VERSION(I3MuonGun::SurfaceScalingFunction, 0);
+BOOST_CLASS_VERSION(I3MuonGun::ConstantSurfaceScalingFunction, 0);
+BOOST_CLASS_VERSION(I3MuonGun::BasicSurfaceScalingFunction, 0);
+BOOST_CLASS_VERSION(I3MuonGun::EnergyDependentSurfaceInjector, 0);
+
 #endif

@@ -199,4 +199,10 @@ namespace I3MuonGun {
 
 }
 
+BOOST_CLASS_VERSION(I3MuonGun::Surface, 0);
+BOOST_CLASS_VERSION(I3MuonGun::SamplingSurface, 0);
+BOOST_CLASS_VERSION(I3MuonGun::Cylinder, 0);
+BOOST_CLASS_VERSION(I3MuonGun::AxialCylinder, 0);
+BOOST_CLASS_VERSION(I3MuonGun::Sphere, 0);
+
 #endif

@@ -201,4 +201,8 @@ I3_POINTER_TYPEDEFS(Generator);
 
 }
 
+BOOST_CLASS_VERSION(I3MuonGun::Generator, 0);
+BOOST_CLASS_VERSION(I3MuonGun::GenerationProbability, 0);
+BOOST_CLASS_VERSION(I3MuonGun::GenerationProbabilityCollection, 0);
+
 #endif // I3MUONGUN_GENERATOR_H_INCLUDED

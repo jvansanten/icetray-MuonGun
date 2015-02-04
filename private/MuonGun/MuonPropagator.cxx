@@ -69,16 +69,10 @@ GetMMCName(I3Particle::ParticleType pt)
 {
 	std::string name;
 	
-	switch (pt) {
-		case I3Particle::MuMinus:
-			name="mu-";
-			break;
-		case I3Particle::MuPlus:
-			name="mu+";
-			break;
-		default:
-			break;
-	}
+	if (pt == I3Particle::MuMinus)
+		name="mu-";
+	else if (pt == I3Particle::MuPlus)
+		name="mu+";
 	
 	return name;
 }
@@ -223,9 +217,9 @@ MuonPropagator::propagate(const I3Particle &p, double distance, boost::shared_pt
 	
 	if (losses) {
 		std::vector<PROPOSALParticle*> &history = propagator_->get_output()->I3hist;
-		BOOST_FOREACH(PROPOSALParticle *pp, history) {
-			losses->push_back(to_I3Particle(pp));
-			delete pp;
+		BOOST_FOREACH(PROPOSALParticle *daughter, history) {
+			losses->push_back(to_I3Particle(daughter));
+			delete daughter;
 		}
 		history.clear();
 		propagator_->get_output()->I3flag = false;

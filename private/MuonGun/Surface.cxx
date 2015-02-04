@@ -270,13 +270,16 @@ Sphere::operator==(const Surface &s) const
 
 template <typename Archive>
 void
-Surface::serialize(Archive &ar, unsigned version)
+Surface::serialize(Archive &ar __attribute__ ((unused)), unsigned version __attribute__ ((unused)))
 {}
 
 template <typename Archive>
 void
 SamplingSurface::serialize(Archive &ar, unsigned version)
 {
+	if (version > 0)
+		log_fatal_stream("Version "<<version<<" is from the future");
+	
 	ar & make_nvp("Surface", base_object<Surface>(*this));
 }
 
@@ -284,6 +287,9 @@ template <typename Archive>
 void
 Cylinder::serialize(Archive &ar, unsigned version)
 {
+	if (version > 0)
+		log_fatal_stream("Version "<<version<<" is from the future");
+	
 	ar & make_nvp("SamplingSurface", base_object<SamplingSurface>(*this));
 	ar & make_nvp("Length", length_);
 	ar & make_nvp("Radius", radius_);
@@ -294,6 +300,9 @@ template <typename Archive>
 void
 Sphere::serialize(Archive &ar, unsigned version)
 {
+	if (version > 0)
+		log_fatal_stream("Version "<<version<<" is from the future");
+	
 	ar & make_nvp("Surface", base_object<Surface>(*this));
 	ar & make_nvp("OriginDepth", originDepth_);
 	ar & make_nvp("Radius", radius_);
@@ -303,6 +312,9 @@ template <typename Archive>
 void
 AxialCylinder::serialize(Archive &ar, unsigned version)
 {
+	if (version > 0)
+		log_fatal_stream("Version "<<version<<" is from the future");
+	
 	ar & make_nvp("SamplingSurface", base_object<SamplingSurface>(*this));
 	ar & make_nvp("Length", length_);
 	ar & make_nvp("Radius", radius_);
@@ -368,7 +380,7 @@ AxialCylinder::operator==(const Surface &s) const
 }
 
 double
-AxialCylinder::GetDifferentialArea(double coszen) const
+AxialCylinder::GetDifferentialArea(double coszen __attribute__((unused))) const
 {
 	return M_PI*radius_*radius_;
 }
@@ -391,10 +403,9 @@ AxialCylinder::GetMinDepth() const
 	return GetDepth(center_.GetZ() + length_.first);
 }
 
-double AxialCylinder::IntegrateFlux(boost::function<double (double, double)> flux, double cosMin, double cosMax) const
+double AxialCylinder::IntegrateFlux(boost::function<double (double, double)> flux __attribute__((unused)), double cosMin __attribute__((unused)), double cosMax __attribute__((unused))) const
 {
 	throw std::runtime_error("Flux integration is not implemented");
-	return 0.;
 }
 
 I3Direction

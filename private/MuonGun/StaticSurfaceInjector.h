@@ -67,7 +67,7 @@ protected:
 	/**
 	 * Draw a sample from the distribution of shower impact points
 	 *
-	 * @returns shower axis and multiplicity
+	 * The shower axis and multiplcity are filled into the *axis*
 	 */
 	void GenerateAxis(I3RandomService &rng, std::pair<I3Particle, unsigned> &axis) const;
 	/**
@@ -103,6 +103,8 @@ protected:
 };
 
 }
+
+BOOST_CLASS_VERSION(I3MuonGun::StaticSurfaceInjector, 0);
 
 #endif
 

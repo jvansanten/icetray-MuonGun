@@ -35,7 +35,7 @@ BMSSRadialDistribution::GetMeanRadius(double h, double theta, unsigned N) const
 }
 
 double
-BMSSRadialDistribution::GetShapeParameter(double h, double theta, unsigned N) const
+BMSSRadialDistribution::GetShapeParameter(double h, double theta __attribute__ ((unused)), unsigned N) const
 {
 	return (alpha0a_*N + alpha0b_)*exp(h*(alpha1a_*N + alpha1b_));
 }
@@ -96,7 +96,7 @@ double
 SplineRadialDistribution::GetLog(double depth, double cos_theta,
     unsigned N, double radius) const
 {
-	double coords[4] = {cos_theta, depth, N, radius};
+	double coords[4] = {cos_theta, depth, static_cast<double>(N), radius};
 	double logprob;
 	
 	if (spline_.Eval(coords, &logprob) != 0)
@@ -112,7 +112,7 @@ SplineRadialDistribution::Generate(I3RandomService &rng, double depth,
 {
 	double radius, logprob, maxprob;
 	std::pair<double, double> extent = spline_.GetExtents(3);
-	double coords[4] = {cos_theta, depth, N, extent.first};
+	double coords[4] = {cos_theta, depth, static_cast<double>(N), extent.first};
 	if (spline_.Eval(coords, &maxprob) != 0)
 		maxprob = -std::numeric_limits<double>::infinity();
 	
@@ -141,13 +141,16 @@ SplineRadialDistribution::operator==(const RadialDistribution &o) const
 
 template <typename Archive>
 void
-RadialDistribution::serialize(Archive &ar, unsigned)
+RadialDistribution::serialize(Archive &ar __attribute__((unused)), unsigned __attribute__((unused)))
 {}
 
 template <typename Archive>
 void
-SplineRadialDistribution::serialize(Archive &ar, unsigned)
+SplineRadialDistribution::serialize(Archive &ar, unsigned version)
 {
+	if (version > 0)
+		log_fatal_stream("Version "<<version<<" is from the future");
+	
 	ar & make_nvp("RadialDistribution", base_object<RadialDistribution>(*this));
 	ar & make_nvp("SplineTable", spline_);
 }

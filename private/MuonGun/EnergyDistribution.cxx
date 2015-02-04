@@ -45,7 +45,7 @@ double
 SplineEnergyDistribution::GetLog(double depth, double cos_theta, 
     unsigned multiplicity, double radius, double energy) const
 {
-	double coords[5] = {cos_theta, depth, multiplicity,
+	double coords[5] = {cos_theta, depth, static_cast<double>(multiplicity),
 	    std::min(radius, bundles_.GetExtents(3).second),
 	    std::max(minLogEnergy_, std::log(energy))};
 	double logprob;
@@ -65,11 +65,10 @@ SplineEnergyDistribution::GetLog(double depth, double cos_theta,
 }
 
 double
-SplineEnergyDistribution::Generate(I3RandomService &rng, double depth, double cos_theta, 
-    unsigned multiplicity, double radius) const
+SplineEnergyDistribution::Generate(I3RandomService &rng __attribute__((unused)), double depth __attribute__((unused)), double cos_theta __attribute__((unused)), 
+    unsigned multiplicity __attribute__((unused)), double radius __attribute__((unused))) const
 {
 	log_fatal("Sampling is not yet implemented");
-	return 1.;
 }
 
 BMSSEnergyDistribution::BMSSEnergyDistribution() : 
@@ -111,11 +110,10 @@ BMSSEnergyDistribution::GetLog(double depth, double cos_theta,
 }
 
 double
-BMSSEnergyDistribution::Generate(I3RandomService &rng, double depth, double cos_theta, 
-    unsigned multiplicity, double radius) const
+BMSSEnergyDistribution::Generate(I3RandomService &rng __attribute__((unused)), double depth __attribute__((unused)), double cos_theta __attribute__((unused)), 
+    unsigned multiplicity __attribute__((unused)), double radius __attribute__((unused))) const
 {
 	log_fatal("Sampling is not yet implemented");
-	return 1.;
 }
 
 OffsetPowerLaw::OffsetPowerLaw() : gamma_(NAN), offset_(NAN), emin_(NAN), emax_(NAN)
@@ -174,13 +172,16 @@ OffsetPowerLaw::Generate(I3RandomService &rng) const
 
 template <typename Archive>
 void
-EnergyDistribution::serialize(Archive &ar, unsigned)
+EnergyDistribution::serialize(Archive &ar __attribute__ ((unused)), unsigned version __attribute__ ((unused)))
 {}
 	
 template <typename Archive>
 void
-SplineEnergyDistribution::serialize(Archive &ar, unsigned)
+SplineEnergyDistribution::serialize(Archive &ar, unsigned version)
 {
+	if (version > 0)
+		log_fatal_stream("Version "<<version<<" is from the future");
+	
 	ar & make_nvp("EnergyDistribution", base_object<EnergyDistribution>(*this));
 	ar & make_nvp("SingleEnergy", singles_);
 	ar & make_nvp("BundleEnergy", bundles_);
@@ -190,6 +191,9 @@ template <typename Archive>
 void
 OffsetPowerLaw::serialize(Archive &ar, unsigned version)
 {
+	if (version > 0)
+		log_fatal_stream("Version "<<version<<" is from the future");
+	
 	ar & make_nvp("Gamma", gamma_);
 	ar & make_nvp("Offset", offset_);
 	ar & make_nvp("MinEnergy", emin_);

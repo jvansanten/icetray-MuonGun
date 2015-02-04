@@ -24,6 +24,9 @@ template <typename Archive>
 void
 CompactTrack::serialize(Archive &ar, unsigned version)
 {
+	if (version > 0)
+		log_fatal_stream("Version "<<version<<" is from the future");
+	
 	ar & make_nvp("Radius", radius_);
 	ar & make_nvp("Energy", energy_);
 	ar & make_nvp("Time", time_);
@@ -41,9 +44,15 @@ template <typename Archive>
 void
 TrackBundle::serialize(Archive &ar, unsigned version)
 {
+	if (version > 0)
+		log_fatal_stream("Version "<<version<<" is from the future");
+	
 	ar & make_nvp("I3FrameObject", base_object<I3FrameObject>(*this));
 	ar & make_nvp("Map", base_object<std::map<double, std::vector<CompactTrack> > >(*this));
 }
+
+// anchor the vtable
+TrackBundle::~TrackBundle() {}
 
 }
 

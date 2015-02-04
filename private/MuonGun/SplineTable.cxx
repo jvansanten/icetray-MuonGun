@@ -1,5 +1,6 @@
 #include <stdexcept>
 #include <MuonGun/SplineTable.h>
+#include <icetray/I3Logging.h>
 #include <boost/serialization/binary_object.hpp>
 
 extern "C" {
@@ -49,7 +50,7 @@ SplineTable::operator==(const SplineTable &other) const
 		return false;
 	size_t size = 1;
 	for (int i=0; i < table_.ndim; i++)
-		size *= table_.naxes[i];
+		size *= size_t(table_.naxes[i]);
 	// Same coefficient grid
 	if (!std::equal(table_.coefficients, table_.coefficients + size, other.table_.coefficients))
 		return false;
@@ -60,10 +61,10 @@ SplineTable::operator==(const SplineTable &other) const
 int
 SplineTable::Eval(double *coordinates, double *result) const
 {
-	int centers[table_.ndim];
+	std::vector<int> centers(unsigned(table_.ndim));
 	
-	if (tablesearchcenters(&table_, coordinates, centers) == 0)
-		*result = ndsplineeval(&table_, coordinates, centers, 0);
+	if (tablesearchcenters(&table_, coordinates, &centers[0]) == 0)
+		*result = ndsplineeval(&table_, coordinates, &centers[0], 0);
 	else
 		return EINVAL;
 	
@@ -84,6 +85,9 @@ template <typename Archive>
 void
 SplineTable::save(Archive &ar, unsigned version) const
 {
+	if (version > 0)
+		log_fatal_stream("Version "<<version<<" is from the future");
+	
 	splinetable_buffer buf;
 	buf.mem_alloc = &malloc;
 	buf.mem_realloc = &realloc;
@@ -98,6 +102,9 @@ template <typename Archive>
 void
 SplineTable::load(Archive &ar, unsigned version)
 {
+	if (version > 0)
+		log_fatal_stream("Version "<<version<<" is from the future");
+	
 	splinetable_buffer buf;
 	buf.mem_alloc = &malloc;
 	buf.mem_realloc = &realloc;

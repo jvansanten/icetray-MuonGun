@@ -38,6 +38,9 @@ template <typename Archive>
 void
 StaticSurfaceInjector::serialize(Archive &ar, unsigned version)
 {
+	if (version > 0)
+		log_fatal_stream("Version "<<version<<" is from the future");
+	
 	ar & make_nvp("Generator", base_object<Generator>(*this));
 	ar & make_nvp("Surface", surface_);
 	ar & make_nvp("Flux", flux_);
@@ -215,7 +218,7 @@ StaticSurfaceInjector::GetLogGenerationProbability(const I3Particle &axis,
 	
 	double h = GetDepth(axis.GetPos().GetZ() + steps.first*axis.GetDir().GetZ());
 	double coszen = cos(axis.GetDir().GetZenith());
-	unsigned m = bundlespec.size();
+	unsigned m = static_cast<unsigned>(bundlespec.size());
 
 	// We used the flux to do rejection sampling in zenith and multiplicity. Evaluate
 	// the properly-normalized PDF here.

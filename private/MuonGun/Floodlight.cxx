@@ -39,7 +39,7 @@ Floodlight::IsCompatible(GenerationProbabilityConstPtr o) const
 }
 
 void
-Floodlight::Generate(I3RandomService &rng, I3MCTree &tree, BundleConfiguration &bundle) const
+Floodlight::Generate(I3RandomService &rng, I3MCTree &tree, BundleConfiguration &bundle __attribute__((unused))) const
 {
 	I3Direction dir;
 	I3Position pos;

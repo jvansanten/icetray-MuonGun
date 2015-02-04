@@ -58,8 +58,8 @@ public:
 	 */
 	struct Checkpoint {
 		double length, energy;
-		unsigned offset;
-		Checkpoint(double l, double e=0., unsigned o=0)
+		ptrdiff_t offset;
+		Checkpoint(double l, double e=0., size_t o=0)
 		    : length(l), energy(e), offset(o) {}
 	};
 	/**

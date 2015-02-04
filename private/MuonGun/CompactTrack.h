@@ -23,11 +23,11 @@ public:
 	CompactTrack(const I3Particle &track);
 	
 	void SetRadius(double r) { radius_=r; };
-	float GetRadius() const { return radius_; };
+	double GetRadius() const { return radius_; };
 	void SetEnergy(double r) { energy_=r; };
-	float GetEnergy() const { return energy_; };
+	double GetEnergy() const { return energy_; };
 	void SetTime(double r) { time_=r; };
-	float GetTime() const { return time_; };
+	double GetTime() const { return time_; };
 	void SetType(I3Particle::ParticleType t) { type_=t; };
 	I3Particle::ParticleType GetType() const { return type_; };
 	
@@ -45,6 +45,7 @@ private:
  * @brief The state of a muon bundle at a set of vertical depths
  */
 struct TrackBundle : public I3FrameObject, std::map<double, std::vector<CompactTrack> > {
+	virtual ~TrackBundle();
 	friend class boost::serialization::access;
 	template <typename Archive>
 	void serialize(Archive&, unsigned);

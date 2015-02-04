@@ -146,4 +146,8 @@ private:
 
 }
 
+BOOST_CLASS_VERSION(I3MuonGun::EnergyDistribution, 0);
+BOOST_CLASS_VERSION(I3MuonGun::SplineEnergyDistribution, 0);
+BOOST_CLASS_VERSION(I3MuonGun::OffsetPowerLaw, 0);
+
 #endif

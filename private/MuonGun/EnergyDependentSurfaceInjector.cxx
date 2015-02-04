@@ -146,7 +146,7 @@ EnergyDependentSurfaceInjector::GetLogGenerationProbability(const I3Particle &ax
 	
 	double h = GetDepth(axis.GetPos().GetZ() + steps.first*axis.GetDir().GetZ());
 	double coszen = cos(axis.GetDir().GetZenith());
-	unsigned m = bundlespec.size();
+	unsigned m = static_cast<unsigned>(bundlespec.size());
 
 	// We used the flux to do rejection sampling in zenith and multiplicity. Evaluate
 	// the properly-normalized PDF here.
@@ -173,7 +173,7 @@ SurfaceScalingFunction::~SurfaceScalingFunction() {}
 
 template <typename Archive>
 void
-SurfaceScalingFunction::serialize(Archive &ar, unsigned)
+SurfaceScalingFunction::serialize(Archive &ar __attribute__((unused)), unsigned version __attribute__((unused)))
 {}
 
 ConstantSurfaceScalingFunction::ConstantSurfaceScalingFunction() {}
@@ -182,14 +182,17 @@ ConstantSurfaceScalingFunction::~ConstantSurfaceScalingFunction() {}
 
 template <typename Archive>
 void
-ConstantSurfaceScalingFunction::serialize(Archive &ar, unsigned)
+ConstantSurfaceScalingFunction::serialize(Archive &ar, unsigned version)
 {
+	if (version > 0)
+		log_fatal_stream("Version "<<version<<" is from the future");
+	
 	ar & make_nvp("SurfaceScalingFunction", base_object<SurfaceScalingFunction>(*this));
 	ar & make_nvp("Surface", surface_);
 }
 
 SamplingSurfacePtr
-ConstantSurfaceScalingFunction::GetSurface(double energy) const { return surface_; }
+ConstantSurfaceScalingFunction::GetSurface(double energy __attribute__((unused))) const { return surface_; }
 
 bool
 ConstantSurfaceScalingFunction::operator==(const SurfaceScalingFunction &o) const
@@ -203,8 +206,11 @@ ConstantSurfaceScalingFunction::operator==(const SurfaceScalingFunction &o) cons
 
 template <typename Archive>
 void
-BasicSurfaceScalingFunction::serialize(Archive &ar, unsigned)
+BasicSurfaceScalingFunction::serialize(Archive &ar, unsigned version)
 {
+	if (version > 0)
+		log_fatal_stream("Version "<<version<<" is from the future");
+	
 	ar & make_nvp("SurfaceScalingFunction", base_object<SurfaceScalingFunction>(*this));
 	ar & make_nvp("Scale", scale_);
 	ar & make_nvp("EnergyScale", energyScale_);

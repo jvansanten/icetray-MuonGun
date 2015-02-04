@@ -114,4 +114,7 @@ private:
 
 }
 
+BOOST_CLASS_VERSION(I3MuonGun::RadialDistribution, 0);
+BOOST_CLASS_VERSION(I3MuonGun::SplineRadialDistribution, 0);
+
 #endif // I3MUONGUN_RADIALDISTRIBUTION_H

@@ -86,8 +86,6 @@ Track::GetEnergy(double length) const
 	    /((cp+1)->length - cp->length);
 	
 	return cp->energy - ls->energy - conti_rate*(length-cp->length);
-	
-	return 0.;
 }
 
 I3Position

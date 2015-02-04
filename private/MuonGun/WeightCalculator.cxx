@@ -36,7 +36,7 @@ WeightCalculator::GetWeight(const I3Particle &axis, const BundleConfiguration &b
 	
 	double h = GetDepth(axis.GetPos().GetZ() + steps.first*axis.GetDir().GetZ());
 	double coszen = cos(axis.GetDir().GetZenith());
-	unsigned m = bundlespec.size();
+	unsigned m = unsigned(bundlespec.size());
 	
 	double rate = flux_->GetLog(h, coszen, m) - generator_->GetLogGeneratedEvents(axis, bundlespec);
 	
@@ -156,11 +156,11 @@ MuonBundleConverter::FillRows(const I3MCTree &mctree, I3TableRowPtr rows)
 		log_fatal("I3MMCTrackList missing!");
 	
 	const I3MCTree::const_iterator primary = mctree.begin();
-	std::pair<double, double> steps =
+	std::pair<double, double> primary_steps =
 	    surface_->GetIntersection(primary->GetPos(), primary->GetDir());
-	if (steps.first > 0) {
-		rows->Set<float>("depth", GetDepth(primary->GetPos().GetZ() + steps.first*primary->GetDir().GetZ()));
-		rows->Set<float>("cos_theta", cos(primary->GetDir().GetZenith()));
+	if (primary_steps.first > 0) {
+		rows->Set<float>("depth", float(GetDepth(primary->GetPos().GetZ() + primary_steps.first*primary->GetDir().GetZ())));
+		rows->Set<float>("cos_theta", float(cos(primary->GetDir().GetZenith())));
 	}
 	
 	uint32_t m = 0;
@@ -172,12 +172,12 @@ MuonBundleConverter::FillRows(const I3MCTree &mctree, I3TableRowPtr rows)
 	BOOST_FOREACH(const Track &track, Track::Harvest(mctree, *mmctracks)) {
 		std::pair<double, double> steps =
 		    surface_->GetIntersection(track.GetPos(), track.GetDir());
-		float energy = track.GetEnergy(steps.first);
+		float energy = float(track.GetEnergy(steps.first));
 		log_trace("energy after %f m: %.1e", steps.first, energy);
 		if (energy > 0) {
 			if (m < maxMultiplicity_) {
 				energies[m] = energy;
-				radii[m] = GetRadius(*primary, track.GetPos(steps.first));
+				radii[m] = float(GetRadius(*primary, track.GetPos(steps.first)));
 			}
 			m++;
 		}
@@ -256,7 +256,12 @@ public:
 		frame->Put(GetName(), boost::make_shared<I3Double>(GetWeight(*primary, bundlespec)));
 		PushFrame(frame);
 	}
+	
+	void Finish();
 };
+
+// Out-of-line virtual method definition to force the vtable into this translation unit
+void WeightCalculatorModule::Finish() {}
 
 }
 

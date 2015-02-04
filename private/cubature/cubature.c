@@ -123,6 +123,12 @@ static double relError(esterr ee)
      return (ee.val == 0.0 ? HUGE_VAL : fabs(ee.err / ee.val));
 }
 
+inline int nonzero(double f)
+{
+    static const double zero = 0.;
+    return (memcmp(&f, &zero, sizeof(double)) != 0);
+}
+
 static double errMax(unsigned fdim, const esterr *ee)
 {
      double errmax = 0;
@@ -311,7 +317,7 @@ static unsigned ls0(unsigned n)
 {
 #if defined(__GNUC__) && \
     ((__GNUC__ == 3 && __GNUC_MINOR__ >= 4) || __GNUC__ > 3)
-     return __builtin_ctz(~n); /* gcc builtin for version >= 3.4 */
+     return (unsigned)__builtin_ctz(~n); /* gcc builtin for version >= 3.4 */
 #else
      const unsigned bits[256] = {
 	  0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0, 4,
@@ -667,13 +673,13 @@ static int rule15gauss_evalError(rule *r,
 	  pts[npts++] = center;
 
 	  for (j = 0; j < (n - 1) / 2; ++j) {
-	       int j2 = 2*j + 1;
+	       unsigned j2 = 2*j + 1;
 	       double w = halfwidth * xgk[j2];
 	       pts[npts++] = center - w;
 	       pts[npts++] = center + w;
 	  }
 	  for (j = 0; j < n/2; ++j) {
-	       int j2 = 2*j;
+	       unsigned j2 = 2*j;
 	       double w = halfwidth * xgk[j2];
 	       pts[npts++] = center - w;
 	       pts[npts++] = center + w;
@@ -695,7 +701,7 @@ static int rule15gauss_evalError(rule *r,
 	       /* accumulate integrals */
 	       npts = 1;
 	       for (j = 0; j < (n - 1) / 2; ++j) {
-		    int j2 = 2*j + 1;
+		    unsigned j2 = 2*j + 1;
 		    double v = vals[npts] + vals[npts+1];
 		    result_gauss += wg[j] * v;
 		    result_kronrod += wgk[j2] * v;
@@ -704,7 +710,7 @@ static int rule15gauss_evalError(rule *r,
 		    npts += 2;
 	       }
 	       for (j = 0; j < n/2; ++j) {
-		    int j2 = 2*j;
+		    unsigned j2 = 2*j;
 		    result_kronrod += wgk[j2] * (vals[npts] + vals[npts+1]);
 		    result_abs += wgk[j2] * (fabs(vals[npts]) 
 					     + fabs(vals[npts+1]));
@@ -722,13 +728,13 @@ static int rule15gauss_evalError(rule *r,
 	       result_asc = wgk[n - 1] * fabs(vals[0] - mean);
 	       npts = 1;
 	       for (j = 0; j < (n - 1) / 2; ++j) {
-		    int j2 = 2*j + 1;
+		    unsigned j2 = 2*j + 1;
 		    result_asc += wgk[j2] * (fabs(vals[npts]-mean)
 					     + fabs(vals[npts+1]-mean));
 		    npts += 2;
 	       }
 	       for (j = 0; j < n/2; ++j) {
-		    int j2 = 2*j;
+		    unsigned j2 = 2*j;
 		    result_asc += wgk[j2] * (fabs(vals[npts]-mean)
 					     + fabs(vals[npts+1]-mean));
 		    npts += 2;
@@ -736,7 +742,7 @@ static int rule15gauss_evalError(rule *r,
 	       err = fabs(result_kronrod - result_gauss) * halfwidth;
 	       result_abs *= halfwidth;
 	       result_asc *= halfwidth;
-	       if (result_asc != 0 && err != 0) {
+	       if (nonzero(result_asc) && nonzero(err)) {
 		    double scale = pow((200 * err / result_asc), 1.5);
 		    err = (scale < 1) ? result_asc * scale : result_asc;
 	       }
@@ -809,7 +815,7 @@ static void heap_free(heap *h)
 
 static int heap_push(heap *h, heap_item hi)
 {
-     int insert;
+     unsigned insert;
      unsigned i, fdim = h->fdim;
 
      for (i = 0; i < fdim; ++i) {
@@ -823,7 +829,7 @@ static int heap_push(heap *h, heap_item hi)
      }
 
      while (insert) {
-	  int parent = (insert - 1) / 2;
+	  unsigned parent = (insert - 1) / 2;
 	  if (KEY(hi) <= KEY(h->items[parent]))
 	       break;
 	  h->items[insert] = h->items[parent];
@@ -844,7 +850,7 @@ static int heap_push_many(heap *h, unsigned ni, heap_item *hi)
 static heap_item heap_pop(heap *h)
 {
      heap_item ret;
-     int i, n, child;
+     unsigned i, n, child;
 
      if (!(h->n)) {
 	  fprintf(stderr, "attempted to pop an empty heap\n");
@@ -854,7 +860,7 @@ static heap_item heap_pop(heap *h)
      ret = h->items[0];
      h->items[i = 0] = h->items[n = --(h->n)];
      while ((child = i * 2 + 1) < n) {
-	  int largest;
+	  unsigned largest;
 	  heap_item swap;
 
 	  if (KEY(h->items[child]) <= KEY(h->items[i]))
@@ -871,10 +877,10 @@ static heap_item heap_pop(heap *h)
      }
 
      {
-	  unsigned i, fdim = h->fdim;
-	  for (i = 0; i < fdim; ++i) {
-	       h->ee[i].val -= ret.ee[i].val;
-	       h->ee[i].err -= ret.ee[i].err;
+	  unsigned j, fdim = h->fdim;
+	  for (j = 0; j < fdim; ++j) {
+	       h->ee[j].val -= ret.ee[j].val;
+	       h->ee[j].err -= ret.ee[j].err;
 	  }
      }
      return ret;

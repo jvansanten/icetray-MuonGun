@@ -33,7 +33,7 @@ template <size_t N> struct multiply;
 template <>
 struct multiply<1> {
 	typedef boost::function<double (double)> func_t;
-	multiply(func_t f, func_t g) : f_(f), g_(g) {};
+	multiply(func_t f, func_t g) : f_(f), g_(g) {}
 	func_t f_, g_;
 	typedef double result_type;
 	inline double operator()(double x) const { return f_(x)*g_(x); }
@@ -42,7 +42,7 @@ struct multiply<1> {
 template <>
 struct multiply<2> {
 	typedef boost::function<double (double, double)> func_t;
-	multiply(func_t f, func_t g) : f_(f), g_(g) {};
+	multiply(func_t f, func_t g) : f_(f), g_(g) {}
 	func_t f_, g_;
 	typedef double result_type;
 	inline double operator()(double x, double y) const { return f_(x, y)*g_(x, y); }

@@ -12,7 +12,6 @@
 #include <phys-services/I3RandomService.h>
 #include <icetray/I3Logging.h>
 #include <icetray/I3Units.h>
-
 #include <gsl/gsl_integration.h>
 #include <gsl/gsl_errno.h>
 #include <cubature/cubature.h>
