@@ -123,7 +123,7 @@ static double relError(esterr ee)
      return (ee.val == 0.0 ? HUGE_VAL : fabs(ee.err / ee.val));
 }
 
-inline int nonzero(double f)
+static inline int nonzero(double f)
 {
     static const double zero = 0.;
     return (memcmp(&f, &zero, sizeof(double)) != 0);
