@@ -94,11 +94,9 @@ NeutrinoBinner::NeutrinoBinner()
 }
 
 void NeutrinoBinner::Consume(boost::shared_ptr<const TrackBundle> tracks,
-    I3MCTreeConstPtr tree, I3ParticleIDMapConstPtr particle_weights, double flux_weight)
-    // I3MCTreeConstPtr tree, double flux_weight)
+    I3MCTreeConstPtr tree, I3MapI3ParticleIDDoubleConstPtr particle_weights, double flux_weight)
 
 {
-	// I3ParticleIDMapConstPtr particle_weights;
 	if (tree->size() == 0)
 		return;
 	double zenith = tree->begin()->GetZenith();
@@ -115,7 +113,7 @@ void NeutrinoBinner::Consume(boost::shared_ptr<const TrackBundle> tracks,
 		if (p.IsNeutrino()) {
 			double weight = flux_weight;
 			if (particle_weights != NULL) {
-				I3ParticleIDMap::const_iterator w = particle_weights->find(p.GetID());
+				I3MapI3ParticleIDDouble::const_iterator w = particle_weights->find(p.GetID());
 				if (w != particle_weights->end())
 					weight *= w->second;
 			}
