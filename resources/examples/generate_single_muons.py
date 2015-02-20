@@ -4,7 +4,7 @@ from icecube import icetray, dataclasses, dataio, phys_services
 from I3Tray import I3Tray
 from os.path import expandvars
 
-gcd = expandvars('$I3_PORTS/test-data/sim/GeoCalibDetectorStatus_IC80_DC6.54655.i3.gz')
+gcd = expandvars('$I3_TESTDATA/sim/GeoCalibDetectorStatus_IC80_DC6.54655.i3.gz')
 
 import sys
 outfile = sys.argv[1]

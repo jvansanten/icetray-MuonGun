@@ -23,7 +23,7 @@ model = MuonGun.load_model('GaisserH4a_atmod12_SIBYLL')
 generator = MuonGun.EnergyDependentSurfaceInjector(outer, model.flux, spectrum, model.radius,
     MuonGun.ConstantSurfaceScalingFunction(inner))
 tray.AddSegment(GenerateBundles, 'BundleGen', NEvents=1000, Generator=generator,
-    GCDFile=expandvars('$I3_PORTS/test-data/sim/GeoCalibDetectorStatus_IC80_DC6.54655.i3.gz'))
+    GCDFile=expandvars('$I3_TESTDATA/sim/GeoCalibDetectorStatus_IC80_DC6.54655.i3.gz'))
 
 
 class Harvest(icetray.I3ConditionalModule):
