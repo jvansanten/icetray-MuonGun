@@ -107,7 +107,8 @@ Integrate(boost::function<Signature> f, typename detail::traits<Signature>::arra
 	unsigned fdims = 1;
 	unsigned ndims = detail::traits<Signature>::arity;
 	
-	int err = adapt_integrate(fdims, &detail::integrate_thunk<Signature>, &f, ndims, &low.front(), &high.front(), limit, epsabs, epsrel, &result, &error);
+	// int err =
+    adapt_integrate(fdims, &detail::integrate_thunk<Signature>, &f, ndims, &low.front(), &high.front(), limit, epsabs, epsrel, &result, &error);
 	
 	return result;
 }

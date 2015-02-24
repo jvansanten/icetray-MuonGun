@@ -19,7 +19,7 @@
 #include <I3/hash_map.h>
 
 class I3Particle;
-class I3ParticleID;
+struct I3ParticleID;
 class I3RandomService;
 namespace TreeBase {
     template <typename T,typename K,typename H> class Tree;

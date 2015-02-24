@@ -33,7 +33,7 @@ no_intersection()
 	return std::make_pair(NAN, NAN);
 }
 
-static const double SurfaceRadius = 6371300+2834;
+// static const double SurfaceRadius = 6371300+2834;
 
 }
 
