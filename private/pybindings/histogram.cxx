@@ -41,7 +41,7 @@ to_dashi(boost::shared_ptr<I3MuonGun::histogram::histogram_base> h)
 	bp::object dhist = histmodule.attr("histogram")(h->ndim(), edges);
 	
 	bp::list shape;
-	size_t ndim = h->ndim();
+	size_t ndim = h->ndim(); (void) ndim;
 	size_t tsize = 1;
 	BOOST_FOREACH(size_t i, h->shape()) {
 		tsize *= i;

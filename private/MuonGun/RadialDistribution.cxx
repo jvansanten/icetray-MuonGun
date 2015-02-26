@@ -110,7 +110,7 @@ double
 SplineRadialDistribution::Generate(I3RandomService &rng, double depth,
     double cos_theta, unsigned N) const
 {
-	double radius, logprob, maxprob;
+	double radius, logprob, maxprob; (void) radius;
 	std::pair<double, double> extent = spline_.GetExtents(3);
 	double coords[4] = {cos_theta, depth, static_cast<double>(N), extent.first};
 	if (spline_.Eval(coords, &maxprob) != 0)
