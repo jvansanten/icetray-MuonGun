@@ -1,4 +1,7 @@
 
+#ifndef MUONGUN_FLOODLIGHT_H_INCLUDED
+#define MUONGUN_FLOODLIGHT_H_INCLUDED
+
 #include <MuonGun/Generator.h>
 #include <MuonGun/Surface.h>
 #include <MuonGun/EnergyDistribution.h>
@@ -17,9 +20,18 @@ public:
 	virtual SamplingSurfaceConstPtr GetInjectionSurface() const { return surface_; }
 	
 private:
+	Floodlight() {};
+	friend class boost::serialization::access;
+	template <typename Archive>
+	void serialize(Archive &, unsigned);
+	
 	SamplingSurfacePtr surface_;
 	boost::shared_ptr<OffsetPowerLaw> energyGenerator_;
 
 };
 
 }
+
+BOOST_CLASS_VERSION(I3MuonGun::Floodlight, 0);
+
+#endif // MUONGUN_FLOODLIGHT_H_INCLUDED

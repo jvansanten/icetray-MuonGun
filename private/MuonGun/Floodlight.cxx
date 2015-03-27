@@ -12,6 +12,18 @@
 
 namespace I3MuonGun {
 
+template <typename Archive>
+void
+Floodlight::serialize(Archive &ar, unsigned version)
+{
+	if (version > 0)
+		log_fatal_stream("Version "<<version<<" is from the future");
+
+	ar & make_nvp("Generator", base_object<Generator>(*this));
+	ar & make_nvp("Surface", surface_);
+	ar & make_nvp("EnergySpectrum", energyGenerator_);
+}
+
 Floodlight::Floodlight(SamplingSurfacePtr surface, boost::shared_ptr<OffsetPowerLaw> energyGenerator) : surface_(surface),
     energyGenerator_(energyGenerator)
 {
@@ -72,3 +84,5 @@ Floodlight::GetLogGenerationProbability(const I3Particle &axis, const BundleConf
 }
 
 }
+
+I3_SERIALIZABLE(I3MuonGun::Floodlight);
