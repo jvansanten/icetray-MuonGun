@@ -35,7 +35,7 @@ class Harvest(icetray.I3ConditionalModule):
 		self.tracks = []
 	
 	def DAQ(self, frame):
-		self.tracks.append(frame['I3MCTree'].most_energetic_track)
+		self.tracks.append(dataclasses.get_most_energetic_track(frame['I3MCTree']))
 		self.PushFrame(frame)
 	
 	@staticmethod
