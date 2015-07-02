@@ -23,7 +23,7 @@ void register_Generator()
 	using namespace I3MuonGun;
 	using namespace boost::python;
 	
-	class_<GenerationProbability, GenerationProbabilityPtr, boost::noncopyable>("GenerationProbability", no_init)
+	class_<GenerationProbability, bases<I3FrameObject>, GenerationProbabilityPtr, boost::noncopyable>("GenerationProbability", no_init)
 	    .def("generated_events", &GenerationProbability::GetGeneratedEvents)
 	    .add_property("total_events", &GenerationProbability::GetTotalEvents, &GenerationProbability::SetTotalEvents)
 	    .add_property("surface", &GetInjectionSurface)
@@ -33,6 +33,7 @@ void register_Generator()
 	    .def("__imul__", (GenerationProbabilityPtr (*)(GenerationProbabilityPtr, double))(&operator*=))
 	;
 	implicitly_convertible<GenerationProbabilityPtr, GenerationProbabilityConstPtr>();
+	register_pointer_conversions<GenerationProbability>();
 	
 	class_<Generator, bases<GenerationProbability, I3FrameObject>, boost::noncopyable>("Generator", no_init)
 	;
