@@ -20,6 +20,11 @@ Mostly docs. Changes since 00-00-04:
 - Remove built-in copy of the weighting project in favor of the official one.
 - Remove relative imports for Python 3 compatibility.
   -- David Schultz
+  
+- Fixed pybindings for GenerationProbability to be able to combine
+  GenerationProbabilty objects with different settings in Python. I3FrameObject 
+  is now the base of GenerationProbability in the pybindings and added 
+  necessary pointer conversions. (reported and fixed by briedel in r134695)
 
 July 11, 2014 Alex Olivas  (olivas@icecube.umd.edu)
 --------------------------------------------------------------------
