@@ -12,6 +12,7 @@
 #include <phys-services/I3RandomService.h>
 #include <icetray/python/dataclass_suite.hpp>
 #include <MuonGun/Flux.h>
+#include <icetray/python/gil_holder.hpp>
 #include "utils.h"
 
 static double IntegrateFlux(const I3MuonGun::SamplingSurface &s, I3MuonGun::FluxPtr flux, unsigned m, double cosMin, double cosMax)
@@ -27,12 +28,35 @@ static boost::python::tuple SampleImpactRay(const I3MuonGun::SamplingSurface &s,
 	return boost::python::make_tuple(pos, dir);
 }
 
+namespace I3MuonGun {
+
+using namespace boost::python;
+
+class PySurface : public Surface, public wrapper<Surface> {
+public:
+	virtual std::pair<double, double> GetIntersection(const I3Position &p, const I3Direction &dir) const
+	{
+		detail::gil_holder lock;
+		return get_override("GetIntersection")(p, dir);
+	}
+	
+	virtual bool operator==(const Surface &s) const
+	{
+		log_fatal("Python Surfaces can't be compared.");
+		return false;
+	}
+};
+
+I3_POINTER_TYPEDEFS(PySurface);
+
+}
+
 void register_Surface()
 {
 	using namespace I3MuonGun;
 	using namespace boost::python;
 	
-	class_<Surface, SurfacePtr, boost::noncopyable>("Surface", no_init)
+	class_<PySurface, PySurfacePtr, boost::noncopyable>("Surface")
 	    .def("intersection", &Surface::GetIntersection)
 	;
 	
