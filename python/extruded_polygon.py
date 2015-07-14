@@ -177,7 +177,7 @@ class ExtrudedPolygon(Surface):
         inner = numpy.dot(self._normals, numpy.asarray((dir.x, dir.y, dir.z)))
         # only surfaces that face the requested direction count towards the area
         mask = inner < 0
-        return -(inner*self._areas[:,None]*mask).sum(axis=0)
+        return -(inner*self._areas*mask).sum(axis=0)
     
     def _point_in_hull(self, point):
         """
