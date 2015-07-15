@@ -65,7 +65,7 @@ GetMuonsAtSurface(I3FramePtr frame, SurfaceConstPtr surface)
 		std::pair<double, double> steps =
 		    surface->GetIntersection(track.GetPos(), track.GetDir());
 		double energy = track.GetEnergy(steps.first);
-		if (energy > 0) {
+		if (steps.first >= 0 && energy > 0) {
 			final_states.push_back(track);
 			I3Particle &p = final_states.back();
 			p.SetEnergy(energy);
