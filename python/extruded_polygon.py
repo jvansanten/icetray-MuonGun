@@ -179,6 +179,52 @@ class ExtrudedPolygon(Surface):
         mask = inner < 0
         return -(inner*self._areas*mask).sum(axis=0)
     
+    def azimuth_averaged_area(self, cos_theta):
+        """
+        Return projected area at the given zenith angle, averaged over all
+        azimuth angles.
+        
+        :param cos_theta: cosine of the zenith angle
+        """
+        cap = self._areas[-1]
+        sides = self._side_lengths.sum()*self.length/numpy.pi
+        
+        return cap*abs(cos_theta) + sides*numpy.sqrt(1-cos_theta**2)
+    
+    @staticmethod
+    def _integrate_area(a, b, cap, sides):
+        return cap*(b**2-a**2) + (sides/2.)*(numpy.arccos(a) - numpy.arccos(b) + numpy.sqrt(1-a**2)*a + numpy.sqrt(1-b**2)*b)
+    
+    def entendue(self, cosMin=-1., cosMax=1.):
+        """
+        Integrate A * d\Omega over the given range of zenith angles
+        
+        :param cosMin: cosine of the maximum zenith angle
+        :param cosMax: cosine of the minimum zenith angle
+        :returns: a product of area and solid angle. Divide by
+                  2*pi*(cosMax-cosMin) to obtain the average projected area in
+                  this zenith angle range
+        """
+        
+        # First, integrate over all azimuthal angles, exploiting the fact that
+        # the projected area of a plane, averaged over a 2\pi rotation that
+        # passes through the normal, is
+        # A*\int_0^\pi \Theta(\sin\alpha)\sin\alpha d\alpha / 2\pi = A/\pi
+        sides = 2*self._side_lengths.sum()*self.length
+        # The projected area of the cap is independent of azimuth
+        cap = 2*numpy.pi*self._areas[-1]
+        
+        if (cosMin >= 0 and cosMax >= 0):
+            return self._integrate_area(cosMin, cosMax, cap, sides)
+        elif (cosMin < 0 and cosMax <= 0):
+            return self._integrate_area(-cosMax, -cosMin, cap, sides)
+        elif (cosMin < 0 and cosMax > 0):
+            return self._integrate_area(0, -cosMin, cap, sides) \
+                + self._integrate_area(0, cosMax, cap, sides)
+        else:
+            raise ValueError("Can't deal with zenith range [%.1e, %.1e]" % (cosMin, cosMax))
+        return numpy.nan
+    
     def _point_in_hull(self, point):
         """
         Test whether point is inside the 2D hull by ray casting
