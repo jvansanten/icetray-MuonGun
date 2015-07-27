@@ -1,43 +1,57 @@
-# $Id: RELEASE_NOTES 121473 2014-07-11 12:37:08Z olivas $
-# $Author: olivas $
-# $Date: 2014-07-11 06:37:08 -0600 (Fri, 11 Jul 2014) $
+.. $Id: RELEASE_NOTES 121473 2014-07-11 12:37:08Z olivas $
+.. $Author: olivas $
+.. $Date: 2014-07-11 06:37:08 -0600 (Fri, 11 Jul 2014) $
 
---------------------------------------------------------------------
+Release Notes
+=============
+
+trunk
+-----
+
 Mostly docs. Changes since 00-00-04:
 
-- Document:
+* Document:
+
   * Methods for determining the energies of muons in simulation at arbitrary points
   * List of available flux parameterizations 
-- Add:
+
+* Add:
+
   * Generation probability parameterizations for the CORSIKA configurations used
     in IC79 (previously private to my thesis work, but that's done now)
   * Muon flux parameterizations from DPMJET, split into conventional and prompt
     components (ditto)
-- Remove built-in copy of boost::numpy, and instead use Martin Wolf's enhanced
+
+* Remove built-in copy of boost::numpy, and instead use Martin Wolf's enhanced
   version (when available)
+
   -- Jakob van Santen
 
-- Remove built-in copy of the weighting project in favor of the official one.
-- Remove relative imports for Python 3 compatibility.
+* Remove built-in copy of the weighting project in favor of the official one.
+* Remove relative imports for Python 3 compatibility.
+
   -- David Schultz
   
-- Fixed pybindings for GenerationProbability to be able to combine
+* Fixed pybindings for GenerationProbability to be able to combine
   GenerationProbabilty objects with different settings in Python. I3FrameObject 
   is now the base of GenerationProbability in the pybindings and added 
   necessary pointer conversions. (reported and fixed by briedel in r134695)
 
 July 11, 2014 Alex Olivas  (olivas@icecube.umd.edu)
---------------------------------------------------------------------
-Added release notes for this project. Enhancements and bugfixes since 00-00-03:
+---------------------------------------------------
 
-- Add an axial cylinder sampling surface for use in NeutrinoGenerator
-- Add pybindings for I3MuonGun::GetDepth() and fix up argument order in
+V00-00-04
+
+Added release notes for this project.
+
+* Add an axial cylinder sampling surface for use in NeutrinoGenerator
+* Add pybindings for I3MuonGun::GetDepth() and fix up argument order in
   EnergyDistribution
-- Fix up various incompatibilities with Python 2.4 and 3
-- When choosing intersection points with a cylinder, allow up-going tracks to
+* Fix up various incompatibilities with Python 2.4 and 3
+* When choosing intersection points with a cylinder, allow up-going tracks to
   intersect the bottom cap (reported by chaack)
-- Fix a sign error in the projected area term for cylinders. This was important
+* Fix a sign error in the projected area term for cylinders. This was important
   for extremely long cylinders. (reported by cweaver)
-- Check down-track distances of stochastic losses by distance rather than time
+* Check down-track distances of stochastic losses by distance rather than time
   in Track
 
