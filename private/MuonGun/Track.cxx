@@ -111,13 +111,6 @@ Track::GetTime(double length) const
 
 namespace {
 
-inline bool
-operator!=(const I3MMCTrack &track, const I3Particle &p)
-{
-	return (track.GetI3Particle().GetMajorID() != p.GetMajorID() ||
-	    track.GetI3Particle().GetMinorID() != p.GetMinorID());
-}
-
 /**
  * Ensure that the MMCTrack has the same time reference as
  * the associated I3MCTree.

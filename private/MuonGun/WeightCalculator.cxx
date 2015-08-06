@@ -98,22 +98,10 @@ make_vector(const I3Direction &dir)
 	return make_vector(dir.GetX(), dir.GetY(), dir.GetZ());
 }
 
-vector
-make_vector(const I3Position &dir)
-{
-	return make_vector(dir.GetX(), dir.GetY(), dir.GetZ());
-}
-
 inline vector
 subtract(const I3Position &p1, const I3Position &p2)
 {
 	return make_vector(p1.GetX()-p2.GetX(), p1.GetY()-p2.GetY(), p1.GetZ()-p2.GetZ());
-}
-
-inline vector
-operator-(const vector &v, const I3Position &p)
-{
-	return v-make_vector(p);
 }
 
 inline double
