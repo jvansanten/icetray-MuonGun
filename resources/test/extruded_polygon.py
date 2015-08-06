@@ -1,4 +1,8 @@
 
+"""
+Reference implementation of ExtrudedPolygon
+"""
+
 import numpy
 
 from icecube.MuonGun import Surface
@@ -21,7 +25,7 @@ def convex_hull(points):
     # Sort the points lexicographically (tuples are compared lexicographically).
     # Remove duplicates to detect the case we have just one unique point.
     points = sorted(set(points))
- 
+     
     # Boring case: no points or a single point, possibly repeated multiple times.
     if len(points) <= 1:
         return points
@@ -38,6 +42,9 @@ def convex_hull(points):
         while len(lower) >= 2 and cross(lower[-2], lower[-1], p) <= 0:
             lower.pop()
         lower.append(p)
+    print 'lower'
+    for p in lower:
+        print p
  
     # Build upper hull
     upper = []
@@ -45,7 +52,9 @@ def convex_hull(points):
         while len(upper) >= 2 and cross(upper[-2], upper[-1], p) <= 0:
             upper.pop()
         upper.append(p)
- 
+    print 'upper'
+    for p in upper:
+        print p
     # Concatenation of the lower and upper hulls gives the convex hull.
     # Last point of each list is omitted because it is repeated at the beginning of the other list. 
     hull = lower[:-1] + upper[:-1]
@@ -296,3 +305,61 @@ class ExtrudedPolygon(Surface):
             caps = self._distance_to_caps(point, vec)
             intersections = numpy.concatenate((sides, caps))
             return make_pair(*(numpy.nanmin(intersections), numpy.nanmax(intersections)))
+
+if __name__ == "__main__":
+    
+    from icecube.MuonGun import ExtrudedPolygon as CExtrudedPolygon
+    from icecube.dataclasses import I3Position, I3Direction
+    
+    numpy.random.seed(0)
+    
+    def make_surfaces(npoints=10, padding=0):
+        npoints = 10
+        x = numpy.random.uniform(0, 1e3, size=npoints)-5e2
+        y = numpy.random.uniform(0, 1e3, size=npoints)-5e2
+        z = [-500, 500]
+        points = numpy.vstack((x,y)).T
+    
+        py_surface = ExtrudedPolygon(points, z).expand(padding)
+        cpoints = []
+        for z_ in z:
+            cpoints += [I3Position(x_,y_,z_) for x_,y_ in zip(x,y)]
+        cpp_surface = CExtrudedPolygon(cpoints, padding)
+        
+        return py_surface, cpp_surface
+    
+    def random_points(radius, npoints=1000):
+        r = numpy.random.uniform(0, radius**3, size=npoints)**(1./3)
+        azi = numpy.random.uniform(0, 2*numpy.pi, size=2*npoints)
+        zen = numpy.arccos(numpy.random.uniform(-1, 1, size=2*npoints))
+        return [(I3Position(r_, z1_, a1_, I3Position.sph), I3Direction(z2_, a2_)) for r_,z1_,a1_,z2_,a2_ in zip(r, zen[:npoints], azi[:npoints], zen[npoints:], azi[npoints:])]
+    
+    py_surface, cpp_surface = make_surfaces()
+    numpy.testing.assert_almost_equal(py_surface._x, numpy.vstack((cpp_surface.x, cpp_surface.y)).T, err_msg="basic hull is not identical")
+    numpy.testing.assert_almost_equal(py_surface._z_range, cpp_surface.z)
+    
+    py_surface, cpp_surface = make_surfaces(padding=50)
+    numpy.testing.assert_almost_equal(py_surface._x, numpy.vstack((cpp_surface.x, cpp_surface.y)).T, err_msg="padded hull is not identical")
+    numpy.testing.assert_almost_equal(py_surface._z_range, cpp_surface.z)
+    
+    # test intersection code
+    for i, (pos, dir) in enumerate(random_points(7e2)):
+        i1 = py_surface.GetIntersection(pos, dir)
+        i2 = cpp_surface.intersection(pos, dir)
+        numpy.testing.assert_equal(i1.first, i2.first)
+        numpy.testing.assert_equal(i1.second, i2.second)
+        
+    # import sys
+    # # sys.exit(1)
+    #
+    # import pylab
+    #
+    # ax = pylab.gca()
+    # ax.scatter(points[:,0], points[:,1])
+    # ax.add_artist(pylab.Line2D(py_surface._x[:,0], py_surface._x[:,1]))
+    # ax.add_artist(pylab.Line2D(cpp_surface.x, cpp_surface.y, color='r'))
+    #
+    # print len(py_surface._x), len(cpp_surface.x)
+    #
+    # pylab.show()
+    

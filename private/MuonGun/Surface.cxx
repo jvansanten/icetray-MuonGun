@@ -27,12 +27,6 @@ sort(std::pair<double, double> &pair)
 	}
 }
 
-inline std::pair<double, double>
-no_intersection()
-{
-	return std::make_pair(NAN, NAN);
-}
-
 // static const double SurfaceRadius = 6371300+2834;
 
 }

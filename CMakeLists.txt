@@ -14,6 +14,7 @@ SET (LIB_${PROJECT_NAME}_SOURCEFILES
     private/MuonGun/Generator.cxx
     private/MuonGun/WeightCalculator.cxx
     private/MuonGun/Surface.cxx
+    private/MuonGun/ExtrudedPolygon.cxx
     private/MuonGun/Flux.cxx
     private/MuonGun/RadialDistribution.cxx
     private/MuonGun/EnergyDistribution.cxx
@@ -87,7 +88,10 @@ i3_add_pybindings(MuonGun
   USE_PROJECTS MuonGun
   )
 
-i3_test_scripts(resources/test/test_StaticSurfaceInjector.py)
+i3_test_scripts(
+  resources/test/test_StaticSurfaceInjector.py
+  resources/test/extruded_polygon.py
+)
 
 i3_test_executable(test 
   private/test/main.cxx

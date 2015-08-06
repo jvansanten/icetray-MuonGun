@@ -7,6 +7,7 @@
  */
 
 #include <MuonGun/Surface.h>
+#include <MuonGun/ExtrudedPolygon.h>
 #include <dataclasses/I3Position.h>
 #include <dataclasses/I3Direction.h>
 #include <phys-services/I3RandomService.h>
@@ -83,5 +84,12 @@ void register_Surface()
 	implicitly_convertible<CylinderPtr, CylinderConstPtr>();
 	
 	class_<Sphere, bases<Surface> >("Sphere", init<double, double>())
+	;
+	
+	class_<ExtrudedPolygon, ExtrudedPolygonPtr, bases<Surface> >("ExtrudedPolygon",
+	    init<const std::vector<I3Position> &, double>((arg("points"), arg("padding")=0)))
+	    .add_property("x", &ExtrudedPolygon::GetX)
+	    .add_property("y", &ExtrudedPolygon::GetY)
+	    .add_property("z", &ExtrudedPolygon::GetZ)
 	;
 }

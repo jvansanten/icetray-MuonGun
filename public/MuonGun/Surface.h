@@ -39,6 +39,10 @@ namespace I3MuonGun {
 		 *          "behind" the origin.
 		 */
 		virtual std::pair<double, double> GetIntersection(const I3Position &p, const I3Direction &dir) const = 0;
+		std::pair<double, double> no_intersection() const
+		{
+			return std::make_pair(NAN, NAN);
+		}
 	
 		virtual bool operator==(const Surface&) const = 0;
 	private:
@@ -196,7 +200,6 @@ namespace I3MuonGun {
 	};
 	
 	I3_POINTER_TYPEDEFS(AxialCylinder);
-
 }
 
 BOOST_CLASS_VERSION(I3MuonGun::Surface, 0);
