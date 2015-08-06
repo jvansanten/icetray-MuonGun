@@ -11,6 +11,7 @@
 #include <dataclasses/I3Direction.h>
 
 #include <boost/foreach.hpp>
+#include <cmath>
 
 namespace {
 
@@ -170,7 +171,7 @@ ExtrudedPolygon::vec2::from_I3Position(const I3Position &p)
 ExtrudedPolygon::vec2
 ExtrudedPolygon::vec2::normalized(double xi, double yi)
 {
-	double l = std::hypot(xi, yi);
+	double l = hypot(xi, yi);
 	return vec2(xi/l, yi/l);
 }
 
@@ -188,7 +189,7 @@ operator<(const ExtrudedPolygon::vec2 &a, const ExtrudedPolygon::vec2 &b)
 }
 
 ExtrudedPolygon::side::side(const vec2 &p, const vec2 &np) : origin(p),
-    vector(np.x-p.x, np.y-p.y), length(std::hypot(vector.x, vector.y)),
+    vector(np.x-p.x, np.y-p.y), length(hypot(vector.x, vector.y)),
 	normal(vector.y/length, -vector.x/length, 0.)
 {}
 
