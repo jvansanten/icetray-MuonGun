@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 
 """
 Reference implementation of ExtrudedPolygon
@@ -42,9 +43,6 @@ def convex_hull(points):
         while len(lower) >= 2 and cross(lower[-2], lower[-1], p) <= 0:
             lower.pop()
         lower.append(p)
-    print 'lower'
-    for p in lower:
-        print p
  
     # Build upper hull
     upper = []
@@ -52,9 +50,7 @@ def convex_hull(points):
         while len(upper) >= 2 and cross(upper[-2], upper[-1], p) <= 0:
             upper.pop()
         upper.append(p)
-    print 'upper'
-    for p in upper:
-        print p
+
     # Concatenation of the lower and upper hulls gives the convex hull.
     # Last point of each list is omitted because it is repeated at the beginning of the other list. 
     hull = lower[:-1] + upper[:-1]
@@ -348,18 +344,4 @@ if __name__ == "__main__":
         i2 = cpp_surface.intersection(pos, dir)
         numpy.testing.assert_equal(i1.first, i2.first)
         numpy.testing.assert_equal(i1.second, i2.second)
-        
-    # import sys
-    # # sys.exit(1)
-    #
-    # import pylab
-    #
-    # ax = pylab.gca()
-    # ax.scatter(points[:,0], points[:,1])
-    # ax.add_artist(pylab.Line2D(py_surface._x[:,0], py_surface._x[:,1]))
-    # ax.add_artist(pylab.Line2D(cpp_surface.x, cpp_surface.y, color='r'))
-    #
-    # print len(py_surface._x), len(cpp_surface.x)
-    #
-    # pylab.show()
     
