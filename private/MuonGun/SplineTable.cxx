@@ -1,3 +1,4 @@
+#include <cerrno>
 #include <stdexcept>
 #include <MuonGun/SplineTable.h>
 #include <icetray/I3Logging.h>
