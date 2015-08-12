@@ -65,6 +65,7 @@ void register_base_Surface()
 	
 	class_<SamplingSurface, SamplingSurfacePtr, bases<Surface>, boost::noncopyable>("SamplingSurface", no_init)
 	    .def("area", &SamplingSurface::GetArea, (arg("dir")))
+	    .def("maximum_area", &SamplingSurface::GetMaximumArea)
 	    .def("sample_impact_ray", &SampleImpactRay, (arg("self"), arg("rng"), arg("cosMin")=0, arg("cosMax")=1))
 	    .def("sample_impact_position", &SamplingSurface::SampleImpactPosition, (arg("self"), arg("dir"), arg("rng")))
 	;
@@ -81,10 +82,21 @@ void register_base_Surface()
 	
 	implicitly_convertible<CylinderPtr, CylinderConstPtr>();
 	
+	class_<ExtrudedPolygon, ExtrudedPolygonPtr, bases<SamplingSurface> >("ExtrudedPolygon",
+	    init<const std::vector<I3Position> &, double>((arg("points"), arg("padding")=0)))
+	    .add_property("x", &ExtrudedPolygon::GetX)
+	    .add_property("y", &ExtrudedPolygon::GetY)
+	    .add_property("z", &ExtrudedPolygon::GetZ)
+	;
+	
 	class_<Sphere, bases<Surface> >("Sphere", init<double, double>())
 	;
-}
 	
+	class_<AxialCylinder, bases<SamplingSurface> >("AxialCylinder",
+	    init<double,double,I3Position>((bp::arg("length"), bp::arg("radius"), bp::arg("center")=I3Position(0,0,0))))
+	    .def(init<double,double,double,I3Position>((bp::arg("lengthBefore"), "lengthAfter", "radius", bp::arg("center")=I3Position(0,0,0))))
+	;
+}
 
 void register_Surface()
 {
@@ -111,12 +123,10 @@ void register_Surface()
 
 	implicitly_convertible<CylinderPtr, CylinderConstPtr>();
 
-#if 0	
-	class_<ExtrudedPolygon, ExtrudedPolygonPtr, bases<Surface> >("ExtrudedPolygon",
+	class_<ExtrudedPolygon, ExtrudedPolygonPtr, bases<SamplingSurface> >("ExtrudedPolygon",
 	    init<const std::vector<I3Position> &, double>((arg("points"), arg("padding")=0)))
 	    .add_property("x", &ExtrudedPolygon::GetX)
 	    .add_property("y", &ExtrudedPolygon::GetY)
 	    .add_property("z", &ExtrudedPolygon::GetZ)
 	;
-#endif
 }

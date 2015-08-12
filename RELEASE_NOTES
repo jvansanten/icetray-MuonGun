@@ -21,9 +21,24 @@ Mostly docs. Changes since 00-00-04:
     in IC79 (previously private to my thesis work, but that's done now)
   * Muon flux parameterizations from DPMJET, split into conventional and prompt
     components (ditto)
+  * ExtrudedPolygon, a SamplingSurface formed by a convex hull around strings
+    in the X-Y plane and straight sides in the Z direction. This takes the
+    guesswork out of efficiently sampling on highly non-cylindrical geometries
 
 * Remove built-in copy of boost::numpy, and instead use Martin Wolf's enhanced
   version (when available)
+
+* Rework SamplingSurface interface for more clarity:
+  - GetDifferentialArea() renamed to GetArea(): returns the area in m^2 in
+    the given direction. Surfaces are no longer assumed to be azimuthally
+    symmetric.
+  - GetTotalArea() renamed to GetAcceptance(): now returns the product of
+    area and solid angle integrated over both zenith and azimuth (i.e. the
+    return value no longer needs to be multiplied by 2pi to get m^2 sr)
+
+* Factor Surface classes out into simclasses, separating the general functionality
+  (calculating areas and finding intersections) with MuonGun specific bits
+  (equality comparison and flux integration)
 
   -- Jakob van Santen
 

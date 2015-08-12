@@ -14,7 +14,7 @@ SET (LIB_${PROJECT_NAME}_SOURCEFILES
     private/MuonGun/Generator.cxx
     private/MuonGun/WeightCalculator.cxx
     private/MuonGun/Surface.cxx
-#   private/MuonGun/ExtrudedPolygon.cxx
+    private/MuonGun/ExtrudedPolygon.cxx
     private/MuonGun/Flux.cxx
     private/MuonGun/RadialDistribution.cxx
     private/MuonGun/EnergyDistribution.cxx

@@ -184,6 +184,12 @@ class ExtrudedPolygon(Surface):
         mask = inner < 0
         return -(inner*self._areas*mask).sum(axis=0)
     
+    def partial_area(self, dir):
+        inner = numpy.dot(self._normals, numpy.asarray((dir.x, dir.y, dir.z)))
+        # only surfaces that face the requested direction count towards the area
+        mask = inner < 0
+        return -(inner*self._areas*mask)
+    
     def azimuth_averaged_area(self, cos_theta):
         """
         Return projected area at the given zenith angle, averaged over all
@@ -275,11 +281,7 @@ class ExtrudedPolygon(Surface):
             return (numpy.nanmin(beta), numpy.nanmax(beta))
     
     def _distance_to_cap(self, point, dir, cap_z):
-        d = (point[2]-cap_z)/dir[2]
-        if self._point_in_hull(point + d*dir):
-            return d
-        else:
-            return numpy.nan
+        return (cap_z-point[2])/dir[2]
     
     def _distance_to_caps(self, point, dir):
         return sorted((self._distance_to_cap(point, dir, cap_z) for cap_z in self._z_range))
@@ -288,24 +290,37 @@ class ExtrudedPolygon(Surface):
         point = numpy.array((pos.x, pos.y, pos.z))
         vec = numpy.array((dir.x, dir.y, dir.z))
         
+        no_intersection = make_pair(numpy.nan, numpy.nan)
+        
         # perfectly vertical track: only check intersections with caps
         if abs(dir.z) == 1.:
-            return make_pair(*self._distance_to_caps(point, vec))
+            if not self._point_in_hull(point):
+                return no_intersection
+            else:
+                return make_pair(*self._distance_to_caps(point, vec))
         # perfectly horizontal track: only check intersections with sides
         elif dir.z == 0.:
-            return make_pair(*self._distance_to_hull(point, vec))
+            if pos.z < self._z_range.first or pos.z > self._z_range.second:
+                return no_intersection
+            else:
+                return make_pair(*self._distance_to_hull(point, vec))
         # general case: both rho and z components nonzero
         else:
             sin_zenith = numpy.sqrt(1.-dir.z**2)
             sides = numpy.array(self._distance_to_hull(point, vec))/sin_zenith
             caps = self._distance_to_caps(point, vec)
             intersections = numpy.concatenate((sides, caps))
-            return make_pair(*(numpy.nanmin(intersections), numpy.nanmax(intersections)))
+            
+            if (caps[0] >= sides[1] or caps[1] <= sides[0]):
+                return no_intersection
+            else:
+                return make_pair(numpy.max((sides[0], caps[0])), numpy.min((sides[1], caps[1])))
 
 if __name__ == "__main__":
     
     from icecube.MuonGun import ExtrudedPolygon as CExtrudedPolygon
     from icecube.dataclasses import I3Position, I3Direction
+    from icecube.phys_services import I3GSLRandomService
     
     numpy.random.seed(0)
     
@@ -338,10 +353,23 @@ if __name__ == "__main__":
     numpy.testing.assert_almost_equal(py_surface._x, numpy.vstack((cpp_surface.x, cpp_surface.y)).T, err_msg="padded hull is not identical")
     numpy.testing.assert_almost_equal(py_surface._z_range, cpp_surface.z)
     
-    # test intersection code
+    # test intersection and projection code
     for i, (pos, dir) in enumerate(random_points(7e2)):
         i1 = py_surface.GetIntersection(pos, dir)
         i2 = cpp_surface.intersection(pos, dir)
         numpy.testing.assert_equal(i1.first, i2.first)
         numpy.testing.assert_equal(i1.second, i2.second)
+        numpy.testing.assert_almost_equal(py_surface.area(dir), cpp_surface.area(dir))
+    
+    # test acceptance calculation
+    ct = numpy.random.uniform(-1, 1, size=2*1000).reshape(2,1000)
+    ct.sort(axis=0)
+    for ct_lo, ct_hi in ct.T:
+        py_acceptance = py_surface.entendue(ct_lo, ct_hi)
+        cpp_acceptance = cpp_surface.acceptance(ct_lo, ct_hi)
+        numpy.testing.assert_almost_equal(py_acceptance, cpp_acceptance)
+    
+    rng = I3GSLRandomService(1)
+    # test area sampling
+    pos, dir = cpp_surface.sample_impact_ray(rng)
     

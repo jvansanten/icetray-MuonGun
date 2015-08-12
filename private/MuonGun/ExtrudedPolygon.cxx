@@ -9,13 +9,14 @@
 #include <MuonGun/ExtrudedPolygon.h>
 #include <dataclasses/I3Position.h>
 #include <dataclasses/I3Direction.h>
+#include <phys-services/I3RandomService.h>
 
 #include <boost/foreach.hpp>
 #include <cmath>
 
 namespace {
 
-typedef I3MuonGun::ExtrudedPolygon::vec2 vec2;
+typedef simclasses::polygon::vec2 vec2;
 
 /// A counterclockwise curve is the basic building block of a convex hull
 class ccw_curve : public std::vector<vec2> {
@@ -123,60 +124,49 @@ z_range(const std::vector<I3Position> &positions)
 	return range;
 }
 
-// define an absolute ordering for NaN
-bool
-nan_less(double a, double b)
-{
-	if (std::isnan(b))
-		return true;
-	else if (std::isnan(a))
-		return false;
-	else
-		return a < b;
-}
-
-bool
-nan_greater(double a, double b)
-{
-	if (std::isnan(b))
-		return true;
-	else if (std::isnan(a))
-		return false;
-	else
-		return a > b;
-}
-
 std::pair<double, double>
 make_ordered_pair(double a, double b)
 {
-	if (!(a > b))
-		return std::make_pair(a, b);
-	else
+	if (std::isnan(a) || (a > b))
 		return std::make_pair(b, a);
+	else
+		return std::make_pair(a, b);
 }
 
 }
 
-namespace I3MuonGun {
+namespace simclasses {
 
-ExtrudedPolygon::vec2::vec2(double xi, double yi) : x(xi), y(yi)
+namespace polygon {
+
+vec2::vec2(double xi, double yi) : x(xi), y(yi)
 {}
 
-ExtrudedPolygon::vec2
-ExtrudedPolygon::vec2::from_I3Position(const I3Position &p)
+template <typename Archive>
+void vec2::serialize(Archive &ar, unsigned version)
+{
+	if (version > 0)
+		log_fatal_stream("Version "<<version<<" is from the future");
+	
+	ar & make_nvp("X", x);
+	ar & make_nvp("Y", y);
+}
+
+vec2
+vec2::from_I3Position(const I3Position &p)
 {
 	return vec2(p.GetX(), p.GetY());
 }
 
-ExtrudedPolygon::vec2
-ExtrudedPolygon::vec2::normalized(double xi, double yi)
+vec2
+vec2::normalized(double xi, double yi)
 {
 	double l = hypot(xi, yi);
 	return vec2(xi/l, yi/l);
 }
 
 bool
-operator<(const ExtrudedPolygon::vec2 &a, const ExtrudedPolygon::vec2 &b)
+operator<(const vec2 &a, const vec2 &b)
 {
 	if (a.x < b.x)
 		return true;
@@ -188,22 +178,38 @@ operator<(const ExtrudedPolygon::vec2 &a, const ExtrudedPolygon::vec2 &b)
 		return false;
 }
 
-ExtrudedPolygon::side::side(const vec2 &p, const vec2 &np) : origin(p),
+side::side(const vec2 &p, const vec2 &np) : origin(p),
     vector(np.x-p.x, np.y-p.y), length(hypot(vector.x, vector.y)),
 	normal(vector.y/length, -vector.x/length, 0.)
 {}
 
-ExtrudedPolygon::ExtrudedPolygon(const std::vector<I3Position> &points, double padding)
+}
+
+template <typename Base>
+ExtrudedPolygonBase<Base>::ExtrudedPolygonBase(const std::vector<I3Position> &points, double padding)
 {
-	z_range_ = z_range(points);
-	cap_area_ = 0;
+	using simclasses::polygon::vec2;
 	
+	std::pair<double, double> zrange = z_range(points);
 	std::vector<vec2> hull = convex_hull(points);
 	if (padding != 0) {
 		hull = expand_polygon(hull, padding);
-		z_range_.first -= padding;
-		z_range_.second += padding;
+		zrange.first -= padding;
+		zrange.second += padding;
 	}
+	initWithHull(hull, zrange);
+}
+
+template <typename Base>
+void
+ExtrudedPolygonBase<Base>::initWithHull(const std::vector<polygon::vec2> &hull,
+    const std::pair<double, double> &z_range)
+{
+	using simclasses::polygon::vec2;
+	using simclasses::polygon::side;
+	
+	z_range_ = z_range;
+	cap_area_ = 0;
 	sides_.clear();
 	for (std::vector<vec2>::const_iterator p = hull.begin(); p != hull.end(); p++) {
 		std::vector<vec2>::const_iterator np = boost::next(p);
@@ -218,45 +224,29 @@ ExtrudedPolygon::ExtrudedPolygon(const std::vector<I3Position> &points, double p
 	cap_area_ /= 2.;
 }
 
-bool
-ExtrudedPolygon::operator==(const Surface &s) const
-{
-	const ExtrudedPolygon *other = dynamic_cast<const ExtrudedPolygon*>(&s);
-	if (!other)
-		return false;
-	else {
-		if (z_range_ != other->z_range_ || sides_.size() != other->sides_.size())
-			return false;
-		typedef std::vector<side>::const_iterator side_iter;
-		for (side_iter a=sides_.begin(), b=other->sides_.begin(); a != sides_.end(); a++, b++) {
-			if (a->origin.x != b->origin.x || a->origin.y != b->origin.y)
-				return false;
-		}
-	}
-	
-	return true;
-}
-
+template <typename Base>
 std::vector<double>
-ExtrudedPolygon::GetX() const
+ExtrudedPolygonBase<Base>::GetX() const
 {
 	std::vector<double> x;
-	BOOST_FOREACH(const side &sidey, sides_)
+	BOOST_FOREACH(const polygon::side &sidey, sides_)
 		x.push_back(sidey.origin.x);
 	return x;
 }
 
+template <typename Base>
 std::vector<double>
-ExtrudedPolygon::GetY() const
+ExtrudedPolygonBase<Base>::GetY() const
 {
 	std::vector<double> y;
-	BOOST_FOREACH(const side &sidey, sides_)
+	BOOST_FOREACH(const polygon::side &sidey, sides_)
 		y.push_back(sidey.origin.y);
 	return y;
 }
 
+template <typename Base>
 std::vector<double>
-ExtrudedPolygon::GetZ() const
+ExtrudedPolygonBase<Base>::GetZ() const
 {
 	std::vector<double> z;
 	z.push_back(z_range_.first);
@@ -266,15 +256,16 @@ ExtrudedPolygon::GetZ() const
 }
 
 /// Calculate the most extreme displacements to points on the 2D hull
+template <typename Base>
 std::pair<double, double>
-ExtrudedPolygon::GetDistanceToHull(const I3Position &pos, const I3Direction &dir) const
+ExtrudedPolygonBase<Base>::GetDistanceToHull(const I3Position &pos, const I3Direction &dir) const
 {
-	std::pair<double, double> offsets = no_intersection();
+	std::pair<double, double> offsets = Surface::no_intersection();
 	
 	if (dir.GetX() + dir.GetY() == 0.)
 		log_fatal("Direction must have a horizontal component");
 	
-	BOOST_FOREACH(const side &sidey, sides_) {
+	BOOST_FOREACH(const polygon::side &sidey, sides_) {
 		// Components of the vector connecting the test point to the
 		// origin of the line segment;
 		double x = sidey.origin.x - pos.GetX();
@@ -291,7 +282,6 @@ ExtrudedPolygon::GetDistanceToHull(const I3Position &pos, const I3Direction &dir
 			double beta = dir.GetX() != 0. ?
 			    (x + alpha*sidey.vector.x)/dir.GetX() :
 			    (y + alpha*sidey.vector.y)/dir.GetY();
-			
 			// NB: reversed comparison is equivalent to
 			// (isnan(offsets.first) || beta < offsets.first)
 			if (!(beta >= offsets.first))
@@ -300,17 +290,21 @@ ExtrudedPolygon::GetDistanceToHull(const I3Position &pos, const I3Direction &dir
 				offsets.second = beta;
 		}
 	}
+	double sin_theta = std::sqrt(1.-dir.GetZ()*dir.GetZ());
+	offsets.first /= sin_theta;
+	offsets.second /= sin_theta;
 	
 	return offsets;
 }
 
 /// Test whether point is inside the 2D hull by ray casting
+template <typename Base>
 bool
-ExtrudedPolygon::PointInHull(const I3Position &pos) const
+ExtrudedPolygonBase<Base>::PointInHull(const I3Position &pos) const
 {
 	int crossings = 0;
-	for (std::vector<side>::const_iterator p = sides_.begin(); p != sides_.end(); p++) {
-		std::vector<side>::const_iterator np = boost::next(p);
+	for (std::vector<polygon::side>::const_iterator p = sides_.begin(); p != sides_.end(); p++) {
+		std::vector<polygon::side>::const_iterator np = boost::next(p);
 		if (np == sides_.end())
 			np = sides_.begin();
 		
@@ -329,49 +323,236 @@ ExtrudedPolygon::PointInHull(const I3Position &pos) const
 	return (crossings % 2) == 1;
 }
 
+template <typename Base>
 double
-ExtrudedPolygon::GetDistanceToCap(const I3Position &p, const I3Direction &dir, double cap_z) const
+ExtrudedPolygonBase<Base>::GetDistanceToCap(const I3Position &p, const I3Direction &dir, double cap_z) const
 {
-	double d = (p.GetZ()-cap_z)/dir.GetZ();
-	if (PointInHull(p + d*dir)) {
-		return d;
-	} else {
-		return NAN;
-	}
+	return (cap_z-p.GetZ())/dir.GetZ();
 }
 
+template <typename Base>
 std::pair<double, double>
-ExtrudedPolygon::GetDistanceToCaps(const I3Position &p, const I3Direction &dir) const
+ExtrudedPolygonBase<Base>::GetDistanceToCaps(const I3Position &p, const I3Direction &dir) const
 {
 	return make_ordered_pair(GetDistanceToCap(p, dir, z_range_.first), GetDistanceToCap(p, dir, z_range_.second));
 }
 
+template <typename Base>
 std::pair<double, double>
-ExtrudedPolygon::GetIntersection(const I3Position &p, const I3Direction &dir) const
+ExtrudedPolygonBase<Base>::GetIntersection(const I3Position &p, const I3Direction &dir) const
 {
 	if (std::abs(dir.GetZ()) == 1.) {
 		// perfectly vertical track: only check intersections with caps
-		return GetDistanceToCaps(p, dir);
+		if (!PointInHull(p))
+			return Surface::no_intersection();
+		else
+			return GetDistanceToCaps(p, dir);
 	} else if (dir.GetZ() == 0.) {
 		// perfectly horizontal track: only check intersections with sides
-		return GetDistanceToHull(p, dir);
+		if (p.GetZ() < z_range_.first || p.GetZ() > z_range_.second)
+			return Surface::no_intersection();
+		else
+			return GetDistanceToHull(p, dir);
 	} else {
 		// general case: both rho and z components nonzero
 		std::pair<double, double> sides = GetDistanceToHull(p, dir);
 		std::pair<double, double> caps = GetDistanceToCaps(p, dir);
-		double sin_zenith = std::sqrt(1.-dir.GetZ()*dir.GetZ());
 		
-		boost::array<double,4> combo =
-		    {{sides.first/sin_zenith, sides.second/sin_zenith,
-		      caps.first, caps.second}};
-		std::pair<double, double> ordered(
-		    *std::min_element(combo.begin(), combo.end(), nan_less),
-		    *std::min_element(combo.begin(), combo.end(), nan_greater));
-		
-		return ordered;
+		if (caps.first >= sides.second || caps.second <= sides.first)
+			return Surface::no_intersection();
+		else {
+			return std::make_pair(std::max(sides.first, caps.first), std::min(sides.second, caps.second));
+		}
 	}
 }
 
+template <typename Base>
+double
+ExtrudedPolygonBase<Base>::GetArea(const I3Direction &dir) const
+{
+	double area = 0;
+	BOOST_FOREACH(const polygon::side &sidey, sides_) {
+		double inner = sidey.normal*dir;
+		if (inner < 0)
+			area += -inner*sidey.length;
+	}
+	area *= (z_range_.second-z_range_.first);
+	area += std::abs(dir.GetZ())*cap_area_;
+	
+	return area;
 }
 
+template <typename Base>
+double
+ExtrudedPolygonBase<Base>::GetMaximumArea() const
+{
+	double side_area = 0;
+	BOOST_FOREACH(const polygon::side &sidey, sides_) {
+		side_area += sidey.length;
+	}
+	// the largest possible projected area occurs for a flat square
+	side_area *= (z_range_.second-z_range_.first)/2.;
+	double ct_max = cos(atan(side_area/cap_area_));
+	
+	return cap_area_*fabs(ct_max) + side_area*sqrt(1.-ct_max*ct_max);
+}
+
+template <typename Base>
+double
+ExtrudedPolygonBase<Base>::GetAverageSideArea() const
+{
+	// the projected area of a plane, averaged over a 2\pi rotation that
+	// passes through the normal, is
+	// A*\int_0^\pi \Theta(\sin\alpha)\sin\alpha d\alpha / 2\pi = A/\pi
+	double area = 0;
+	BOOST_FOREACH(const polygon::side &sidey, sides_)
+		area += sidey.length;
+	area *= GetLength()/M_PI;
+	
+	return area;
+}
+
+template <typename Base>
+I3Position
+ExtrudedPolygonBase<Base>::SampleImpactPosition(const I3Direction &dir, I3RandomService &rng) const
+{
+	// first, pick which face it's going to hit
+	double area = 0;
+	double height = GetLength();
+	std::vector<double> prob;
+	std::pair<double, double> x_range(std::numeric_limits<double>::infinity(), -std::numeric_limits<double>::infinity());
+	std::pair<double, double> y_range(std::numeric_limits<double>::infinity(), -std::numeric_limits<double>::infinity());
+	
+	BOOST_FOREACH(const polygon::side &sidey, sides_) {
+		double inner = sidey.normal*dir;
+		if (inner < 0)
+			area += -inner*sidey.length*height;
+		prob.push_back(area);
+		// Find the bounding box of the cap
+		if (sidey.origin.x < x_range.first)
+			x_range.first = sidey.origin.x;
+		if (sidey.origin.x > x_range.second)
+			x_range.second = sidey.origin.x;
+		if (sidey.origin.y < y_range.first)
+			y_range.first = sidey.origin.y;
+		if (sidey.origin.y > y_range.second)
+			y_range.second = sidey.origin.y;
+	}
+	area += std::abs(dir.GetZ())*cap_area_;
+	prob.push_back(area);
+	std::vector<double>::iterator target =
+	    std::lower_bound(prob.begin(), prob.end(), rng.Uniform(0, area));
+	if (target == boost::prior(prob.end())) {
+		// top or bottom face
+		// triangulation would be more efficient here, but also more complicated
+		I3Position pos(NAN,NAN,dir.GetZ() > 0 ? z_range_.first : z_range_.second);
+		do {
+			pos.SetX(rng.Uniform(x_range.first, x_range.second));
+			pos.SetY(rng.Uniform(y_range.first, y_range.second));
+		} while (!PointInHull(pos));
+		return pos;
+	} else {
+		// side face
+		std::vector<polygon::side>::const_iterator sidey =
+		    sides_.begin() + std::distance(prob.begin(), target);
+		double horizontal = rng.Uniform();
+		double vertical = rng.Uniform();
+		return I3Position(
+		    sidey->origin.x + horizontal*sidey->vector.x,
+		    sidey->origin.y + horizontal*sidey->vector.y,
+		    z_range_.first + vertical*height
+		);
+	}
+}
+
+template <typename Base>
+template <typename Archive>
+void
+ExtrudedPolygonBase<Base>::save(Archive &ar, unsigned version) const
+{
+	if (version > 0)
+		log_fatal_stream("Version "<<version<<" is from the future");
+
+	ar & make_nvp("Base", base_object<Base>(*this));
+	std::vector<polygon::vec2> hull;
+	BOOST_FOREACH(const polygon::side &sidey, sides_) {
+		hull.push_back(sidey.origin);
+	}
+	ar & make_nvp("HullXY", hull);
+	ar & make_nvp("HullZ", z_range_);
+}
+
+template <typename Base>
+template <typename Archive>
+void
+ExtrudedPolygonBase<Base>::load(Archive &ar, unsigned version)
+{
+	if (version > 0)
+		log_fatal_stream("Version "<<version<<" is from the future");
+
+	ar & make_nvp("Base", base_object<Base>(*this));
+	std::vector<polygon::vec2> hull;
+	std::pair<double, double> z_range;
+	ar & make_nvp("HullXY", hull);
+	ar & make_nvp("HullZ", z_range);
+	initWithHull(hull, z_range);
+}
+
+template <typename Archive>
+void
+ExtrudedPolygon::serialize(Archive &ar, unsigned version)
+{
+	if (version > 0)
+		log_fatal_stream("Version "<<version<<" is from the future");
+
+	ar & make_nvp("Base", base_object<Base>(*this));
+}
+
+}
+
+namespace I3MuonGun {
+
+ExtrudedPolygon::~ExtrudedPolygon() {}
+
+template <typename Archive>
+void
+ExtrudedPolygon::serialize(Archive &ar, unsigned version)
+{
+	if (version > 0)
+		log_fatal_stream("Version "<<version<<" is from the future");
+
+	ar & make_nvp("Base", base_object<Base>(*this));
+}
+
+#if 0
+bool
+ExtrudedPolygon::operator==(const Surface &s) const
+{
+	const ExtrudedPolygon *other = dynamic_cast<const ExtrudedPolygon*>(&s);
+	if (!other)
+		return false;
+	else {
+		if (z_range_ != other->z_range_ || sides_.size() != other->sides_.size())
+			return false;
+		typedef std::vector<side>::const_iterator side_iter;
+		for (side_iter a=sides_.begin(), b=other->sides_.begin(); a != sides_.end(); a++, b++) {
+			if (a->origin.x != b->origin.x || a->origin.y != b->origin.y)
+				return false;
+		}
+	}
+
+	return true;
+}
+
+
+#endif
+
+}
+
+template class simclasses::ExtrudedPolygonBase<simclasses::SamplingSurface>;
+template class simclasses::ExtrudedPolygonBase<I3MuonGun::SamplingSurface>;
+template class I3MuonGun::detail::UprightSurface<simclasses::ExtrudedPolygonBase<I3MuonGun::SamplingSurface> >;
+
+I3_SERIALIZABLE(simclasses::ExtrudedPolygon);
+I3_SERIALIZABLE(I3MuonGun::ExtrudedPolygon);
 

@@ -59,8 +59,7 @@ SamplingSurface::SampleDirection(I3RandomService &rng,
 	I3Direction sampled_dir;
 	do {
 		sampled_dir = I3Direction(acos(rng.Uniform(cosMin, cosMax)),
-		    rng.Uniform(0*2*M_PI));
-		
+		    rng.Uniform(0, 2*M_PI));
 	} while (rng.Uniform(0, maxarea) > GetArea(sampled_dir));
 	
 	return sampled_dir;
@@ -374,49 +373,6 @@ SamplingSurface::serialize(Archive &ar, unsigned version)
 
 SamplingSurface::~SamplingSurface() {}
 
-// double
-// UprightSurface::GetDifferentialArea(double coszen) const
-// {
-// 	double cap = GetTopArea();
-// 	double sides = GetSideArea();
-// 	return cap*fabs(coszen) + sides*sqrt(1.-coszen*coszen);
-// }
-
-static double integrate_area(double a, double b, double cap, double sides)
-{
-	return cap*(b*b-a*a) +
-	    (sides/2.)*(acos(a) - acos(b) + sqrt(1-a*a)*a + sqrt(1-b*b)*b);
-}
-
-namespace detail {
-
-template <typename Base>
-double
-UprightSurface<Base>::GetAcceptance(double cosMin, double cosMax) const
-{
-	double cap = GetTopArea();
-	double sides = GetSideArea();
-	if (cosMin >= 0 && cosMax >= 0)
-		return integrate_area(cosMin, cosMax, cap, sides);
-	else if (cosMin < 0 && cosMax <= 0)
-		return integrate_area(-cosMax, -cosMin, cap, sides);
-	else if (cosMin < 0 && cosMax > 0)
-		return integrate_area(0, -cosMin, cap, sides)
-		    + integrate_area(0, cosMax, cap, sides);
-	else
-		log_fatal("Can't deal with zenith range [%.1e, %.1e]", cosMin, cosMax);
-	return NAN;
-}
-
-template <typename Base>
-double
-UprightSurface<Base>::GetMinDepth() const
-{
-	return GetDepth(GetZRange().second);
-}
-
-}
-
 std::pair<double, double>
 Cylinder::GetZRange() const
 {
@@ -433,69 +389,6 @@ double
 Cylinder::GetSideArea() const
 {
 	return 2*GetRadius()*GetLength();
-}
-
-namespace detail {
-
-// dAd Omega/dcos(theta) dphi (only one depth)
-template <typename Base>
-double
-UprightSurface<Base>::GetDifferentialTopArea(double coszen) const
-{
-	return std::abs(coszen)*GetTopArea();
-}
-
-// dAd Omega/dcos(theta) dphi dz (differential also in depth)
-template <typename Base>
-double
-UprightSurface<Base>::GetDifferentialSideArea(double coszen) const
-{
-	return GetSideArea()/GetLength()*sqrt(1-coszen*coszen);
-}
-
-template <typename Base>
-double
-UprightSurface<Base>::IntegrateFlux(boost::function<double (double, double)> flux,
-    double cosMin, double cosMax) const
-{
-        typedef boost::function<double (double)> f1;
-	typedef boost::function<double (double, double)> f2;
-	
-	double total = 0;
-	std::pair<double, double> z_range = GetZRange();
-	
-	// First, integrate to find dN/dt on the cap(s)
-	{
-		f1 dN = boost::bind<double>(flux, GetDepth(z_range.second), _1);
-		f1 dOmega = boost::bind(&UprightSurface<Base>::GetDifferentialTopArea, this, _1);
-		f1 dN_dOmega = detail::multiply<1>(dN, dOmega);
-		total += 2*M_PI*Integrate(dN_dOmega, cosMin, cosMax, 1e-3, 1e-3);
-	}
-	
-	// Now, the more complicated bit: integrate over the sides. The flux is now a function of both depth and zenith!
-	{
-		f2 dN = boost::bind(flux, boost::bind(GetDepth, _1), _2);
-		f2 dOmega = boost::bind(&UprightSurface<Base>::GetDifferentialSideArea, this, _2);
-		f2 dN_dOmega = detail::multiply<2>(dN, dOmega);
-		boost::array<double, 2> low = {{z_range.first, cosMin}};
-		boost::array<double, 2> high = {{z_range.second, cosMax}};
-		total += 2*M_PI*Integrate(dN_dOmega, low, high, 1e-3, 1e-3, 10000u);
-	}
-	
-	return total;
-}
-
-template <typename Base>
-template <typename Archive>
-void
-UprightSurface<Base>::serialize(Archive &ar, unsigned version)
-{
-	if (version > 0)
-		log_fatal_stream("Version "<<version<<" is from the future");
-	
-	ar & make_nvp("Base", base_object<Base>(*this));
-}
-
 }
 
 bool

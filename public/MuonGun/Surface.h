@@ -13,6 +13,7 @@
 #include <icetray/I3Units.h>
 #include <boost/function.hpp>
 #include <dataclasses/I3Position.h>
+#include <MuonGun/UprightSurface.h>
 
 class I3Direction;
 class I3RandomService;
@@ -235,41 +236,6 @@ namespace I3MuonGun {
 	};
 	
 	I3_POINTER_TYPEDEFS(SamplingSurface);
-
-	namespace detail {
-		/**
-		 * @brief A surface consisting only of vertical and horizontal faces
-		 */
-		template <typename Base>
-		class UprightSurface : public Base {
-		public:
-			// SamplingSurface interface
-			double GetAcceptance(double cosMin=0, double cosMax=1) const;
-			double GetMinDepth() const;
-		
-			double IntegrateFlux(boost::function<double (double, double)> flux, double cosMin=0, double cosMax=1) const;
-
-		protected:
-			virtual double GetSideArea() const = 0;
-			virtual double GetTopArea() const = 0;
-			virtual double GetLength() const = 0;
-			virtual std::pair<double, double> GetZRange() const = 0;
-		
-			double GetDifferentialTopArea(double cos_zenith) const;
-			double GetDifferentialSideArea(double cos_zenith) const;
-	
-		protected:
-			// not a generic way to forward ctors, but good enough for this use
-			template <typename A, typename B, typename C>
-			UprightSurface(A a, B b, C c) : Base(a,b,c) {};
-			UprightSurface() {};
-	
-		private:
-			friend class boost::serialization::access;
-			template <typename Archive>
-			void serialize(Archive &, unsigned);
-		};
-	}
 
 	/**
 	 * @brief A cylinder aligned with the z axis
