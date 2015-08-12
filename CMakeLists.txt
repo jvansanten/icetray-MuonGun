@@ -6,14 +6,6 @@ i3_project(MuonGun
 SET (LIB_${PROJECT_NAME}_SOURCEFILES
     # Numerical integration
     private/cubature/cubature.c
-
-    private/simclasses/Surface.cxx
-    private/simclasses/SamplingSurface.cxx
-    private/simclasses/Cylinder.cxx
-    private/simclasses/ExtrudedPolygon.cxx
-    private/simclasses/AxialCylinder.cxx
-    private/simclasses/Sphere.cxx
-    private/simclasses/polygon.cxx
 	
     # Base classes and function implementations
     private/MuonGun/I3MuonGun.cxx
