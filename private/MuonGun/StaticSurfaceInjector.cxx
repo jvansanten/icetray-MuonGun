@@ -116,7 +116,7 @@ void
 StaticSurfaceInjector::CalculateMaxFlux()
 {
 	if (surface_ && flux_)
-		maxFlux_ = (*flux_)(surface_->GetMinDepth(), 1., 1u)*surface_->GetMaxDifferentialArea();
+		maxFlux_ = (*flux_)(surface_->GetMinDepth(), 1., 1u)*surface_->GetMaximumArea();
 }
 
 double
@@ -229,7 +229,7 @@ StaticSurfaceInjector::GetLogGenerationProbability(const I3Particle &axis,
 		logprob += energyGenerator_->GetLog(track.energy);
 	}
 	
-	return logprob - std::log(2*M_PI*surface_->GetTotalArea());
+	return logprob - std::log(surface_->GetAcceptance());
 }
 
 }

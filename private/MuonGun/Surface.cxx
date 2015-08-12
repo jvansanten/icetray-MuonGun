@@ -13,8 +13,6 @@
 #include <phys-services/I3RandomService.h>
 #include <boost/bind.hpp>
 
-namespace I3MuonGun {
-
 namespace {
 
 inline void
@@ -27,11 +25,16 @@ sort(std::pair<double, double> &pair)
 	}
 }
 
-// static const double SurfaceRadius = 6371300+2834;
-
 }
 
+namespace simclasses {
+
 Surface::~Surface() {}
+
+template <typename Archive>
+void
+Surface::serialize(Archive &ar __attribute__ ((unused)), unsigned version __attribute__ ((unused)))
+{}
 
 SamplingSurface::~SamplingSurface() {}
 
@@ -41,9 +44,36 @@ SamplingSurface::SampleImpactRay(I3Position &impact, I3Direction &dir, I3RandomS
 {
 	dir = SampleDirection(rng, cosMin, cosMax);
 	impact = SampleImpactPosition(dir, rng);
+
+	// Calculate projected area
+	return GetArea(dir);
+}
+
+I3Direction
+SamplingSurface::SampleDirection(I3RandomService &rng,
+    double cosMin, double cosMax) const
+{
+	// Sample a direction proportional to the projected area 
+	// of the surface.
+	double maxarea = GetMaximumArea();
+	I3Direction sampled_dir;
+	do {
+		sampled_dir = I3Direction(acos(rng.Uniform(cosMin, cosMax)),
+		    rng.Uniform(0*2*M_PI));
+		
+	} while (rng.Uniform(0, maxarea) > GetArea(sampled_dir));
 	
-	// Calculate d(A_projected)/d(cos(theta))
-	return 2*M_PI*GetDifferentialArea(std::cos(dir.GetZenith()));
+	return sampled_dir;
+}
+
+template <typename Archive>
+void
+SamplingSurface::serialize(Archive &ar, unsigned version)
+{
+	if (version > 0)
+		log_fatal_stream("Version "<<version<<" is from the future");
+	
+	ar & make_nvp("Surface", base_object<Surface>(*this));
 }
 
 // Find the distances to the points of intersection with a centered at (0,0,0)
@@ -51,10 +81,13 @@ SamplingSurface::SampleImpactRay(I3Position &impact, I3Direction &dir, I3RandomS
 // http://code.icecube.wisc.edu/svn/projects/mmc/trunk/src/tfa/Amanda.java
 // (D. Chirkin)
 
+namespace detail {
+
+template <typename T>
 std::pair<double, double>
-Cylinder::GetIntersection(const I3Position &p, const I3Direction &dir) const
+CylinderBase<T>::GetIntersection(const I3Position &p, const I3Direction &dir) const
 {
-	std::pair<double, double> h(no_intersection()), r(no_intersection());
+	std::pair<double, double> h(Surface::no_intersection()), r(Surface::no_intersection());
 	
 	double x = p.GetX()-center_.GetX();
 	double y = p.GetY()-center_.GetY();
@@ -87,15 +120,15 @@ Cylinder::GetIntersection(const I3Position &p, const I3Direction &dir) const
 			if ((z > -length_/2) && (z < length_/2))
 				h = r;
 			else
-				h = no_intersection();
+				h = Surface::no_intersection();
 		// Perfectly vertical tracks never intersect the sides
 		} else if (sinth == 0) {
 			if (hypot(x, y) >= radius_)
-				h = no_intersection();
+				h = Surface::no_intersection();
 		// For general tracks, take the last entrace and first exit
 		} else {
 			if (h.first >= r.second || h.second <= r.first)
-				h = no_intersection();
+				h = Surface::no_intersection();
 			else {
 				h.first = std::max(r.first, h.first);
 				h.second = std::min(r.second, h.second);
@@ -106,108 +139,49 @@ Cylinder::GetIntersection(const I3Position &p, const I3Direction &dir) const
 	return h;
 }
 
+template <typename T>
 double
-Cylinder::GetDifferentialArea(double coszen) const
+CylinderBase<T>::GetArea(const I3Direction &dir) const
 {
-	return M_PI*radius_*(radius_*fabs(coszen) + (2*length_/M_PI)*sqrt(1-coszen*coszen));
+	return GetAreaForZenith(-dir.GetZ());
 }
 
-static double integrate_area(double a, double b, double radius, double length)
+template <typename T>
+double
+CylinderBase<T>::GetAreaForZenith(double coszen) const
 {
-	return (M_PI/2)*radius*(radius*(b*b - a*a)
-	    + (2*length/M_PI)*(acos(a) - acos(b) -
-	      (sqrt(1-a*a)*a) + sqrt(1-b*b)*b));
+	double cap = M_PI*radius_*radius_;
+	double sides = 2*radius_*length_;
+	return cap*fabs(coszen) + sides*sqrt(1.-coszen*coszen);
 }
 
+template <typename T>
 double
-Cylinder::GetTotalArea(double cosMin, double cosMax) const
-{
-	if (cosMin >= 0 && cosMax >= 0)
-		return integrate_area(cosMin, cosMax, radius_, length_);
-	else if (cosMin < 0 && cosMax <= 0)
-		return integrate_area(-cosMax, -cosMin, radius_, length_);
-	else if (cosMin < 0 && cosMax > 0)
-		return integrate_area(0, -cosMin, radius_, length_)
-		    + integrate_area(0, cosMax, radius_, length_);
-	else
-		log_fatal("Can't deal with zenith range [%.1e, %.1e]", cosMin, cosMax);
-	return NAN;
-}
-
-double
-Cylinder::GetMaxDifferentialArea() const
+CylinderBase<T>::GetMaximumArea() const
 {
 	double thetaMax = atan(2*length_/(M_PI*radius_));
-	return GetDifferentialArea(cos(thetaMax));
+	return GetAreaForZenith(cos(thetaMax));
 }
 
-double
-Cylinder::GetMinDepth() const
-{
-	return GetDepth(center_.GetZ() + length_/2.);
-}
-
-// dAd Omega/dcos(theta) dphi (only one depth)
-double
-Cylinder::GetDifferentialTopArea(double coszen) const
-{
-	return M_PI*radius_*(radius_*coszen);
-}
-
-// dAd Omega/dcos(theta) dphi dz (differential also in depth)
-double
-Cylinder::GetDifferentialSideArea(double coszen) const
-{
-	return 2*radius_*sqrt(1-coszen*coszen);
-}
-
-double
-Cylinder::IntegrateFlux(boost::function<double (double, double)> flux,
-    double cosMin, double cosMax) const
-{
-        typedef boost::function<double (double)> f1;
-	typedef boost::function<double (double, double)> f2;
-	
-	double total = 0;
-	
-	// First, integrate to find dN/dt on the cap(s)
-	{
-		f1 dN = boost::bind<double>(flux, GetDepth(center_.GetZ() + length_/2.), _1);
-		f1 dOmega = boost::bind(&Cylinder::GetDifferentialTopArea, this, _1);
-		f1 dN_dOmega = detail::multiply<1>(dN, dOmega);
-		total += 2*M_PI*Integrate(dN_dOmega, cosMin, cosMax, 1e-3, 1e-3);
-	}
-	
-	// Now, the more complicated bit: integrate over the sides. The flux is now a function of both depth and zenith!
-	{
-		f2 dN = boost::bind(flux, boost::bind(GetDepth, _1), _2);
-		f2 dOmega = boost::bind(&Cylinder::GetDifferentialSideArea, this, _2);
-		f2 dN_dOmega = detail::multiply<2>(dN, dOmega);
-		boost::array<double, 2> low = {{center_.GetZ()  - length_/2., cosMin}};
-		boost::array<double, 2> high = {{center_.GetZ() + length_/2., cosMax}};
-		total += 2*M_PI*Integrate(dN_dOmega, low, high, 1e-3, 1e-3, 10000u);
-	}
-	
-	return total;
-}
-
+template <typename T>
 I3Direction
-Cylinder::SampleDirection(I3RandomService &rng,
+CylinderBase<T>::SampleDirection(I3RandomService &rng,
     double cosMin, double cosMax) const
 {
 	// Sample a direction proportional to the projected area 
 	// of the surface.
 	double coszen;
-	double maxarea = GetMaxDifferentialArea();
+	double maxarea = GetMaximumArea();
 	do {
 		coszen = rng.Uniform(cosMin, cosMax);
-	} while (rng.Uniform(0, maxarea) > GetDifferentialArea(coszen));
+	} while (rng.Uniform(0, maxarea) > GetAreaForZenith(coszen));
 	
 	return I3Direction(acos(coszen), rng.Uniform(0, 2*M_PI));
 }
 
+template <typename T>
 I3Position
-Cylinder::SampleImpactPosition(const I3Direction &dir, I3RandomService &rng) const
+CylinderBase<T>::SampleImpactPosition(const I3Direction &dir, I3RandomService &rng) const
 {
 	// The projection of a cylinder onto a plane whose
 	// normal is inclined by `zenith` w.r.t to the cylinder
@@ -239,42 +213,20 @@ Cylinder::SampleImpactPosition(const I3Direction &dir, I3RandomService &rng) con
 	return impact;
 }
 
-bool
-Cylinder::operator==(const Surface &s) const
-{
-	const Cylinder *other = dynamic_cast<const Cylinder*>(&s);
-	if (!other)
-		return false;
-	else 
-		return (radius_ == other->radius_ &&
-		    length_ == other->length_ &&
-		    center_ == other->center_);
-}
-
-bool
-Sphere::operator==(const Surface &s) const
-{
-	const Sphere *other = dynamic_cast<const Sphere*>(&s);
-	if (!other)
-		return false;
-	else 
-		return (radius_ == other->radius_ &&
-		    originDepth_ == other->originDepth_);
-}
-
+template <typename Base>
 template <typename Archive>
 void
-Surface::serialize(Archive &ar __attribute__ ((unused)), unsigned version __attribute__ ((unused)))
-{}
-
-template <typename Archive>
-void
-SamplingSurface::serialize(Archive &ar, unsigned version)
+CylinderBase<Base>::serialize(Archive &ar, unsigned version)
 {
 	if (version > 0)
 		log_fatal_stream("Version "<<version<<" is from the future");
 	
-	ar & make_nvp("Surface", base_object<Surface>(*this));
+	ar & make_nvp("Base", base_object<Base>(*this));
+	ar & make_nvp("Length", length_);
+	ar & make_nvp("Radius", radius_);
+	ar & make_nvp("Center", center_);
+}
+
 }
 
 template <typename Archive>
@@ -283,23 +235,72 @@ Cylinder::serialize(Archive &ar, unsigned version)
 {
 	if (version > 0)
 		log_fatal_stream("Version "<<version<<" is from the future");
-	
-	ar & make_nvp("SamplingSurface", base_object<SamplingSurface>(*this));
-	ar & make_nvp("Length", length_);
-	ar & make_nvp("Radius", radius_);
-	ar & make_nvp("Center", center_);
+
+	ar & make_nvp("Base", base_object<Base>(*this));
 }
 
-template <typename Archive>
-void
-Sphere::serialize(Archive &ar, unsigned version)
+Cylinder::~Cylinder() {}
+
+AxialCylinder::AxialCylinder(double length, double radius, I3Position center)
+    : length_(length/2.,length/2.), radius_(radius), center_(center)
+{}
+
+AxialCylinder::AxialCylinder(double lengthBefore, double lengthAfter, double radius, I3Position center)
+    : length_(lengthBefore,lengthAfter), radius_(radius), center_(center)
+{}
+
+std::pair<double, double>
+AxialCylinder::GetIntersection(const I3Position &p, const I3Direction &dir) const
 {
-	if (version > 0)
-		log_fatal_stream("Version "<<version<<" is from the future");
+	// Distance to point of closest approach to the center
+	double to_center = (center_ - p)*dir;
+	// Check distance of closest approach against cylinder radius
+	if ((p + to_center*dir - center_).Magnitude() > radius_)
+		return no_intersection();
+	else
+		return std::make_pair(to_center-length_.first, to_center+length_.second);
+}
+
+double
+AxialCylinder::GetArea(const I3Direction &dir __attribute__((unused))) const
+{
+	return M_PI*radius_*radius_;
+}
+
+double
+AxialCylinder::GetAcceptance(double cosMin, double cosMax) const
+{
+	return M_PI*radius_*radius_*(cosMax-cosMin);
+}
+
+double
+AxialCylinder::GetMaximumArea() const
+{
+	return M_PI*radius_*radius_;
+}
+
+I3Direction
+AxialCylinder::SampleDirection(I3RandomService &rng, double cosMin, double cosMax) const
+{
+	return I3Direction(std::acos(rng.Uniform(cosMin, cosMax)), rng.Uniform(0, 2*M_PI));
+}
+
+I3Position
+AxialCylinder::SampleImpactPosition(const I3Direction &dir, I3RandomService &rng) const
+{
+	// Choose a position in a circle in axis-centered coordinates
+	I3Position impact(std::sqrt(rng.Uniform(0, radius_*radius_)), 0, 0);
+	impact.RotateZ(rng.Uniform(0, 2*M_PI));
 	
-	ar & make_nvp("Surface", base_object<Surface>(*this));
-	ar & make_nvp("OriginDepth", originDepth_);
-	ar & make_nvp("Radius", radius_);
+	// Rotate into the transverse plane
+	impact.RotateY(dir.GetZenith());
+	impact.RotateZ(dir.GetAzimuth());
+	// Shift from cylinder-centered to real coordinates
+	impact += center_;
+	// Shift back to the entry point
+	impact -= length_.first*dir;
+	
+	return impact;
 }
 
 template <typename Archive>
@@ -314,6 +315,8 @@ AxialCylinder::serialize(Archive &ar, unsigned version)
 	ar & make_nvp("Radius", radius_);
 	ar & make_nvp("Center", center_);
 }
+
+AxialCylinder::~AxialCylinder() {}
 
 std::pair<double, double>
 Sphere::GetIntersection(const I3Position &p, const I3Direction &dir) const
@@ -341,96 +344,210 @@ Sphere::GetIntersection(const I3Position &p, const I3Direction &dir) const
 	return h;
 }
 
-AxialCylinder::AxialCylinder(double length, double radius, I3Position center)
-    : length_(length/2.,length/2.), radius_(radius), center_(center)
-{}
+template <typename Archive>
+void
+Sphere::serialize(Archive &ar, unsigned version)
+{
+	if (version > 0)
+		log_fatal_stream("Version "<<version<<" is from the future");
+	
+	ar & make_nvp("Surface", base_object<Surface>(*this));
+	ar & make_nvp("OriginDepth", originDepth_);
+	ar & make_nvp("Radius", radius_);
+}
 
-AxialCylinder::AxialCylinder(double lengthBefore, double lengthAfter, double radius, I3Position center)
-    : length_(lengthBefore,lengthAfter), radius_(radius), center_(center)
-{}
+Sphere::~Sphere() {}
+
+}
+
+namespace I3MuonGun {
+
+template <typename Archive>
+void
+SamplingSurface::serialize(Archive &ar, unsigned version)
+{
+	if (version > 0)
+		log_fatal_stream("Version "<<version<<" is from the future");
+
+	ar & make_nvp("Base", base_object<simclasses::SamplingSurface>(*this));
+}
+
+SamplingSurface::~SamplingSurface() {}
+
+// double
+// UprightSurface::GetDifferentialArea(double coszen) const
+// {
+// 	double cap = GetTopArea();
+// 	double sides = GetSideArea();
+// 	return cap*fabs(coszen) + sides*sqrt(1.-coszen*coszen);
+// }
+
+static double integrate_area(double a, double b, double cap, double sides)
+{
+	return cap*(b*b-a*a) +
+	    (sides/2.)*(acos(a) - acos(b) + sqrt(1-a*a)*a + sqrt(1-b*b)*b);
+}
+
+namespace detail {
+
+template <typename Base>
+double
+UprightSurface<Base>::GetAcceptance(double cosMin, double cosMax) const
+{
+	double cap = GetTopArea();
+	double sides = GetSideArea();
+	if (cosMin >= 0 && cosMax >= 0)
+		return integrate_area(cosMin, cosMax, cap, sides);
+	else if (cosMin < 0 && cosMax <= 0)
+		return integrate_area(-cosMax, -cosMin, cap, sides);
+	else if (cosMin < 0 && cosMax > 0)
+		return integrate_area(0, -cosMin, cap, sides)
+		    + integrate_area(0, cosMax, cap, sides);
+	else
+		log_fatal("Can't deal with zenith range [%.1e, %.1e]", cosMin, cosMax);
+	return NAN;
+}
+
+template <typename Base>
+double
+UprightSurface<Base>::GetMinDepth() const
+{
+	return GetDepth(GetZRange().second);
+}
+
+}
 
 std::pair<double, double>
-AxialCylinder::GetIntersection(const I3Position &p, const I3Direction &dir) const
+Cylinder::GetZRange() const
 {
-	// Distance to point of closest approach to the center
-	double to_center = (center_ - p)*dir;
-	// Check distance of closest approach against cylinder radius
-	if ((p + to_center*dir - center_).Magnitude() > radius_)
-		return no_intersection();
-	else
-		return std::make_pair(to_center-length_.first, to_center+length_.second);
+	return std::make_pair(GetCenter().GetZ() - GetLength()/2., GetCenter().GetZ() + GetLength()/2.);
+}
+
+double
+Cylinder::GetTopArea() const
+{
+	return M_PI*GetRadius()*GetRadius();
+}
+
+double
+Cylinder::GetSideArea() const
+{
+	return 2*GetRadius()*GetLength();
+}
+
+namespace detail {
+
+// dAd Omega/dcos(theta) dphi (only one depth)
+template <typename Base>
+double
+UprightSurface<Base>::GetDifferentialTopArea(double coszen) const
+{
+	return std::abs(coszen)*GetTopArea();
+}
+
+// dAd Omega/dcos(theta) dphi dz (differential also in depth)
+template <typename Base>
+double
+UprightSurface<Base>::GetDifferentialSideArea(double coszen) const
+{
+	return GetSideArea()/GetLength()*sqrt(1-coszen*coszen);
+}
+
+template <typename Base>
+double
+UprightSurface<Base>::IntegrateFlux(boost::function<double (double, double)> flux,
+    double cosMin, double cosMax) const
+{
+        typedef boost::function<double (double)> f1;
+	typedef boost::function<double (double, double)> f2;
+	
+	double total = 0;
+	std::pair<double, double> z_range = GetZRange();
+	
+	// First, integrate to find dN/dt on the cap(s)
+	{
+		f1 dN = boost::bind<double>(flux, GetDepth(z_range.second), _1);
+		f1 dOmega = boost::bind(&UprightSurface<Base>::GetDifferentialTopArea, this, _1);
+		f1 dN_dOmega = detail::multiply<1>(dN, dOmega);
+		total += 2*M_PI*Integrate(dN_dOmega, cosMin, cosMax, 1e-3, 1e-3);
+	}
+	
+	// Now, the more complicated bit: integrate over the sides. The flux is now a function of both depth and zenith!
+	{
+		f2 dN = boost::bind(flux, boost::bind(GetDepth, _1), _2);
+		f2 dOmega = boost::bind(&UprightSurface<Base>::GetDifferentialSideArea, this, _2);
+		f2 dN_dOmega = detail::multiply<2>(dN, dOmega);
+		boost::array<double, 2> low = {{z_range.first, cosMin}};
+		boost::array<double, 2> high = {{z_range.second, cosMax}};
+		total += 2*M_PI*Integrate(dN_dOmega, low, high, 1e-3, 1e-3, 10000u);
+	}
+	
+	return total;
+}
+
+template <typename Base>
+template <typename Archive>
+void
+UprightSurface<Base>::serialize(Archive &ar, unsigned version)
+{
+	if (version > 0)
+		log_fatal_stream("Version "<<version<<" is from the future");
+	
+	ar & make_nvp("Base", base_object<Base>(*this));
+}
+
 }
 
 bool
-AxialCylinder::operator==(const Surface &s) const
+Cylinder::operator==(const SamplingSurface &s) const
 {
-	const AxialCylinder *other = dynamic_cast<const AxialCylinder*>(&s);
+	const Cylinder *other = dynamic_cast<const Cylinder*>(&s);
 	if (!other)
 		return false;
 	else 
-		return (radius_ == other->radius_ &&
-		    length_ == other->length_ &&
-		    center_ == other->center_);
+		return (GetRadius() == other->GetRadius() &&
+		    GetLength() == other->GetLength() &&
+		    GetCenter() == other->GetCenter());
 }
 
-double
-AxialCylinder::GetDifferentialArea(double coszen __attribute__((unused))) const
+template <typename Archive>
+void
+Cylinder::serialize(Archive &ar, unsigned version)
 {
-	return M_PI*radius_*radius_;
-}
-
-double
-AxialCylinder::GetTotalArea(double cosMin, double cosMax) const
-{
-	return GetDifferentialArea(0)*(cosMax-cosMin);
-}
-
-double
-AxialCylinder::GetMaxDifferentialArea() const
-{
-	return GetDifferentialArea(0);
-}
-
-double
-AxialCylinder::GetMinDepth() const
-{
-	return GetDepth(center_.GetZ() + length_.first);
-}
-
-double AxialCylinder::IntegrateFlux(boost::function<double (double, double)> flux __attribute__((unused)), double cosMin __attribute__((unused)), double cosMax __attribute__((unused))) const
-{
-	throw std::runtime_error("Flux integration is not implemented");
-}
-
-I3Direction
-AxialCylinder::SampleDirection(I3RandomService &rng, double cosMin, double cosMax) const
-{
-	return I3Direction(std::acos(rng.Uniform(cosMin, cosMax)), rng.Uniform(0, 2*M_PI));
-}
-
-I3Position
-AxialCylinder::SampleImpactPosition(const I3Direction &dir, I3RandomService &rng) const
-{
-	// Choose a position in a circle in axis-centered coordinates
-	I3Position impact(std::sqrt(rng.Uniform(0, radius_*radius_)), 0, 0);
-	impact.RotateZ(rng.Uniform(0, 2*M_PI));
+	if (version > 1)
+		log_fatal_stream("Version "<<version<<" is from the future");
 	
-	// Rotate into the transverse plane
-	impact.RotateY(dir.GetZenith());
-	impact.RotateZ(dir.GetAzimuth());
-	// Shift from cylinder-centered to real coordinates
-	impact += center_;
-	// Shift back to the entry point
-	impact -= length_.first*dir;
-	
-	return impact;
+	if (version == 0) {
+		// Class hierarchy changed from v0 to v1, so we have to
+		// deserialize by hand
+		double radius, length;
+		I3Position center;
+		ar & make_nvp("SamplingSurface", base_object<simclasses::SamplingSurface>(*this));
+		ar & make_nvp("Length", length);
+		ar & make_nvp("Radius", radius);
+		ar & make_nvp("Center", center);
+		SetLength(length);
+		SetRadius(radius);
+		SetCenter(center);
+	} else {
+		ar & make_nvp("Base", base_object<Base>(*this));
+	}
 }
 
 }
 
-I3_SERIALIZABLE(I3MuonGun::Surface);
+// explicitly instantiate the base classes used
+template class simclasses::detail::CylinderBase<simclasses::SamplingSurface>;
+template class simclasses::detail::CylinderBase<I3MuonGun::SamplingSurface>;
+template class I3MuonGun::detail::UprightSurface<simclasses::detail::CylinderBase<I3MuonGun::SamplingSurface> >;
+
+I3_SERIALIZABLE(simclasses::Surface);
+I3_SERIALIZABLE(simclasses::SamplingSurface);
+I3_SERIALIZABLE(simclasses::Cylinder);
+I3_SERIALIZABLE(simclasses::Sphere);
+I3_SERIALIZABLE(simclasses::AxialCylinder);
+
 I3_SERIALIZABLE(I3MuonGun::SamplingSurface);
 I3_SERIALIZABLE(I3MuonGun::Cylinder);
-I3_SERIALIZABLE(I3MuonGun::Sphere);
-I3_SERIALIZABLE(I3MuonGun::AxialCylinder);
+
 

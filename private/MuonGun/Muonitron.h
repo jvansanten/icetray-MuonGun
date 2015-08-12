@@ -44,7 +44,7 @@ private:
 	
 	boost::shared_ptr<I3MuonGun::MuonPropagator> bulkPropagator_;
 	boost::shared_ptr<I3MuonGun::Crust> crust_;
-	I3MuonGun::Sphere iceWorld_;
+	simclasses::Sphere iceWorld_;
 	
 	std::vector<double> depths_;
 };

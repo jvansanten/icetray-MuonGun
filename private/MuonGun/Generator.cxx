@@ -189,7 +189,7 @@ operator+(GenerationProbabilityPtr p1, GenerationProbabilityPtr p2)
 
 I3Particle
 Generator::CreateParallelTrack(double radius, double azimuth,
-    const Surface &surface, const I3Particle &axis)
+    const simclasses::Surface &surface, const I3Particle &axis)
 {
 	I3Particle track;
 	track.SetLocationType(I3Particle::InIce);

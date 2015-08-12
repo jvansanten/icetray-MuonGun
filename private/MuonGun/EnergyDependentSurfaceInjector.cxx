@@ -158,7 +158,7 @@ EnergyDependentSurfaceInjector::GetLogGenerationProbability(const I3Particle &ax
 	}
 	
 	// We only distributed events over the target surface, not the entire injection surface
-	return logprob - std::log(2*M_PI*surface->GetTotalArea());
+	return logprob - std::log(surface->GetAcceptance());
 }
 
 template <typename Archive>

@@ -26,6 +26,10 @@ namespace TreeBase {
 }
 typedef TreeBase::Tree<I3Particle, I3ParticleID, hash<I3ParticleID> > I3MCTree;
 
+namespace simclasses {
+I3_FORWARD_DECLARATION(Surface);
+}
+
 namespace I3MuonGun {
 
 /**
@@ -45,7 +49,6 @@ struct BundleEntry {
 };
 typedef std::list<BundleEntry> BundleConfiguration;
 
-I3_FORWARD_DECLARATION(Surface);
 I3_FORWARD_DECLARATION(SamplingSurface);
 I3_FORWARD_DECLARATION(GenerationProbability);
 
@@ -189,7 +192,7 @@ public:
 	 * @param[in] axis    the shower axis
 	 */
 	static I3Particle CreateParallelTrack(double radius, double azimuth,
-	    const Surface &surface, const I3Particle &axis);
+	    const simclasses::Surface &surface, const I3Particle &axis);
 
 private:
 	friend class boost::serialization::access;

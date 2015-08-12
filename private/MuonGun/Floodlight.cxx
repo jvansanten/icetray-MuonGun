@@ -80,7 +80,7 @@ Floodlight::GetLogGenerationProbability(const I3Particle &axis, const BundleConf
 	if (!std::isfinite(steps.first) || bundle.size() != 1)
 		return -std::numeric_limits<double>::infinity();
 	
-	return energyGenerator_->GetLog(bundle.front().energy) - std::log(2*M_PI*surface_->GetTotalArea(-1, 1));
+	return energyGenerator_->GetLog(bundle.front().energy) - std::log(surface_->GetAcceptance(-1, 1));
 }
 
 }

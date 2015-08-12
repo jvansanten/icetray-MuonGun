@@ -14,7 +14,7 @@
 
 namespace I3MuonGun {
 
-	class ExtrudedPolygon : public Surface {
+	class ExtrudedPolygon : public simclasses::Surface {
 	public:
 		ExtrudedPolygon(const std::vector<I3Position> &points, double padding=0.);
 

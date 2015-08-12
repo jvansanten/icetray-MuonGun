@@ -28,7 +28,7 @@ I3_FORWARD_DECLARATION(RadialDistribution);
 I3_FORWARD_DECLARATION(EnergyDistribution);
 
 std::vector<I3Particle>
-GetMuonsAtSurface(I3FramePtr frame, SurfaceConstPtr surface);
+GetMuonsAtSurface(I3FramePtr frame, simclasses::SurfaceConstPtr surface);
 
 /**
  * @brief Convenience struct to hold the components of a muon bundle flux model

@@ -21,7 +21,7 @@ static double IntegrateFlux(const I3MuonGun::SamplingSurface &s, I3MuonGun::Flux
 	return s.IntegrateFlux(boost::bind(boost::cref(*flux), _1, _2, m), cosMin, cosMax);
 }
 
-static boost::python::tuple SampleImpactRay(const I3MuonGun::SamplingSurface &s, I3RandomServicePtr rng, double cosMin, double cosMax)
+static boost::python::tuple SampleImpactRay(const simclasses::SamplingSurface &s, I3RandomServicePtr rng, double cosMin, double cosMax)
 {
 	I3Position pos;
 	I3Direction dir;
@@ -29,7 +29,7 @@ static boost::python::tuple SampleImpactRay(const I3MuonGun::SamplingSurface &s,
 	return boost::python::make_tuple(pos, dir);
 }
 
-namespace I3MuonGun {
+namespace simclasses {
 
 using namespace boost::python;
 
@@ -37,7 +37,7 @@ class PySurface : public Surface, public wrapper<Surface> {
 public:
 	virtual std::pair<double, double> GetIntersection(const I3Position &p, const I3Direction &dir) const
 	{
-		detail::gil_holder lock;
+		boost::python::detail::gil_holder lock;
 		return get_override("GetIntersection")(p, dir);
 	}
 	
@@ -52,9 +52,9 @@ I3_POINTER_TYPEDEFS(PySurface);
 
 }
 
-void register_Surface()
+void register_base_Surface()
 {
-	using namespace I3MuonGun;
+	using namespace simclasses;
 	using namespace boost::python;
 	
 	class_<PySurface, PySurfacePtr, boost::noncopyable>("Surface")
@@ -64,9 +64,7 @@ void register_Surface()
 	implicitly_convertible<SurfacePtr, SurfaceConstPtr>();
 	
 	class_<SamplingSurface, SamplingSurfacePtr, bases<Surface>, boost::noncopyable>("SamplingSurface", no_init)
-	    DEF("differential_area", &SamplingSurface::GetDifferentialArea, (arg("costheta")))
-	    DEF("total_area", &SamplingSurface::GetTotalArea, (arg("cosMin")=0., arg("cosMax")=1.))
-	    .def("integrate_flux", &IntegrateFlux, (arg("self"), arg("flux"), arg("m")=1u, arg("cosMin")=0, arg("cosMax")=1))
+	    .def("area", &SamplingSurface::GetArea, (arg("dir")))
 	    .def("sample_impact_ray", &SampleImpactRay, (arg("self"), arg("rng"), arg("cosMin")=0, arg("cosMax")=1))
 	    .def("sample_impact_position", &SamplingSurface::SampleImpactPosition, (arg("self"), arg("dir"), arg("rng")))
 	;
@@ -85,11 +83,40 @@ void register_Surface()
 	
 	class_<Sphere, bases<Surface> >("Sphere", init<double, double>())
 	;
+}
 	
+
+void register_Surface()
+{
+	register_base_Surface();
+	
+	using namespace I3MuonGun;
+	using namespace boost::python;
+	
+	class_<SamplingSurface, SamplingSurfacePtr, bases<simclasses::SamplingSurface>, boost::noncopyable>("SamplingSurface", no_init)
+	    .def("integrate_flux", &IntegrateFlux, (arg("self"), arg("flux"), arg("m")=1u, arg("cosMin")=0, arg("cosMax")=1))
+	    DEF("acceptance", &SamplingSurface::GetAcceptance, (arg("cosMin")=0., arg("cosMax")=1.))
+	;
+	
+	implicitly_convertible<SamplingSurfacePtr, SamplingSurfaceConstPtr>();
+	
+	class_<Cylinder, CylinderPtr, bases<SamplingSurface> >("Cylinder",
+	    init<double, double, I3Position>((arg("length"), arg("radius"), arg("center")=I3Position(0,0,0))))
+	    .def(copy_suite<Cylinder>())
+	    #define PROPS (Length)(Radius)(Center)
+	    BOOST_PP_SEQ_FOR_EACH(WRAP_PROP, Cylinder, PROPS)
+	    #undef PROPS
+	    .def(self == self)
+	;
+
+	implicitly_convertible<CylinderPtr, CylinderConstPtr>();
+
+#if 0	
 	class_<ExtrudedPolygon, ExtrudedPolygonPtr, bases<Surface> >("ExtrudedPolygon",
 	    init<const std::vector<I3Position> &, double>((arg("points"), arg("padding")=0)))
 	    .add_property("x", &ExtrudedPolygon::GetX)
 	    .add_property("y", &ExtrudedPolygon::GetY)
 	    .add_property("z", &ExtrudedPolygon::GetZ)
 	;
+#endif
 }
