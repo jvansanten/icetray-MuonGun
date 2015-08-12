@@ -4,6 +4,7 @@
 #include "common.h"
 #include "MuonGun/Generator.h"
 #include "MuonGun/CORSIKAGenerationProbability.h"
+#include "MuonGun/Cylinder.h"
 
 #include <boost/make_shared.hpp>
 
