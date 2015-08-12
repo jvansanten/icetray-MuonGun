@@ -5,17 +5,6 @@
 #include <MuonGun/I3MuonGun.h>
 #include <boost/bind.hpp>
 
-namespace {
-
-inline double
-integrate_area(double a, double b, double cap, double sides)
-{
-	return 2*M_PI*(cap*(b*b-a*a) +
-	    (sides/2.)*(acos(a) - acos(b) + sqrt(1-a*a)*a + sqrt(1-b*b)*b));
-}
-
-}
-
 namespace I3MuonGun { namespace detail {
 /**
  * @brief A surface consisting only of vertical and horizontal faces
@@ -23,22 +12,6 @@ namespace I3MuonGun { namespace detail {
 template <typename Base>
 class UprightSurface : public Base {
 public:
-	// SamplingSurface interface
-	double GetAcceptance(double cosMin=0, double cosMax=1) const
-	{
-		double cap = GetTopArea();
-		double sides = GetSideArea();
-		if (cosMin >= 0 && cosMax >= 0)
-			return integrate_area(cosMin, cosMax, cap, sides);
-		else if (cosMin < 0 && cosMax <= 0)
-			return integrate_area(-cosMax, -cosMin, cap, sides);
-		else if (cosMin < 0 && cosMax > 0)
-			return integrate_area(0, -cosMin, cap, sides)
-			    + integrate_area(0, cosMax, cap, sides);
-		else
-			log_fatal("Can't deal with zenith range [%.1e, %.1e]", cosMin, cosMax);
-		return NAN;
-	}
 	double GetMinDepth() const
 	{
 		return GetDepth(GetZRange().second);

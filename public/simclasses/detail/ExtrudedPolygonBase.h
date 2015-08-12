@@ -43,6 +43,13 @@ make_ordered_pair(double a, double b)
 		return std::make_pair(a, b);
 }
 
+inline double
+integrate_area(double a, double b, double cap, double sides)
+{
+	return 2*M_PI*(cap*(b*b-a*a) +
+	    (sides/2.)*(acos(a) - acos(b) + sqrt(1-a*a)*a + sqrt(1-b*b)*b));
+}
+
 }
 
 template <typename Base>
@@ -113,6 +120,21 @@ public:
 		double ct_max = cos(atan(side_area/cap_area_));
 	
 		return cap_area_*fabs(ct_max) + side_area*sqrt(1.-ct_max*ct_max);
+	}
+	virtual double GetAcceptance(double cosMin=0, double cosMax=1) const
+	{
+		double cap = GetCapArea();
+		double sides = GetAverageSideArea();
+		if (cosMin >= 0 && cosMax >= 0)
+			return integrate_area(cosMin, cosMax, cap, sides);
+		else if (cosMin < 0 && cosMax <= 0)
+			return integrate_area(-cosMax, -cosMin, cap, sides);
+		else if (cosMin < 0 && cosMax > 0)
+			return integrate_area(0, -cosMin, cap, sides)
+			    + integrate_area(0, cosMax, cap, sides);
+		else
+			log_fatal("Can't deal with zenith range [%.1e, %.1e]", cosMin, cosMax);
+		return NAN;
 	}
 	
 	I3Position SampleImpactPosition(const I3Direction &dir, I3RandomService &rng) const

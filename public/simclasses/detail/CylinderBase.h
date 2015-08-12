@@ -25,6 +25,13 @@ sort(std::pair<double, double> &pair)
 	}
 }
 
+inline double
+integrate_area(double a, double b, double cap, double sides)
+{
+	return 2*M_PI*(cap*(b*b-a*a) +
+	    (sides/2.)*(acos(a) - acos(b) + sqrt(1-a*a)*a + sqrt(1-b*b)*b));
+}
+
 }
 
 namespace simclasses { namespace detail {
@@ -104,6 +111,21 @@ public:
 	{
 		double thetaMax = atan(2*length_/(M_PI*radius_));
 		return GetAreaForZenith(cos(thetaMax));
+	}
+	virtual double GetAcceptance(double cosMin=0, double cosMax=1) const
+	{
+		double cap = M_PI*radius_*radius_;
+		double sides = 2*radius_*length_;
+		if (cosMin >= 0 && cosMax >= 0)
+			return integrate_area(cosMin, cosMax, cap, sides);
+		else if (cosMin < 0 && cosMax <= 0)
+			return integrate_area(-cosMax, -cosMin, cap, sides);
+		else if (cosMin < 0 && cosMax > 0)
+			return integrate_area(0, -cosMin, cap, sides)
+			    + integrate_area(0, cosMax, cap, sides);
+		else
+			log_fatal("Can't deal with zenith range [%.1e, %.1e]", cosMin, cosMax);
+		return NAN;
 	}
 	
 	// SamplingSurface interface
