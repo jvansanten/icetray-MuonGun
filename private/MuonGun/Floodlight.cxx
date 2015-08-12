@@ -1,8 +1,8 @@
 
 #include <MuonGun/Floodlight.h>
 #include <MuonGun/I3MuonGun.h>
-#include <MuonGun/Surface.h>
 #include <MuonGun/EnergyDependentSurfaceInjector.h>
+#include <MuonGun/Cylinder.h>
 #include <dataclasses/I3Position.h>
 #include <dataclasses/I3Direction.h>
 #include <dataclasses/physics/I3Particle.h>

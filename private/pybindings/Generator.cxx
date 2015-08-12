@@ -7,7 +7,7 @@
  */
 
 #include <MuonGun/Generator.h>
-#include <MuonGun/Surface.h>
+#include <MuonGun/SamplingSurface.h>
 #include <dataclasses/physics/I3Particle.h>
 #include <icetray/python/dataclass_suite.hpp>
 #include <boost/serialization/list.hpp>

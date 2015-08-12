@@ -3,7 +3,7 @@
 #define MUONGUN_FLOODLIGHT_H_INCLUDED
 
 #include <MuonGun/Generator.h>
-#include <MuonGun/Surface.h>
+#include <MuonGun/SamplingSurface.h>
 #include <MuonGun/EnergyDistribution.h>
 
 namespace I3MuonGun {

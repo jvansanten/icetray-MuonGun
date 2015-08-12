@@ -10,7 +10,7 @@
 #define I3MUONGUN_CORSIKAGENERATIONPROBABILITY_H_INCLUDED
 
 #include <MuonGun/Generator.h>
-#include <MuonGun/Surface.h>
+#include <MuonGun/SamplingSurface.h>
 
 namespace I3MuonGun {
 

@@ -6,9 +6,9 @@
  * $Date$
  */
 
-#include <MuonGun/ExtrudedPolygon.h>
+#include <simclasses/ExtrudedPolygon.h>
 
-namespace I3MuonGun {
+namespace simclasses {
 
 ExtrudedPolygon::~ExtrudedPolygon() {}
 
@@ -24,7 +24,4 @@ ExtrudedPolygon::serialize(Archive &ar, unsigned version)
 
 }
 
-template class simclasses::ExtrudedPolygonBase<I3MuonGun::SamplingSurface>;
-template class I3MuonGun::detail::UprightSurface<simclasses::ExtrudedPolygonBase<I3MuonGun::SamplingSurface> >;
-
-I3_SERIALIZABLE(I3MuonGun::ExtrudedPolygon);
+I3_SERIALIZABLE(simclasses::ExtrudedPolygon);

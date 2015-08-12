@@ -18,7 +18,7 @@ register_CanCan()
 	using namespace boost::python;
 	
 	class_<StaticSurfaceInjector, bases<Generator> >("StaticSurfaceInjector")
-		.def(init<CylinderPtr, FluxPtr,
+		.def(init<SamplingSurfacePtr, FluxPtr,
 		    boost::shared_ptr<OffsetPowerLaw>, RadialDistributionPtr>())
 		#define PROPS (Flux)(RadialDistribution)(EnergyDistribution)
 		BOOST_PP_SEQ_FOR_EACH(WRAP_PROP, StaticSurfaceInjector, PROPS)

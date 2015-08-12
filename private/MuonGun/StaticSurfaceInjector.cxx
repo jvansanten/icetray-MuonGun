@@ -8,6 +8,7 @@
 
 #include <MuonGun/I3MuonGun.h>
 #include <MuonGun/StaticSurfaceInjector.h>
+#include <MuonGun/Cylinder.h>
 #include <dataclasses/I3Constants.h>
 
 #include <boost/bind.hpp>
@@ -38,11 +39,17 @@ template <typename Archive>
 void
 StaticSurfaceInjector::serialize(Archive &ar, unsigned version)
 {
-	if (version > 0)
+	if (version > 1)
 		log_fatal_stream("Version "<<version<<" is from the future");
 	
 	ar & make_nvp("Generator", base_object<Generator>(*this));
-	ar & make_nvp("Surface", surface_);
+	if (version == 0) {
+		CylinderPtr cyl;
+		ar & make_nvp("Surface", cyl);
+		surface_ = cyl;
+	} else {
+		ar & make_nvp("Surface", surface_);
+	}
 	ar & make_nvp("Flux", flux_);
 	ar & make_nvp("EnergySpectrum", energyGenerator_);
 	ar & make_nvp("RadialDistribution", radialDistribution_);
@@ -67,7 +74,7 @@ StaticSurfaceInjector::StaticSurfaceInjector()
 	    GetTablePath("Hoerandel5_atmod12_SIBYLL.radius.fits"));
 }
 
-StaticSurfaceInjector::StaticSurfaceInjector(CylinderPtr surface, FluxPtr flux,
+StaticSurfaceInjector::StaticSurfaceInjector(SamplingSurfacePtr surface, FluxPtr flux,
     boost::shared_ptr<OffsetPowerLaw> edist, RadialDistributionPtr rdist)
 {
 	SetSurface(surface);
@@ -95,7 +102,7 @@ StaticSurfaceInjector::IsCompatible(GenerationProbabilityConstPtr o) const
 }
 
 void
-StaticSurfaceInjector::SetSurface(CylinderPtr p)
+StaticSurfaceInjector::SetSurface(SamplingSurfacePtr p)
 {
 	surface_ = p;
 	totalRate_ = NAN;

@@ -10,7 +10,6 @@
 #include <MuonGun/CORSIKAGenerationProbability.h>
 
 #include <dataclasses/physics/I3Particle.h>
-#include <MuonGun/Surface.h>
 #include <MuonGun/Flux.h>
 #include <MuonGun/RadialDistribution.h>
 #include <MuonGun/EnergyDistribution.h>

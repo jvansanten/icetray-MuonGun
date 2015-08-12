@@ -8,7 +8,8 @@
 
 #include <MuonGun/WeightCalculator.h>
 #include <MuonGun/Generator.h>
-#include <MuonGun/Surface.h>
+#include <MuonGun/SamplingSurface.h>
+#include <MuonGun/Cylinder.h>
 #include <MuonGun/Flux.h>
 #include <MuonGun/RadialDistribution.h>
 #include <MuonGun/EnergyDistribution.h>

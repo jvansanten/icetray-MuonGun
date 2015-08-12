@@ -10,7 +10,7 @@
 #define MUONGUN_CANCAN_H_INCLUDED
 
 #include <MuonGun/Generator.h>
-#include <MuonGun/Surface.h>
+#include <MuonGun/SamplingSurface.h>
 #include <MuonGun/Flux.h>
 #include <MuonGun/RadialDistribution.h>
 #include <MuonGun/EnergyDistribution.h>
@@ -33,7 +33,7 @@ namespace I3MuonGun {
 class StaticSurfaceInjector : public Generator {
 public:
 	StaticSurfaceInjector();
-	StaticSurfaceInjector(CylinderPtr surface, FluxPtr flux,
+	StaticSurfaceInjector(SamplingSurfacePtr surface, FluxPtr flux,
 	    boost::shared_ptr<OffsetPowerLaw> edist, RadialDistributionPtr rdist);
 	
 	// Generator Interface
@@ -43,8 +43,8 @@ public:
 	virtual double GetLogGenerationProbability(const I3Particle &axis, const BundleConfiguration &bundle) const;
 	virtual SamplingSurfaceConstPtr GetInjectionSurface() const { return surface_; }
 	
-	void SetSurface(CylinderPtr p);
-	CylinderPtr GetSurface() { return surface_; }
+	void SetSurface(SamplingSurfacePtr p);
+	SamplingSurfacePtr GetSurface() { return surface_; }
 	
 	void SetFlux(FluxPtr p);
 	FluxPtr GetFlux() { return flux_; }
@@ -92,7 +92,7 @@ private:
 	void serialize(Archive &, unsigned);
 
 protected:
-	CylinderPtr surface_;
+	SamplingSurfacePtr surface_;
 	FluxPtr flux_;
 	boost::shared_ptr<OffsetPowerLaw> energyGenerator_;
 	RadialDistributionPtr radialDistribution_;
@@ -104,7 +104,7 @@ protected:
 
 }
 
-BOOST_CLASS_VERSION(I3MuonGun::StaticSurfaceInjector, 0);
+BOOST_CLASS_VERSION(I3MuonGun::StaticSurfaceInjector, 1);
 
 #endif
 

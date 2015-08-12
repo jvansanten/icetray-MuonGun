@@ -13,6 +13,7 @@
 #include <dataclasses/I3Constants.h>
 #include <dataclasses/physics/I3Particle.h>
 #include <MuonGun/MuonPropagator.h>
+#include <simclasses/Sphere.h>
 
 namespace {
 	const double EarthRadius = 637131500*I3Units::cm; // as in CORSIKA

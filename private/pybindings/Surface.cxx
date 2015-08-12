@@ -6,8 +6,14 @@
  * $Date$
  */
 
-#include <MuonGun/Surface.h>
+#include <simclasses/Cylinder.h>
+#include <simclasses/ExtrudedPolygon.h>
+#include <simclasses/AxialCylinder.h>
+#include <simclasses/Sphere.h>
+
+#include <MuonGun/Cylinder.h>
 #include <MuonGun/ExtrudedPolygon.h>
+
 #include <dataclasses/I3Position.h>
 #include <dataclasses/I3Direction.h>
 #include <phys-services/I3RandomService.h>

@@ -7,7 +7,7 @@
  */
 
 #include <MuonGun/Generator.h>
-#include <MuonGun/Surface.h>
+#include <MuonGun/SamplingSurface.h>
 
 #include <icetray/I3Module.h>
 #include <dataclasses/physics/I3MCTreeUtils.h>
