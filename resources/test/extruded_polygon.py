@@ -6,7 +6,7 @@ Reference implementation of ExtrudedPolygon
 
 import numpy
 
-from icecube.MuonGun import Surface
+from icecube.simclasses import Surface
 from icecube.dataclasses import make_pair
 
 def convex_hull(points):
