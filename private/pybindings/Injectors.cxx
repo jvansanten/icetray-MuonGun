@@ -54,9 +54,10 @@ register_CanCan()
 	;
 
 	class_<Floodlight, boost::shared_ptr<Floodlight>, bases<Generator> >("Floodlight",
-	    init<SamplingSurfacePtr, boost::shared_ptr<OffsetPowerLaw> >((
+	    init<SamplingSurfacePtr, boost::shared_ptr<OffsetPowerLaw>, double, double>((
 	    arg("surface")=CylinderPtr(),
-	    arg("energyGenerator")=boost::shared_ptr<OffsetPowerLaw>())))
+	    arg("energyGenerator")=boost::shared_ptr<OffsetPowerLaw>(),
+	    arg("cosMin")=-1.,arg("cosMax")=1.)))
 	;
 	
 }

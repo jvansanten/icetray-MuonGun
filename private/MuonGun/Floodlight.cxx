@@ -16,21 +16,30 @@ template <typename Archive>
 void
 Floodlight::serialize(Archive &ar, unsigned version)
 {
-	if (version > 0)
+	if (version > 1)
 		log_fatal_stream("Version "<<version<<" is from the future");
 
 	ar & make_nvp("Generator", base_object<Generator>(*this));
 	ar & make_nvp("Surface", surface_);
 	ar & make_nvp("EnergySpectrum", energyGenerator_);
+	if (version > 0) {
+		ar & make_nvp("CosZenithRange", zenith_range_);
+	}
 }
 
-Floodlight::Floodlight(SamplingSurfacePtr surface, boost::shared_ptr<OffsetPowerLaw> energyGenerator) : surface_(surface),
-    energyGenerator_(energyGenerator)
+Floodlight::Floodlight(SamplingSurfacePtr surface, boost::shared_ptr<OffsetPowerLaw> energyGenerator,
+    double cosMin, double cosMax) : surface_(surface), energyGenerator_(energyGenerator),
+    zenith_range_(cosMin, cosMax)
 {
 	if (!surface_)
 		surface_ = boost::make_shared<Cylinder>(1000, 600, I3Position(31.25, 19.64, 0));
 	if (!energyGenerator_)
 		energyGenerator_ = boost::make_shared<OffsetPowerLaw>(1, 0., 5e2, 1e7);
+	i3_assert(zenith_range_.second > zenith_range_.first);
+	i3_assert(std::abs(zenith_range_.first) <= 1);
+	i3_assert(std::abs(zenith_range_.second) <= 1);
+	log_acceptance_ = std::log(surface_->GetAcceptance(zenith_range_.first, zenith_range_.second));
+	i3_assert(std::isfinite(log_acceptance_));
 }
 
 GenerationProbabilityPtr
@@ -47,6 +56,7 @@ Floodlight::IsCompatible(GenerationProbabilityConstPtr o) const
 		return false;
 	else
 		return (*surface_ == *(other->surface_)
+		    && zenith_range_ == other->zenith_range_
 		    && *energyGenerator_ == *(other->energyGenerator_));
 }
 
@@ -55,7 +65,7 @@ Floodlight::Generate(I3RandomService &rng, I3MCTree &tree, BundleConfiguration &
 {
 	I3Direction dir;
 	I3Position pos;
-	surface_->SampleImpactRay(pos, dir, rng, -1, 1);
+	surface_->SampleImpactRay(pos, dir, rng, zenith_range_.first, zenith_range_.second);
 	
 	I3Particle primary;
 	primary.SetDir(dir);
@@ -77,10 +87,13 @@ Floodlight::GetLogGenerationProbability(const I3Particle &axis, const BundleConf
 {
 	std::pair<double, double> steps = surface_->GetIntersection(axis.GetPos(), axis.GetDir());
 	// Bail if the axis doesn't intersect the surface, or there's more than 1 muon.
-	if (!std::isfinite(steps.first) || bundle.size() != 1)
+	double ct = std::cos(axis.GetDir().GetZenith());
+	if (!std::isfinite(steps.first) || bundle.size() != 1
+	    || ct < zenith_range_.first
+	    || ct > zenith_range_.second)
 		return -std::numeric_limits<double>::infinity();
 	
-	return energyGenerator_->GetLog(bundle.front().energy) - std::log(surface_->GetAcceptance(-1, 1));
+	return energyGenerator_->GetLog(bundle.front().energy) - log_acceptance_;
 }
 
 }

@@ -10,7 +10,7 @@ namespace I3MuonGun {
 
 class Floodlight : public Generator {
 public:
-	Floodlight(SamplingSurfacePtr, boost::shared_ptr<OffsetPowerLaw>);
+	Floodlight(SamplingSurfacePtr, boost::shared_ptr<OffsetPowerLaw>, double cosMin=-1, double cosMax=1);
 	
 	// Generator Interface
 	virtual void Generate(I3RandomService &rng, I3MCTree &tree, BundleConfiguration &bundle) const;
@@ -25,13 +25,15 @@ private:
 	template <typename Archive>
 	void serialize(Archive &, unsigned);
 	
+
 	SamplingSurfacePtr surface_;
 	boost::shared_ptr<OffsetPowerLaw> energyGenerator_;
-
+	std::pair<double, double> zenith_range_;
+	double log_acceptance_;
 };
 
 }
 
-BOOST_CLASS_VERSION(I3MuonGun::Floodlight, 0);
+BOOST_CLASS_VERSION(I3MuonGun::Floodlight, 1);
 
 #endif // MUONGUN_FLOODLIGHT_H_INCLUDED

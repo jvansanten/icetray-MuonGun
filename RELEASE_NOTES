@@ -40,6 +40,8 @@ Mostly docs. Changes since 00-00-04:
   (calculating areas and finding intersections) with MuonGun specific bits
   (equality comparison and flux integration)
 
+* Give Floodlight the ability to restrict its zenith angle range
+
   -- Jakob van Santen
 
 * Remove built-in copy of the weighting project in favor of the official one.
