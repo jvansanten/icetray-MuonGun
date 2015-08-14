@@ -13,6 +13,7 @@ Mostly docs. Changes since 00-00-04:
 * Document:
 
   * Methods for determining the energies of muons in simulation at arbitrary points
+  * How to calculate a muon effective area from MuonGun simulation
   * List of available flux parameterizations 
 
 * Add:

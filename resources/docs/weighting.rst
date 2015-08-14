@@ -33,7 +33,12 @@ First, you should collect the generators for all of the files you plan to use::
         return generator
 
 The generators can simply be added together, or multiplied by an integer to
-represent a larger number of identically-configured generators. You can pass
+represent a larger number of identically-configured generators.
+
+Weighting to a cosmic ray flux model
+------------------------------------
+
+You can pass
 this combined generator to :cpp:class:`WeightCalculatorModule` to calculate a
 weight appropriate for the combined set of files::
 
@@ -72,3 +77,19 @@ weight::
 .. note:: The weighter will only be able to accept Numpy arrays if you have `boost::numpy`_ installed. If you do not have `boost::numpy`_ it will simply be exposed as a scalar function.
 
 .. _`boost::numpy`: https://github.com/martwo/BoostNumpy/
+
+Calculating a muon effective area
+---------------------------------
+
+To calculate a muon effective area for single muons, simply sum up the inverse
+of the generated fluences for each event, e.g.::
+	mctree = frame['I3MCTree']
+	primary = mctree.primaries[0]
+	muon = mctree.get_daughters(primary)[0]
+	bundle = BundleConfiguration([BundleEntry(0, muon.energy)])
+	area_weight = 1./generator.generated_events(primary, bundle)
+
+``area_weight`` has units of :math:`GeV \, m^{2} \, sr`, and is analogous to
+NeutrinoGenerator's ``OneWeight``. To obtain the effective area in units of
+:math:`m^{2}` as a function of muon energy and direction, fill ``area_weight``
+into a histogram and divide each bin by its width in energy and solid angle.
