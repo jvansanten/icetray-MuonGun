@@ -30,9 +30,11 @@ Mostly docs. Changes since 00-00-04:
   version (when available)
 
 * Rework SamplingSurface interface for more clarity:
+
   - GetDifferentialArea() renamed to GetArea(): returns the area in m^2 in
     the given direction. Surfaces are no longer assumed to be azimuthally
     symmetric.
+
   - GetTotalArea() renamed to GetAcceptance(): now returns the product of
     area and solid angle integrated over both zenith and azimuth (i.e. the
     return value no longer needs to be multiplied by 2pi to get m^2 sr)

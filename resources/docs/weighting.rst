@@ -83,6 +83,7 @@ Calculating a muon effective area
 
 To calculate a muon effective area for single muons, simply sum up the inverse
 of the generated fluences for each event, e.g.::
+
 	mctree = frame['I3MCTree']
 	primary = mctree.primaries[0]
 	muon = mctree.get_daughters(primary)[0]
