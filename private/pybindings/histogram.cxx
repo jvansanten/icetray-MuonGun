@@ -97,7 +97,7 @@ void register_histogram()
 	
 	bp::def("test_histogram", &test_histogram);
 	
-	bp::class_<histogram_base, shared_ptr<histogram_base>, boost::noncopyable>("histogram", bp::no_init)
+	bp::class_<histogram_base, boost::shared_ptr<histogram_base>, boost::noncopyable>("histogram", bp::no_init)
 		.def("to_dashi", &to_dashi)
 			;
 	try {
