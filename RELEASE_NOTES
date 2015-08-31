@@ -39,7 +39,7 @@ Mostly docs. Changes since 00-00-04:
     area and solid angle integrated over both zenith and azimuth (i.e. the
     return value no longer needs to be multiplied by 2pi to get m^2 sr)
 
-* Factor Surface classes out into simclasses, separating the general functionality
+* Factor Surface classes out into phys-services, separating the general functionality
   (calculating areas and finding intersections) with MuonGun specific bits
   (equality comparison and flux integration)
 

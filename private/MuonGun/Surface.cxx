@@ -215,7 +215,7 @@ SamplingSurface::serialize(Archive &ar, unsigned version)
 	if (version > 0)
 		log_fatal_stream("Version "<<version<<" is from the future");
 
-	ar & make_nvp("Base", base_object<simclasses::SamplingSurface>(*this));
+	ar & make_nvp("Base", base_object<I3Surfaces::SamplingSurface>(*this));
 }
 
 SamplingSurface::~SamplingSurface() {}
@@ -262,7 +262,7 @@ Cylinder::serialize(Archive &ar, unsigned version)
 		// deserialize by hand
 		double radius, length;
 		I3Position center;
-		ar & make_nvp("SamplingSurface", base_object<simclasses::SamplingSurface>(*this));
+		ar & make_nvp("SamplingSurface", base_object<I3Surfaces::SamplingSurface>(*this));
 		ar & make_nvp("Length", length);
 		ar & make_nvp("Radius", radius);
 		ar & make_nvp("Center", center);
@@ -277,15 +277,15 @@ Cylinder::serialize(Archive &ar, unsigned version)
 }
 
 // explicitly instantiate the base classes used
-template class simclasses::detail::CylinderBase<simclasses::SamplingSurface>;
-template class simclasses::detail::CylinderBase<I3MuonGun::SamplingSurface>;
-template class I3MuonGun::detail::UprightSurface<simclasses::detail::CylinderBase<I3MuonGun::SamplingSurface> >;
+template class I3Surfaces::detail::CylinderBase<I3Surfaces::SamplingSurface>;
+template class I3Surfaces::detail::CylinderBase<I3MuonGun::SamplingSurface>;
+template class I3MuonGun::detail::UprightSurface<I3Surfaces::detail::CylinderBase<I3MuonGun::SamplingSurface> >;
 
-I3_SERIALIZABLE(simclasses::Surface);
-I3_SERIALIZABLE(simclasses::SamplingSurface);
-I3_SERIALIZABLE(simclasses::Cylinder);
-I3_SERIALIZABLE(simclasses::Sphere);
-I3_SERIALIZABLE(simclasses::AxialCylinder);
+I3_SERIALIZABLE(I3Surfaces::Surface);
+I3_SERIALIZABLE(I3Surfaces::SamplingSurface);
+I3_SERIALIZABLE(I3Surfaces::Cylinder);
+I3_SERIALIZABLE(I3Surfaces::Sphere);
+I3_SERIALIZABLE(I3Surfaces::AxialCylinder);
 
 I3_SERIALIZABLE(I3MuonGun::SamplingSurface);
 I3_SERIALIZABLE(I3MuonGun::Cylinder);

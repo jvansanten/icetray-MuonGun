@@ -18,7 +18,7 @@ SamplingSurface::serialize(Archive &ar, unsigned version)
 	if (version > 0)
 		log_fatal_stream("Version "<<version<<" is from the future");
 
-	ar & make_nvp("Base", base_object<simclasses::SamplingSurface>(*this));
+	ar & make_nvp("Base", base_object<I3Surfaces::SamplingSurface>(*this));
 }
 
 SamplingSurface::~SamplingSurface() {}

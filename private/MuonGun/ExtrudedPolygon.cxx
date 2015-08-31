@@ -24,7 +24,7 @@ ExtrudedPolygon::serialize(Archive &ar, unsigned version)
 
 }
 
-template class simclasses::ExtrudedPolygonBase<I3MuonGun::SamplingSurface>;
-template class I3MuonGun::detail::UprightSurface<simclasses::ExtrudedPolygonBase<I3MuonGun::SamplingSurface> >;
+template class I3Surfaces::ExtrudedPolygonBase<I3MuonGun::SamplingSurface>;
+template class I3MuonGun::detail::UprightSurface<I3Surfaces::ExtrudedPolygonBase<I3MuonGun::SamplingSurface> >;
 
 I3_SERIALIZABLE(I3MuonGun::ExtrudedPolygon);

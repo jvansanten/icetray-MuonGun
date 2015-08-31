@@ -228,7 +228,7 @@ MuonPropagator::propagate(const I3Particle &p, double distance, boost::shared_pt
 	return endpoint;
 }
 
-void Crust::AddLayer(simclasses::SurfacePtr s, boost::shared_ptr<MuonPropagator> p)
+void Crust::AddLayer(I3Surfaces::SurfacePtr s, boost::shared_ptr<MuonPropagator> p)
 {
 	boundaries_.push_back(s);
 	propagators_.push_back(p);

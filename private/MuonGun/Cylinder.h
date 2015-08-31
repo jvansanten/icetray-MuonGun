@@ -10,7 +10,7 @@
 #define I3MUONGUN_CYLINDER_H_INCLUDED
 
 #include <MuonGun/SamplingSurface.h>
-#include <simclasses/detail/CylinderBase.h>
+#include <phys-services/surfaces/detail/CylinderBase.h>
 #include <MuonGun/UprightSurface.h>
 
 class I3Direction;
@@ -21,9 +21,9 @@ namespace I3MuonGun {
 /**
  * @brief A cylinder aligned with the z axis
  */
-class Cylinder : public detail::UprightSurface<simclasses::detail::CylinderBase<SamplingSurface > > {
+class Cylinder : public detail::UprightSurface<I3Surfaces::detail::CylinderBase<SamplingSurface > > {
 private:
-	typedef simclasses::detail::CylinderBase<SamplingSurface > CylinderBase;
+	typedef I3Surfaces::detail::CylinderBase<SamplingSurface > CylinderBase;
 	typedef detail::UprightSurface<CylinderBase > Base;
 public:
 	Cylinder(double length, double radius, I3Position center=I3Position(0,0,0)) : Base(length, radius, center)

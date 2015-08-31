@@ -27,7 +27,7 @@ void register_Surface()
 	using namespace I3MuonGun;
 	using namespace boost::python;
 	
-	class_<SamplingSurface, SamplingSurfacePtr, bases<simclasses::SamplingSurface>, boost::noncopyable>("SamplingSurface", no_init)
+	class_<SamplingSurface, SamplingSurfacePtr, bases<I3Surfaces::SamplingSurface>, boost::noncopyable>("SamplingSurface", no_init)
 	    .def("integrate_flux", &IntegrateFlux, (arg("self"), arg("flux"), arg("m")=1u, arg("cosMin")=0, arg("cosMax")=1))
 	    DEF("acceptance", &SamplingSurface::GetAcceptance, (arg("cosMin")=0., arg("cosMax")=1.))
 	;

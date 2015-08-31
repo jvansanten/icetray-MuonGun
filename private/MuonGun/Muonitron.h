@@ -13,7 +13,7 @@
 #include <dataclasses/I3Constants.h>
 #include <dataclasses/physics/I3Particle.h>
 #include <MuonGun/MuonPropagator.h>
-#include <simclasses/Sphere.h>
+#include <phys-services/surfaces/Sphere.h>
 
 namespace {
 	const double EarthRadius = 637131500*I3Units::cm; // as in CORSIKA
@@ -45,7 +45,7 @@ private:
 	
 	boost::shared_ptr<I3MuonGun::MuonPropagator> bulkPropagator_;
 	boost::shared_ptr<I3MuonGun::Crust> crust_;
-	simclasses::Sphere iceWorld_;
+	I3Surfaces::Sphere iceWorld_;
 	
 	std::vector<double> depths_;
 };

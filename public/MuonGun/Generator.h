@@ -26,7 +26,7 @@ namespace TreeBase {
 }
 typedef TreeBase::Tree<I3Particle, I3ParticleID, hash<I3ParticleID> > I3MCTree;
 
-namespace simclasses {
+namespace I3Surfaces {
 I3_FORWARD_DECLARATION(Surface);
 }
 
@@ -192,7 +192,7 @@ public:
 	 * @param[in] axis    the shower axis
 	 */
 	static I3Particle CreateParallelTrack(double radius, double azimuth,
-	    const simclasses::Surface &surface, const I3Particle &axis);
+	    const I3Surfaces::Surface &surface, const I3Particle &axis);
 
 private:
 	friend class boost::serialization::access;

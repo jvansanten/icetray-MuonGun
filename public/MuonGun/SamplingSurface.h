@@ -9,7 +9,7 @@
 #ifndef I3MUONGUN_SAMPLINGSURFACE_H_INCLUDED
 #define I3MUONGUN_SAMPLINGSURFACE_H_INCLUDED
 
-#include <simclasses/SamplingSurface.h>
+#include <phys-services/surfaces/SamplingSurface.h>
 #include <boost/function.hpp>
 
 class I3Direction;
@@ -24,7 +24,7 @@ namespace I3MuonGun {
  * a flux over its surface. It is assumed to be azimuthally symmetric, but
  * its projected area may vary with zenith angle.
  */
-class SamplingSurface : public simclasses::SamplingSurface {
+class SamplingSurface : public I3Surfaces::SamplingSurface {
 public:
 	virtual ~SamplingSurface();
 	/** Get the integral of area*solid_angle over the given cos(theta) range */

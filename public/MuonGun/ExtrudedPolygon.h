@@ -10,14 +10,14 @@
 #define I3MUONGUN_EXTRUDEDPOLYGON_H_INCLUDED
 
 #include <MuonGun/SamplingSurface.h>
-#include <simclasses/detail/ExtrudedPolygonBase.h>
+#include <phys-services/surfaces/detail/ExtrudedPolygonBase.h>
 #include <MuonGun/UprightSurface.h>
 
 namespace I3MuonGun {
 
-class ExtrudedPolygon : public detail::UprightSurface<simclasses::ExtrudedPolygonBase<SamplingSurface > > {
+class ExtrudedPolygon : public detail::UprightSurface<I3Surfaces::ExtrudedPolygonBase<SamplingSurface > > {
 private:
-	typedef simclasses::ExtrudedPolygonBase<SamplingSurface > ExtrudedPolygonBase;
+	typedef I3Surfaces::ExtrudedPolygonBase<SamplingSurface > ExtrudedPolygonBase;
 	typedef detail::UprightSurface<ExtrudedPolygonBase > Base;
 public:
 	virtual ~ExtrudedPolygon();

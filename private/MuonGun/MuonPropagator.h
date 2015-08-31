@@ -12,7 +12,7 @@
 #include "icetray/I3Units.h"
 #include "dataclasses/physics/I3Particle.h"
 #include "MuonGun/I3MuonGun.h"
-#include "simclasses/Surface.h"
+#include "phys-services/surfaces/Surface.h"
 
 class Propagate;
 
@@ -72,12 +72,12 @@ public:
 	Crust(boost::shared_ptr<MuonPropagator> defaultPropagator) : defaultPropagator_(defaultPropagator) {};
 	
 	/** Add an inner layer */
-	void AddLayer(simclasses::SurfacePtr, boost::shared_ptr<MuonPropagator>);
+	void AddLayer(I3Surfaces::SurfacePtr, boost::shared_ptr<MuonPropagator>);
 	/** Propagate a muon to the outer boundary of the innermost layer */
 	I3Particle Ingest(const I3Particle &p);
 private:
 	boost::shared_ptr<MuonPropagator> defaultPropagator_;
-	std::vector<simclasses::SurfacePtr > boundaries_;
+	std::vector<I3Surfaces::SurfacePtr > boundaries_;
 	std::vector<boost::shared_ptr<MuonPropagator> > propagators_;
 };
 

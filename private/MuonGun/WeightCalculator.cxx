@@ -52,7 +52,7 @@ WeightCalculator::GetWeight(const I3Particle &axis, const BundleConfiguration &b
 // Possibly throw-away utility function: "track" muons to a fixed surface using the
 // same method as WeightCalculatorModule
 std::vector<I3Particle>
-GetMuonsAtSurface(I3FramePtr frame, simclasses::SurfaceConstPtr surface)
+GetMuonsAtSurface(I3FramePtr frame, I3Surfaces::SurfaceConstPtr surface)
 {
 	std::vector<I3Particle> final_states;
 	
