@@ -1,5 +1,5 @@
 from icecube.load_pybindings import load_pybindings
-import icecube.icetray, icecube.dataclasses, icecube.simclasses# be nice and pull in our dependencies
+import icecube.icetray, icecube.dataclasses, icecube.simclasses, icecube.phys_services# be nice and pull in our dependencies
 load_pybindings(__name__,__path__)
 
 import inspect
