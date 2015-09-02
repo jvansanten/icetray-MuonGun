@@ -14,7 +14,6 @@ if not propagator:
 tray = I3Tray()
 
 tray.AddModule('I3InfiniteSource', 'driver')
-tray.AddModule('I3MCEventHeaderGenerator', 'headergen', IncrementEventID=True)
 tray.AddService('I3GSLRandomServiceFactory', 'rng', Seed=1337)
 
 surface  = MuonGun.Cylinder(1600, 800)

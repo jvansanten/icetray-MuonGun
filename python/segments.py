@@ -21,16 +21,11 @@ def GenerateBundles(tray, name, Generator=None,
 	
 	tray.AddModule("I3InfiniteSource",name+"_streams",
 	    Prefix=GCDFile, Stream=icetray.I3Frame.DAQ)
-	
-	tray.AddModule("I3MCEventHeaderGenerator",name+"_gen_header",
-	    Year=FromTime.utc_year, DAQTime=FromTime.utc_daq_time,
-	    RunNumber=RunNumber, EventID=1, IncrementEventID=True)
-	
+		
 	# modify the header if necessary by generating a random time
 	# between StartTime and EndTime
 	def GenRandomTime(frame, StartTime, EndTime, RandomService):
-		header = frame["I3EventHeader"]
-		del frame["I3EventHeader"]
+		header = dataclasses.I3EventHeader()
 
 		mjdStart = StartTime.mod_julian_day_double
 		mjdEnd	 = EndTime.mod_julian_day_double
