@@ -357,8 +357,8 @@ if __name__ == "__main__":
     for i, (pos, dir) in enumerate(random_points(7e2)):
         i1 = py_surface.GetIntersection(pos, dir)
         i2 = cpp_surface.intersection(pos, dir)
-        numpy.testing.assert_equal(i1.first, i2.first)
-        numpy.testing.assert_equal(i1.second, i2.second)
+        numpy.testing.assert_almost_equal(i1.first, i2.first)
+        numpy.testing.assert_almost_equal(i1.second, i2.second)
         numpy.testing.assert_almost_equal(py_surface.area(dir), cpp_surface.area(dir))
     
     # test acceptance calculation

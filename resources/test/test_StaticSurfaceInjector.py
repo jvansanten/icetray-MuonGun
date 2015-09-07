@@ -4,13 +4,6 @@ from icecube import icetray, dataclasses, dataio
 from icecube import phys_services, sim_services, simclasses, MuonGun
 from I3Tray import I3Tray
 
-from utils import get_propagator
-propagator = get_propagator(seed=1337)
-if not propagator:
-	import sys
-	print('Skipping test')
-	sys.exit(0)
-
 tray = I3Tray()
 
 tray.AddModule('I3InfiniteSource', 'driver')
@@ -24,10 +17,15 @@ energies = MuonGun.BMSSEnergyDistribution()
 radii    = MuonGun.BMSSRadialDistribution()
 generator = 10*MuonGun.StaticSurfaceInjector(surface, flux, MuonGun.OffsetPowerLaw(2, 500., 50, 1e6), radii)
 
-tray.AddModule('I3MuonGun::GeneratorModule', 'generator', Generator=generator, Propagator=propagator)
+tray.AddModule('I3MuonGun::GeneratorModule', 'generator', Generator=generator)
 tray.AddModule('I3MuonGun::WeightCalculatorModule', 'weight',
-    Flux=flux, EnergyDistribution=energies, RadialDistribution=radii,
+    Model=MuonGun.BundleModel(flux, radii, energies),
     Generator=generator)
+
+def check_weight(frame):
+    weight = frame['weight'].value
+    assert weight > 0
+tray.Add(check_weight, Streams=[icetray.I3Frame.DAQ])
 
 tray.AddModule('TrashCan', 'YesWeCan')
 tray.Execute()
