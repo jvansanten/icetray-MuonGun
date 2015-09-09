@@ -22,10 +22,13 @@ Floodlight::serialize(Archive &ar, unsigned version)
 	ar & make_nvp("Generator", base_object<Generator>(*this));
 	ar & make_nvp("Surface", surface_);
 	ar & make_nvp("EnergySpectrum", energyGenerator_);
-	if (version > 0) {
+	if (version == 0) {
+		zenith_range_ = std::make_pair(-1., 1.);
+	} else {
 		ar & make_nvp("CosZenithRange", zenith_range_);
-		log_acceptance_ = std::log(surface_->GetAcceptance(zenith_range_.first, zenith_range_.second));
 	}
+	log_acceptance_ = std::log(surface_->GetAcceptance(zenith_range_.first, zenith_range_.second));
+	
 }
 
 Floodlight::Floodlight(SamplingSurfacePtr surface, boost::shared_ptr<OffsetPowerLaw> energyGenerator,
