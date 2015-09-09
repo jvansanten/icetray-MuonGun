@@ -24,6 +24,7 @@ Floodlight::serialize(Archive &ar, unsigned version)
 	ar & make_nvp("EnergySpectrum", energyGenerator_);
 	if (version > 0) {
 		ar & make_nvp("CosZenithRange", zenith_range_);
+		log_acceptance_ = std::log(surface_->GetAcceptance(zenith_range_.first, zenith_range_.second));
 	}
 }
 
