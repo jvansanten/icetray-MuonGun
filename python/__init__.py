@@ -12,7 +12,7 @@ def monkeypatch(cls):
         return None
     return monkeypatch
 
-@monkeypatch(ExtrudedPolygon)
+#@monkeypatch(ExtrudedPolygon)
 def from_I3Geometry(cls, i3geo, padding=0):
     from collections import defaultdict
     import numpy
@@ -28,7 +28,7 @@ def from_I3Geometry(cls, i3geo, padding=0):
     
     return cls(positions, padding)
     
-@monkeypatch(ExtrudedPolygon)
+#@monkeypatch(ExtrudedPolygon)
 def from_file(cls, fname, padding=0):
     from icecube import icetray, dataio, dataclasses
     f = dataio.I3File(fname)
