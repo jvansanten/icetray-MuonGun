@@ -16,6 +16,7 @@ import icecube.MuonGun
 import icecube.MuonGun.segments
 from I3Tray import I3Tray
 
+
 def main(output_file="./floodlight.i3.gz", num_events=100,
          gamma_index=2, energy_offset=1e3, energy_min=1e4, energy_max=1e7,
          coszen_min=-1., coszen_max=1.):
@@ -58,6 +59,7 @@ def main(output_file="./floodlight.i3.gz", num_events=100,
     tray.Finish()
 
     return
+
 
 def effective_area(frame, generator):
     mctree = frame["I3MCTree"]
