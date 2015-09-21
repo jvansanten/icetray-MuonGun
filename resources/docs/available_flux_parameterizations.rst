@@ -1,3 +1,5 @@
+.. _MuonGun flux parametrizations:
+
 Available flux parameterizations
 ================================
 
