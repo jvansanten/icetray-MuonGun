@@ -45,10 +45,10 @@ void register_Surface()
 
 	implicitly_convertible<CylinderPtr, CylinderConstPtr>();
 
-//	class_<ExtrudedPolygon, ExtrudedPolygonPtr, bases<SamplingSurface> >("ExtrudedPolygon",
-//	    init<const std::vector<I3Position> &, double>((arg("points"), arg("padding")=0)))
-//	    .add_property("x", &ExtrudedPolygon::GetX)
-//	    .add_property("y", &ExtrudedPolygon::GetY)
-//	    .add_property("z", &ExtrudedPolygon::GetZ)
-//	;
+	class_<ExtrudedPolygon, ExtrudedPolygonPtr, bases<SamplingSurface> >("ExtrudedPolygon",
+	    init<const std::vector<I3Position> &, double>((arg("points"), arg("padding")=0)))
+	    .add_property("x", &ExtrudedPolygon::GetX)
+	    .add_property("y", &ExtrudedPolygon::GetY)
+	    .add_property("z", &ExtrudedPolygon::GetZ)
+	;
 }

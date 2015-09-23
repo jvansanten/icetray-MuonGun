@@ -204,7 +204,7 @@ class ExtrudedPolygon(Surface):
     
     @staticmethod
     def _integrate_area(a, b, cap, sides):
-        return cap*(b**2-a**2) + (sides/2.)*(numpy.arccos(a) - numpy.arccos(b) + numpy.sqrt(1-a**2)*a + numpy.sqrt(1-b**2)*b)
+        return numpy.pi*(cap*(b**2-a**2) + sides*(numpy.arccos(a) - numpy.arccos(b) - numpy.sqrt(1-a**2)*a + numpy.sqrt(1-b**2)*b))
     
     def entendue(self, cosMin=-1., cosMax=1.):
         """
@@ -221,9 +221,9 @@ class ExtrudedPolygon(Surface):
         # the projected area of a plane, averaged over a 2\pi rotation that
         # passes through the normal, is
         # A*\int_0^\pi \Theta(\sin\alpha)\sin\alpha d\alpha / 2\pi = A/\pi
-        sides = 2*self._side_lengths.sum()*self.length
+        sides = self._side_lengths.sum()*self.length/numpy.pi
         # The projected area of the cap is independent of azimuth
-        cap = 2*numpy.pi*self._areas[-1]
+        cap = self._areas[-1]
         
         if (cosMin >= 0 and cosMax >= 0):
             return self._integrate_area(cosMin, cosMax, cap, sides)
