@@ -25,13 +25,13 @@ TEST(Addition)
 	
 	ENSURE(soft_g->IsCompatible(soft_g));
 	ENSURE_EQUAL((soft_g+soft_g)->GetTotalEvents(), 2.);
-	ENSURE(boost::dynamic_pointer_cast<const CORSIKAGenerationProbability>(soft_g+soft_g),
+	ENSURE((bool)boost::dynamic_pointer_cast<const CORSIKAGenerationProbability>(soft_g+soft_g),
 	    "Sum of compatible generators is a generator of the same type");
-	ENSURE(boost::dynamic_pointer_cast<const CORSIKAGenerationProbability>(soft_g+soft_g+soft_g),
+	ENSURE((bool)boost::dynamic_pointer_cast<const CORSIKAGenerationProbability>(soft_g+soft_g+soft_g),
 	    "Sum of compatible generators is a generator of the same type");
 	
 	ENSURE(!soft_g->IsCompatible(hard_g));
 	ENSURE_EQUAL((soft_g+hard_g)->GetTotalEvents(), 1.);
-	ENSURE(boost::dynamic_pointer_cast<const GenerationProbabilityCollection>(soft_g+hard_g),
+	ENSURE((bool)boost::dynamic_pointer_cast<const GenerationProbabilityCollection>(soft_g+hard_g),
 	    "Sum of incompatible generators is a collection");
 }

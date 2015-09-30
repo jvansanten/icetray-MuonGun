@@ -23,9 +23,9 @@ BundleModel
 load_model(const std::string &base)
 {
 	using boost::make_shared;
-	return BundleModel(make_shared<SplineFlux>(get_tabledir() + base + ".single_flux.fits", get_tabledir() + base + ".bundle_flux.fits"),
-	    make_shared<SplineRadialDistribution>(get_tabledir() + base + ".radius.fits"),
-	    make_shared<SplineEnergyDistribution>(get_tabledir() + base + ".single_energy.fits", get_tabledir() + base + ".bundle_energy.fits"));
+	return BundleModel(boost::make_shared<SplineFlux>(get_tabledir() + base + ".single_flux.fits", get_tabledir() + base + ".bundle_flux.fits"),
+	    boost::make_shared<SplineRadialDistribution>(get_tabledir() + base + ".radius.fits"),
+	    boost::make_shared<SplineEnergyDistribution>(get_tabledir() + base + ".single_energy.fits", get_tabledir() + base + ".bundle_energy.fits"));
 }
 
 }
