@@ -784,8 +784,12 @@ typedef struct {
 
 static void heap_resize(heap *h, unsigned nalloc)
 {
-     h->nalloc = nalloc;
-     h->items = (heap_item *) realloc(h->items, sizeof(heap_item) * nalloc);
+    if (h->nalloc == 0) {
+        h->items = (heap_item *) malloc(sizeof(heap_item) * nalloc);
+    } else {
+        h->items = (heap_item *) realloc(h->items, sizeof(heap_item) * nalloc);
+    }
+    h->nalloc = nalloc;
 }
 
 static heap heap_alloc(unsigned nalloc, unsigned fdim)
@@ -808,7 +812,11 @@ static heap heap_alloc(unsigned nalloc, unsigned fdim)
 static void heap_free(heap *h)
 {
      h->n = 0;
-     heap_resize(h, 0);
+     if (h->items) {
+         free(h->items);
+         h->items = NULL;
+     }
+     h->nalloc = 0;
      h->fdim = 0;
      free(h->ee);
 }
