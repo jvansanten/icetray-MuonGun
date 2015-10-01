@@ -100,6 +100,7 @@ i3_test_executable(test
   private/test/Surface.cxx
   private/test/EnergyDistribution.cxx
   private/test/Generator.cxx
+  private/test/Integration.cxx
   USE_PROJECTS MuonGun icetray dataclasses phys-services
 )
 
