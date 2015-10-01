@@ -34,6 +34,7 @@
 #include <math.h>
 #include <limits.h>
 #include <float.h>
+#include <assert.h>
 
 /* Adaptive multidimensional integration on hypercubes (or, really,
    hyper-rectangles) using cubature rules.
@@ -784,6 +785,7 @@ typedef struct {
 
 static void heap_resize(heap *h, unsigned nalloc)
 {
+    assert(nalloc > 0);
     if (h->nalloc == 0) {
         h->items = (heap_item *) malloc(sizeof(heap_item) * nalloc);
     } else {
