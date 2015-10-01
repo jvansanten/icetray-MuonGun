@@ -907,6 +907,7 @@ static int ruleadapt_integrate(rule *r, unsigned fdim, integrand_v f, void *fdat
      unsigned nR_alloc = 0;
      esterr *ee = NULL;
 
+     assert(fdim > 0);
      regions = heap_alloc(1, fdim);
      if (!regions.ee || !regions.items) goto bad;
 
