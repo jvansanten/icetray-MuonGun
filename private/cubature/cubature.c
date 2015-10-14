@@ -1086,6 +1086,9 @@ int adapt_integrate(unsigned fdim, integrand f, void *fdata,
 
      if (fdim == 0) return SUCCESS; /* nothing to do */     
      
+     /* we only use (and test) the n-dimensional version */
+     assert(dim > 1);
+     
      d.f = f; d.fdata = fdata;
      d.fval1 = (double *) malloc(sizeof(double) * fdim);
      if (!d.fval1) {
