@@ -31,8 +31,6 @@ Track::Track(const I3MMCTrack &mmctrack,
 	// Sum energy losses between entry and exit
 	double elost = 0;
 	BOOST_FOREACH(const I3Particle &p, std::make_pair(sbegin, send)) {
-		if (p.GetShape() == I3Particle::Dark)
-			continue;
 		elost += p.GetEnergy();
 		double d = (p.GetPos()-I3Particle::GetPos()).Magnitude();
 		losses_.push_back(LossSum(d, elost));
