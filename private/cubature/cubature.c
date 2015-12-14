@@ -789,7 +789,13 @@ static void heap_resize(heap *h, unsigned nalloc)
     if (h->nalloc == 0) {
         h->items = (heap_item *) malloc(sizeof(heap_item) * nalloc);
     } else {
-        h->items = (heap_item *) realloc(h->items, sizeof(heap_item) * nalloc);
+        heap_item *items = realloc(h->items, sizeof(heap_item) * nalloc);
+        if (items != NULL) {
+            h->items = items;
+        } else {
+            free(h->items);
+            h->items = NULL;
+        }
     }
     h->nalloc = nalloc;
 }
@@ -966,8 +972,12 @@ static int ruleadapt_integrate(rule *r, unsigned fdim, integrand_v f, void *fdat
 	       do {
 		    if (nR + 2 > nR_alloc) {
 			 nR_alloc = (nR + 2) * 2;
-			 R = (region *) realloc(R, nR_alloc * sizeof(region));
-			 if (!R) goto bad;
+			 region *newR = realloc(R, nR_alloc * sizeof(region));
+			 if (newR != NULL) {
+				 R = newR;
+			 } else {
+				 goto bad;
+			 }
 		    }
 		    R[nR] = heap_pop(&regions);
 		    for (j = 0; j < fdim; ++j) ee[j].err -= R[nR].ee[j].err;
