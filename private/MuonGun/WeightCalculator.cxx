@@ -230,9 +230,14 @@ public:
 		
 		if (mmctracks) {
 			std::list<Track> tracks = Track::Harvest(*mctree, *mmctracks);
-			BOOST_FOREACH(const Track &track, tracks)
+			BOOST_FOREACH(const Track &track, tracks) {
+				// Omit secondary muons
+				boost::optional<I3Particle> parent = mctree->parent(track);
+				if (parent && parent->GetType() == I3Particle::NuclInt)
+					continue;
 				bundlespec.push_back(BundleEntry(
 				    GetRadius(*primary, track.GetPos(steps.first)), track.GetEnergy(steps.first)));
+			}
 		} else {
 			// log_warn("No MMCTrackList found in the frame! Assuming that everything starts on the sampling surface...");
 			BOOST_FOREACH(const I3Particle &track, std::make_pair(mctree->begin(), mctree->end())) {

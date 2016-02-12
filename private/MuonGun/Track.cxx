@@ -111,7 +111,7 @@ namespace {
 
 /**
  * Ensure that the MMCTrack has the same time reference as
- * the associated I3MCTree.
+ * the associated I3MCTree, and also the same ID.
  */
 inline I3MMCTrack
 TimeShift(const I3Particle &p, const I3MMCTrack mmctrack)
@@ -123,7 +123,7 @@ TimeShift(const I3Particle &p, const I3MMCTrack mmctrack)
 	shifted.SetEnter( mmctrack.GetXi(), mmctrack.GetYi(), mmctrack.GetZi(), mmctrack.GetTi() + dt, mmctrack.GetEi());
 	shifted.SetCenter(mmctrack.GetXc(), mmctrack.GetYc(), mmctrack.GetZc(), mmctrack.GetTc() + dt, mmctrack.GetEc());
 	shifted.SetExit(  mmctrack.GetXf(), mmctrack.GetYf(), mmctrack.GetZf(), mmctrack.GetTf() + dt, mmctrack.GetEf());
-	shifted.GetParticle().SetTime(p.GetTime());
+	shifted.SetParticle(p);
 	
 	return shifted;
 }
