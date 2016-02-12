@@ -128,6 +128,13 @@ TimeShift(const I3Particle &p, const I3MMCTrack mmctrack)
 	return shifted;
 }
 
+inline bool
+equivalent(const I3Particle &p1, const I3Particle &p2)
+{
+    return (p1.GetType() == p2.GetType()) && (p1.GetEnergy() == p2.GetEnergy())
+        && (p1.GetPos() == p2.GetPos()) && (p1.GetDir() == p2.GetDir());
+}
+
 }
 
 std::list<Track>
@@ -139,7 +146,16 @@ Track::Harvest(const I3MCTree &mctree, const I3MMCTrackList &mmctracks)
     BOOST_FOREACH(const I3MMCTrack &mmctrack, mmctracks) {
         // For each track, find the particle it corresponds to
         p = mctree.find(mmctrack.GetI3Particle());
+        // The above search will fail if particle IDs were not originally
+        // unique. Fall back to linear search.
+        if (!equivalent(*p, mmctrack.GetI3Particle())) {
+            for (p = mctree.begin(); p != mctree.end(); p++) {
+                if (equivalent(*p, mmctrack.GetI3Particle()))
+                    break;
+            }
+        }
         if (p != mctree.end()) {
+            i3_assert(equivalent(*p, mmctrack.GetI3Particle()));
             // Get energy checkpoints from the MMCTrack and stochastic losses
             // from the direct daughters of the corresponding MCTree node
             daughters = mctree.children(p);
