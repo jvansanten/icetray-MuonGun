@@ -5,7 +5,7 @@ In diffuse neutrino searches it is almost always necessary to estimate the
 background due to atmospheric muons from simulation. In IceCube this has
 typically been done directly, by simulating air showers to ground level with
 CORSIKA, propagating the muons in the shower through the firn and ice with
-MMC to a cylindrical sampling surface surrounding the detector, and then
+PROPOSAL to a cylindrical sampling surface surrounding the detector, and then
 weighting the simulated events to an assumed cosmic-ray flux. Though this
 method offers the highest possible precision available from the chosen
 simulation software, it suffers from two key inefficiencies. First, since
