@@ -38,15 +38,14 @@ Track::Track(const I3MMCTrack &mmctrack,
 	
 	if (mmctrack.GetEf() > 0) {
 		// Track made it to the edge of the MMC volume
-		losses_.push_back(LossSum(checkpoints_.back().length, elost));
 		double d = (I3Position(mmctrack.GetXf(), mmctrack.GetYf(),
 		    mmctrack.GetZf())-I3Particle::GetPos()).Magnitude();
 		checkpoints_.push_back(Checkpoint(d, mmctrack.GetEf(), losses_.size()));
-		elost = 0.;
+		losses_.push_back(LossSum(checkpoints_.back().length, 0.));
 	}
 	
-	losses_.push_back(LossSum(I3Particle::GetLength(), elost));
 	checkpoints_.push_back(Checkpoint(I3Particle::GetLength(), 0., losses_.size()));
+	losses_.push_back(LossSum(I3Particle::GetLength(), 0.));
 }
 
 namespace {
@@ -78,11 +77,12 @@ Track::GetEnergy(double length) const
 	// Find the cumulative energy loss since the last checkpoint
 	std::vector<LossSum>::const_iterator ls = std::max(std::lower_bound(l1, l2,
 	    LossSum(length), Sort<LossSum>)-1, l1);
-	
+
 	// Estimate continuous loss rate
 	double conti_rate = (cp->energy - (cp+1)->energy - (l2-1)->energy)
 	    /((cp+1)->length - cp->length);
 	
+	i3_assert(ls->energy <= cp->energy && "sum of losses is smaller than energy at last checkpoint");
 	return cp->energy - ls->energy - conti_rate*(length-cp->length);
 }
 
