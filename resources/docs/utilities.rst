@@ -25,15 +25,18 @@ scattered data structures, it is also extremely tedious. MuonGun includes
 a utility class, :py:class:`Track`, to automate this task.
 
 .. py:class:: Track
+   :noindex:
 
    A subclass of I3Particle that includes the particle's energy losses
 
    .. classmethod:: harvest(frame)
+      :noindex:
 
       Assemble a collection of :py:class:`Track` from the
       :cpp:class:`MMCTrackList` and :cpp:class:`I3MCTree` in *frame*
 
    .. method:: get_energy(displacement)
+      :noindex:
 
       Get the energy of the muon *displacement* meters from its starting position
 
@@ -60,6 +63,7 @@ positions, times, and energies correspond to their intersections with a given
 surface.
 
 .. py:function:: muons_at_surface(frame, surface)
+   :noindex:
  
    :param frame: an I3Frame
    :param surface: a :py:class:`Surface`
