@@ -2,7 +2,7 @@
 #include <stdexcept>
 #include <MuonGun/SplineTable.h>
 #include <icetray/I3Logging.h>
-#include <boost/serialization/binary_object.hpp>
+#include <serialization/binary_object.hpp>
 
 extern "C" {
 	#include <photospline/bspline.h>
@@ -95,7 +95,7 @@ SplineTable::save(Archive &ar, unsigned version) const
 	writesplinefitstable_mem(&buf, &table_);
 	ar & make_nvp("I3FrameObject", base_object<I3FrameObject>(*this));
 	ar & make_nvp("NBytes", buf.size);
-	ar & make_nvp("FITSFile", boost::serialization::make_binary_object(buf.data, buf.size));
+	ar & make_nvp("FITSFile", icecube::serialization::make_binary_object(buf.data, buf.size));
 	free(buf.data);
 }
 
@@ -112,7 +112,7 @@ SplineTable::load(Archive &ar, unsigned version)
 	ar & make_nvp("I3FrameObject", base_object<I3FrameObject>(*this));
 	ar & make_nvp("NBytes", buf.size);
 	buf.data = buf.mem_alloc(buf.size);
-	ar & make_nvp("FITSFile", boost::serialization::make_binary_object(buf.data, buf.size));
+	ar & make_nvp("FITSFile", icecube::serialization::make_binary_object(buf.data, buf.size));
 	readsplinefitstable_mem(&buf, &table_);
 	free(buf.data);
 }

@@ -87,7 +87,7 @@ protected:
 	double GetZenithNorm() const;
 
 private:
-	friend class boost::serialization::access;
+	friend class icecube::serialization::access;
 	template <typename Archive>
 	void serialize(Archive &, unsigned);
 
@@ -104,7 +104,7 @@ protected:
 
 }
 
-BOOST_CLASS_VERSION(I3MuonGun::StaticSurfaceInjector, 1);
+I3_CLASS_VERSION(I3MuonGun::StaticSurfaceInjector, 1);
 
 #endif
 

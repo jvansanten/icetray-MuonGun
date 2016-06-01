@@ -21,7 +21,7 @@ public:
 	
 private:
 	Floodlight() {};
-	friend class boost::serialization::access;
+	friend class icecube::serialization::access;
 	template <typename Archive>
 	void serialize(Archive &, unsigned);
 	
@@ -34,6 +34,6 @@ private:
 
 }
 
-BOOST_CLASS_VERSION(I3MuonGun::Floodlight, 1);
+I3_CLASS_VERSION(I3MuonGun::Floodlight, 1);
 
 #endif // MUONGUN_FLOODLIGHT_H_INCLUDED

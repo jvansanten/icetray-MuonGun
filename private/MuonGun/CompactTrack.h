@@ -36,7 +36,7 @@ private:
 	double radius_, energy_, time_;
 	I3Particle::ParticleType type_;
 	
-	friend class boost::serialization::access;
+	friend class icecube::serialization::access;
 	template <typename Archive>
 	void serialize(Archive&, unsigned);
 };
@@ -46,7 +46,7 @@ private:
  */
 struct TrackBundle : public I3FrameObject, std::map<double, std::vector<CompactTrack> > {
 	virtual ~TrackBundle();
-	friend class boost::serialization::access;
+	friend class icecube::serialization::access;
 	template <typename Archive>
 	void serialize(Archive&, unsigned);
 };

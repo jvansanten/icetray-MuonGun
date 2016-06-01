@@ -59,16 +59,16 @@ private:
 	struct splinetable table_;
 	double bias_;
 	
-	friend class boost::serialization::access;
+	friend class icecube::serialization::access;
 	template <typename Archive>
 	void save(Archive &, unsigned) const;
 	template <typename Archive>
 	void load(Archive &, unsigned);
-	BOOST_SERIALIZATION_SPLIT_MEMBER();
+	I3_SERIALIZATION_SPLIT_MEMBER();
 };
 
 }
 
-BOOST_CLASS_VERSION(I3MuonGun::SplineTable, 0);
+I3_CLASS_VERSION(I3MuonGun::SplineTable, 0);
 
 #endif

@@ -71,7 +71,7 @@ protected:
 	UprightSurface() {};
 
 private:
-	friend class boost::serialization::access;
+	friend class icecube::serialization::access;
 	template <typename Archive>
 	void serialize(Archive &ar, unsigned version)
 	{

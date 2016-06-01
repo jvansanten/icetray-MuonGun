@@ -27,7 +27,7 @@ SET (LIB_${PROJECT_NAME}_SOURCEFILES
     private/MuonGun/CORSIKAGenerationProbability.cxx
 )
 SET (LIB_${PROJECT_NAME}_PROJECTS
-    icetray dataclasses phys-services simclasses photospline tableio
+    serialization icetray dataclasses phys-services simclasses photospline tableio
 )
 SET (LIB_${PROJECT_NAME}_TOOLS
     boost python numpy gsl

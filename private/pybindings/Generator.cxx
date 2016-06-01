@@ -10,7 +10,7 @@
 #include <MuonGun/SamplingSurface.h>
 #include <dataclasses/physics/I3Particle.h>
 #include <icetray/python/dataclass_suite.hpp>
-#include <boost/serialization/list.hpp>
+#include <serialization/list.hpp>
 
 static I3MuonGun::SamplingSurfacePtr
 GetInjectionSurface(const I3MuonGun::GenerationProbability &self)

@@ -40,7 +40,7 @@ public:
 
 	virtual bool operator==(const SamplingSurface&) const = 0;
 private:
-	friend class boost::serialization::access;
+	friend class icecube::serialization::access;
 	template <typename Archive>
 	void serialize(Archive &, unsigned);
 };
@@ -49,6 +49,6 @@ I3_POINTER_TYPEDEFS(SamplingSurface);
 
 }
 
-BOOST_CLASS_VERSION(I3MuonGun::SamplingSurface, 0);
+I3_CLASS_VERSION(I3MuonGun::SamplingSurface, 0);
 
 #endif // I3MUONGUN_SAMPLINGSURFACE_H_INCLUDED

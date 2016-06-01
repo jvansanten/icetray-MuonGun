@@ -37,7 +37,7 @@ protected:
 
 private:
 	ExtrudedPolygon() {}
-	friend class boost::serialization::access;
+	friend class icecube::serialization::access;
 	template <typename Archive>
 	void serialize(Archive &, unsigned);
 };
@@ -46,6 +46,6 @@ I3_POINTER_TYPEDEFS(ExtrudedPolygon);
 
 }
 
-BOOST_CLASS_VERSION(I3MuonGun::ExtrudedPolygon, 0);
+I3_CLASS_VERSION(I3MuonGun::ExtrudedPolygon, 0);
 
 #endif // I3MUONGUN_EXTRUDEDPOLYGON_H_INCLUDED

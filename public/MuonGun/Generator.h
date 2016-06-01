@@ -114,7 +114,7 @@ protected:
 	virtual double GetLogGenerationProbability(const I3Particle &axis, const BundleConfiguration &bundle) const = 0;
 
 private:
-	friend class boost::serialization::access;
+	friend class icecube::serialization::access;
 	template <typename Archive>
 	void serialize(Archive&, unsigned);
 	
@@ -144,7 +144,7 @@ protected:
 	virtual double GetLogGenerationProbability(const I3Particle &axis, const BundleConfiguration &bundle) const;
 private:
 	GenerationProbabilityCollection() {}
-	friend class boost::serialization::access;
+	friend class icecube::serialization::access;
 	template <typename Archive>
 	void serialize(Archive&, unsigned);
 };
@@ -195,7 +195,7 @@ public:
 	    const I3Surfaces::Surface &surface, const I3Particle &axis);
 
 private:
-	friend class boost::serialization::access;
+	friend class icecube::serialization::access;
 	template <typename Archive>
 	void serialize(Archive&, unsigned);
 };
@@ -204,8 +204,8 @@ I3_POINTER_TYPEDEFS(Generator);
 
 }
 
-BOOST_CLASS_VERSION(I3MuonGun::Generator, 0);
-BOOST_CLASS_VERSION(I3MuonGun::GenerationProbability, 0);
-BOOST_CLASS_VERSION(I3MuonGun::GenerationProbabilityCollection, 0);
+I3_CLASS_VERSION(I3MuonGun::Generator, 0);
+I3_CLASS_VERSION(I3MuonGun::GenerationProbability, 0);
+I3_CLASS_VERSION(I3MuonGun::GenerationProbabilityCollection, 0);
 
 #endif // I3MUONGUN_GENERATOR_H_INCLUDED

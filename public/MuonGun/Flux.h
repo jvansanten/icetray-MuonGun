@@ -37,7 +37,7 @@ public:
 	
 	virtual bool operator==(const Flux&) const;
 private:
-	friend class boost::serialization::access;
+	friend class icecube::serialization::access;
 	template <typename Archive>
 	void serialize(Archive &, unsigned);
 	
@@ -72,7 +72,7 @@ public:
 private:
 	SplineFlux() {}
 	
-	friend class boost::serialization::access;
+	friend class icecube::serialization::access;
 	template <typename Archive>
 	void serialize(Archive &, unsigned);
 	

@@ -31,7 +31,7 @@ public:
 	/** @brief Compare for equality */
 	virtual bool operator==(const SurfaceScalingFunction&) const = 0;
 private:
-	friend class boost::serialization::access;
+	friend class icecube::serialization::access;
 	template <typename Archive>
 	void serialize(Archive &, unsigned);
 };
@@ -47,7 +47,7 @@ public:
 	virtual bool operator==(const SurfaceScalingFunction&) const;
 private:
 	ConstantSurfaceScalingFunction();
-	friend class boost::serialization::access;
+	friend class icecube::serialization::access;
 	template <typename Archive>
 	void serialize(Archive &, unsigned);
 	
@@ -73,7 +73,7 @@ public:
 	void SetCenterMax(double x, double y);
 	
 private:
-	friend class boost::serialization::access;
+	friend class icecube::serialization::access;
 	template <typename Archive>
 	void serialize(Archive &, unsigned);
 	
@@ -129,7 +129,7 @@ public:
 	double GetTotalRate(SamplingSurfaceConstPtr surface) const;
 private:
 	
-	friend class boost::serialization::access;
+	friend class icecube::serialization::access;
 	template <typename Archive>
 	void serialize(Archive &, unsigned);
 	
@@ -138,9 +138,9 @@ private:
 
 }
 
-BOOST_CLASS_VERSION(I3MuonGun::SurfaceScalingFunction, 0);
-BOOST_CLASS_VERSION(I3MuonGun::ConstantSurfaceScalingFunction, 0);
-BOOST_CLASS_VERSION(I3MuonGun::BasicSurfaceScalingFunction, 0);
-BOOST_CLASS_VERSION(I3MuonGun::EnergyDependentSurfaceInjector, 0);
+I3_CLASS_VERSION(I3MuonGun::SurfaceScalingFunction, 0);
+I3_CLASS_VERSION(I3MuonGun::ConstantSurfaceScalingFunction, 0);
+I3_CLASS_VERSION(I3MuonGun::BasicSurfaceScalingFunction, 0);
+I3_CLASS_VERSION(I3MuonGun::EnergyDependentSurfaceInjector, 0);
 
 #endif

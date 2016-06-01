@@ -47,7 +47,7 @@ public:
 	
 	virtual bool operator==(const EnergyDistribution&) const = 0;
 private:
-	friend class boost::serialization::access;
+	friend class icecube::serialization::access;
 	template <typename Archive>
 	void serialize(Archive &, unsigned);
 	
@@ -74,7 +74,7 @@ public:
 private:
 	SplineEnergyDistribution() {}
 	
-	friend class boost::serialization::access;
+	friend class icecube::serialization::access;
 	template <typename Archive>
 	void serialize(Archive &, unsigned);
 
@@ -135,7 +135,7 @@ public:
 	
 	bool operator==(const OffsetPowerLaw &other) const;
 private:
-	friend class boost::serialization::access;
+	friend class icecube::serialization::access;
 	template <typename Archive>
 	void serialize(Archive &, unsigned);
 	
@@ -146,8 +146,8 @@ private:
 
 }
 
-BOOST_CLASS_VERSION(I3MuonGun::EnergyDistribution, 0);
-BOOST_CLASS_VERSION(I3MuonGun::SplineEnergyDistribution, 0);
-BOOST_CLASS_VERSION(I3MuonGun::OffsetPowerLaw, 0);
+I3_CLASS_VERSION(I3MuonGun::EnergyDistribution, 0);
+I3_CLASS_VERSION(I3MuonGun::SplineEnergyDistribution, 0);
+I3_CLASS_VERSION(I3MuonGun::OffsetPowerLaw, 0);
 
 #endif
