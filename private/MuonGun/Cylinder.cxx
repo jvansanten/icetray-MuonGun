@@ -50,7 +50,7 @@ Cylinder::serialize(Archive &ar, unsigned version)
 	if (version == 0) {
 		// Class hierarchy changed from v0 to v1, so we have to
 		// deserialize by hand
-		double radius, length;
+		double radius(0), length(0);
 		I3Position center;
 		ar & make_nvp("SamplingSurface", base_object<I3Surfaces::SamplingSurface>(*this));
 		ar & make_nvp("Length", length);
