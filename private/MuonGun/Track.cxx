@@ -148,7 +148,7 @@ Track::Harvest(const I3MCTree &mctree, const I3MMCTrackList &mmctracks)
         p = mctree.find(mmctrack.GetI3Particle());
         // The above search will fail if particle IDs were not originally
         // unique. Fall back to linear search.
-        if (!equivalent(*p, mmctrack.GetI3Particle())) {
+        if (p == mctree.end() || !equivalent(*p, mmctrack.GetI3Particle())) {
             for (p = mctree.begin(); p != mctree.end(); p++) {
                 if (equivalent(*p, mmctrack.GetI3Particle()))
                     break;
