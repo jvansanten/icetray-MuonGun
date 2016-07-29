@@ -45,7 +45,7 @@ weight appropriate for the combined set of files::
     model = MuonGun.load_model('GaisserH4a_atmod12_SIBYLL')
     generator = harvest_generators(infiles)
     tray.AddModule('I3MuonGun::WeightCalculatorModule', 'MuonWeight', Model=model,
-        Surface=generator.surface, Generator=generator)
+        Generator=generator)
 
 This will put an I3Double called "MuonWeight" into the frame that represents a
 weight in events per second. Alternatively, you can use the provided
