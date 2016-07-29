@@ -36,6 +36,16 @@ def from_file(cls, fname, padding=0):
     f.close()
     return cls.from_I3Geometry(fr['I3Geometry'], padding)
 
+def all_models():
+	"""
+	Get a list of models that are valid arguments to load_model()
+	"""
+	from os.path import expandvars, basename, splitext
+	from glob import glob
+	basedir=expandvars('$I3_BUILD/MuonGun/resources/tables/')
+	suffix = '.single_flux.fits'
+	return [p[:-len(suffix)] for p in map(basename, glob(basedir+'*'+suffix))]
+	
 def load_model(base):
 	from os.path import exists, expandvars, join
 	if not exists(base+'.single_flux.fits'):

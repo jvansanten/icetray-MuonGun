@@ -7,6 +7,7 @@
  */
 
 #include <MuonGun/EnergyDistribution.h>
+#include <MuonGun/RadialDistribution.h>
 #include <phys-services/I3RandomService.h>
 
 namespace I3MuonGun {
@@ -68,10 +69,78 @@ double
 SplineEnergyDistribution::Generate(I3RandomService &rng __attribute__((unused)), double depth __attribute__((unused)), double cos_theta __attribute__((unused)), 
     unsigned multiplicity __attribute__((unused)), double radius __attribute__((unused))) const
 {
-	log_fatal("Sampling is not yet implemented");
+	// sample via metropolis-hastings
+	
+	// proposal distribution
+	OffsetPowerLaw proposal(5, 1e3, GetMin(), GetMax());
+	// 80% of samples are accepted; 5x thinning should be enough to remove
+	// correlations between samples
+	int burnin = 50;
+	
+	double lastval = proposal.Generate(rng);
+	double lastproppdf = proposal(lastval);
+	double lastlogpdf = GetLog(depth, cos_theta, multiplicity, radius, lastval);
+	for (int i = 0; i < burnin; i++) {
+		double val = proposal.Generate(rng);
+
+		double logpdf = GetLog(depth, cos_theta, multiplicity, radius, val);
+		double proppdf = proposal(val);
+		double odds = exp(logpdf - lastlogpdf);
+		odds *= lastproppdf/proppdf;
+
+		if (odds > 1. || rng.Uniform() < odds) {
+			/* Accept this value */
+			lastval = val;
+			lastlogpdf = logpdf;
+			lastproppdf = proppdf;
+		}
+	}
+	
+	return lastval;
 }
 
-BMSSEnergyDistribution::BMSSEnergyDistribution() : 
+std::pair<double,double>
+SplineEnergyDistribution::Generate(I3RandomService &rng, double depth,
+    double cos_theta, unsigned multiplicity) const
+{
+	BMSSEnergyDistribution edist;
+	edist.SetMin(GetMin());
+	edist.SetMax(GetMax());
+	// sample via metropolis-hastings
+	// 80% of samples are accepted; 5x thinning should be enough to remove
+	// correlations between samples
+	int burnin = 5;
+	
+	BMSSRadialDistribution fake_rdist;
+	std::pair<double, double> lastval = edist.Generate(rng, depth, cos_theta, multiplicity);
+	double lastproppdf = edist(depth, cos_theta, multiplicity, lastval.first, lastval.second);
+	double lastlogpdf = GetLog(depth, cos_theta, multiplicity, lastval.first, lastval.second);
+	int accepted = 0;
+	for (int i = 0; i < burnin; i++) {
+		std::pair<double, double> val = edist.Generate(rng, depth, cos_theta, multiplicity);
+
+		double logpdf = GetLog(depth, cos_theta, multiplicity, val.first, val.second);
+		double proppdf = edist(depth, cos_theta, multiplicity, val.first, val.second);
+		assert(proppdf > 0);
+		double odds = exp(logpdf - lastlogpdf);
+		assert(isfinite(odds));
+		odds *= lastproppdf/proppdf;
+		assert(isfinite(odds));
+
+		if (odds > 1. || rng.Uniform() < odds) {
+			/* Accept this value */
+			lastval = val;
+			lastlogpdf = logpdf;
+			lastproppdf = proppdf;
+			accepted++;
+		}
+	}
+	// log_warn("accepted %d/%d (%.1f%%)", accepted, burnin, 100*accepted/double(burnin));
+	
+	return lastval;
+}
+
+BMSSEnergyDistribution::BMSSEnergyDistribution() :
     beta_(0.42), g0_(-0.232), g1_(3.961), e0a_(0.0304), e0b_(0.359), e1a_(-0.0077), e1b_(0.659),
     a0_(0.0033), a1_(0.0079), b0a_(0.0407), b0b_(0.0283), b1a_(-0.312), b1b_(6.124),
     q0_(0.0543), q1_(-0.365), c0a_(-0.069), c0b_(0.488), c1_(-0.117),
@@ -84,9 +153,8 @@ BMSSEnergyDistribution::operator==(const EnergyDistribution &o) const
 	return dynamic_cast<const BMSSEnergyDistribution*>(&o);
 }
 
-double
-BMSSEnergyDistribution::GetLog(double depth, double cos_theta, 
-    unsigned m, double r, double energy) const
+OffsetPowerLaw
+BMSSEnergyDistribution::GetSpectrum(double depth, double cos_theta, unsigned m, double r) const
 {
 	// Convert to water-equivalent depth
 	double h = (200*I3Units::m/I3Units::km)*0.832 + (depth-(200*I3Units::m/I3Units::km))*0.917;
@@ -94,7 +162,7 @@ BMSSEnergyDistribution::GetLog(double depth, double cos_theta,
 	double g, eps;
 	if (m == 1) {
 		g = g0_*log(h) + g1_;
-		eps = e0a_*exp(e0b_*h)/cos_theta + e1a_*h + e1b_;
+		eps = (e0a_*exp(e0b_*h)/cos_theta + e1a_*h + e1b_)*I3Units::TeV;
 	} else {
 		m = std::min(m, 4u);
 		double a = a0_*h + a1_;
@@ -103,18 +171,39 @@ BMSSEnergyDistribution::GetLog(double depth, double cos_theta,
 		g = a*r + b*(1 - 0.5*exp(q*r));
 		double c = (c0a_*h + c0b_)*exp(c1_*r);
 		double d = (d0a_*h + d0b_)*pow(r, d1a_*h + d1b_);
-		eps = c*acos(cos_theta) + d;
+		eps = (c*acos(cos_theta) + d)*I3Units::TeV;
 	}
-	double norm = (g-1)*pow(eps, g-1)*exp((g-1)*bX)*pow(1-exp(-bX), g-1);
-	return std::log(norm*exp((1-g)*bX)*pow(energy + eps*(1-exp(-bX)), -g));
+	
+	return OffsetPowerLaw(g, eps*(1-exp(-bX)), GetMin(), GetMax());
 }
 
 double
-BMSSEnergyDistribution::Generate(I3RandomService &rng __attribute__((unused)), double depth __attribute__((unused)), double cos_theta __attribute__((unused)), 
-    unsigned multiplicity __attribute__((unused)), double radius __attribute__((unused))) const
+BMSSEnergyDistribution::GetLog(double depth, double cos_theta, 
+    unsigned multiplicity, double radius, double energy) const
 {
-	log_fatal("Sampling is not yet implemented");
+	
+	return BMSSRadialDistribution().GetLog(depth, cos_theta, multiplicity, radius) +
+	    GetSpectrum(depth, cos_theta, multiplicity, radius).GetLog(energy);
 }
+
+double
+BMSSEnergyDistribution::Generate(I3RandomService &rng, double depth, double cos_theta, 
+    unsigned multiplicity, double radius) const
+{
+	return GetSpectrum(depth, cos_theta, multiplicity, radius).Generate(rng);
+}
+
+std::pair<double,double>
+BMSSEnergyDistribution::Generate(I3RandomService &rng, double depth,
+    double cos_theta, unsigned multiplicity) const
+{
+	std::pair<double, double> val;
+	val.first = BMSSRadialDistribution().Generate(rng, depth, cos_theta, multiplicity);
+	val.second = Generate(rng, depth, cos_theta, multiplicity, val.first);
+	
+	return val;
+}
+
 
 OffsetPowerLaw::OffsetPowerLaw() : gamma_(NAN), offset_(NAN), emin_(NAN), emax_(NAN)
 {}

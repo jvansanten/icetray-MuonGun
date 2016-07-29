@@ -18,6 +18,9 @@ class I3RandomService;
 
 namespace I3MuonGun {
 
+class RadialDistribution;
+class OffsetPowerLaw;
+
 /**
  * @brief Normalized distribution of energies within a bundle
  *
@@ -37,8 +40,13 @@ public:
 	    unsigned multiplicity, double radius, double energy) const;
 	virtual double GetLog(double depth, double cos_theta,
 	    unsigned multiplicity, double radius, double energy) const = 0;
+	/// Sample an energy at the given radius
 	virtual double Generate(I3RandomService &rng, double depth, double cos_theta,
 	    unsigned multiplicity, double radius) const = 0;
+	/// Sample a radius and energy, using the provided radial distribution
+	/// as a proposal distribution
+	virtual std::pair<double,double> Generate(I3RandomService &rng, double depth,
+	    double cos_theta, unsigned multiplicity) const = 0;
 	
 	double GetMax() const { return max_; }
 	double GetMin() const { return min_; }
@@ -69,7 +77,8 @@ public:
 	    unsigned multiplicity, double radius, double energy) const;
 	double Generate(I3RandomService &rng, double depth, double cos_theta,
 	    unsigned multiplicity, double radius) const;
-	    
+	std::pair<double,double> Generate(I3RandomService &rng, double depth,
+	    double cos_theta, unsigned multiplicity) const;
 	virtual bool operator==(const EnergyDistribution&) const;
 private:
 	SplineEnergyDistribution() {}
@@ -90,8 +99,12 @@ public:
 	    unsigned multiplicity, double radius, double energy) const;
 	double Generate(I3RandomService &rng, double depth, double cos_theta,
 	    unsigned multiplicity, double radius) const;
+	std::pair<double,double> Generate(I3RandomService &rng, double depth,
+	    double cos_theta, unsigned multiplicity) const;
 	
 	virtual bool operator==(const EnergyDistribution&) const;
+	
+	OffsetPowerLaw GetSpectrum(double depth, double cos_theta, unsigned m, double r) const;
 private:
 	// Single-muon energy distribution
 	double beta_, g0_, g1_, e0a_, e0b_, e1a_, e1b_;
