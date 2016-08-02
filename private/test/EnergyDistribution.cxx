@@ -33,6 +33,7 @@ TEST(Equality)
 TEST(Sampling)
 {
 	using namespace I3MuonGun;
+	typedef std::pair<double, double> pair;
 	
 	double depth = 2.5;
 	double ct = 0.01;
@@ -45,8 +46,8 @@ TEST(Sampling)
 	
 	{
 		BMSSEnergyDistribution edist;
-		for (int i=0; i < 1000; i++) {
-			std::pair<double, double> val = edist.Generate(rng, depth, ct, m);
+		std::vector<pair> vals = edist.Generate(rng, depth, ct, m, 1000u);
+		BOOST_FOREACH(const pair &val, vals) {
 			ENSURE(BMSSRadialDistribution()(depth, ct, m, val.first) > 0);
 			double pdf = edist(depth, ct, m, val.first, val.second);
 			ENSURE(pdf > 0);
@@ -54,8 +55,7 @@ TEST(Sampling)
 		
 	}
 	
-	
-	for (int i=0; i < 10; i++) {
-		model.energy->Generate(rng, depth, ct, m);
+	{
+		std::vector<pair> vals = model.energy->Generate(rng, depth, ct, m, 1000);
 	}
 }

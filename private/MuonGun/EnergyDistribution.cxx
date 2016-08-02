@@ -9,6 +9,9 @@
 #include <MuonGun/EnergyDistribution.h>
 #include <MuonGun/RadialDistribution.h>
 #include <phys-services/I3RandomService.h>
+#include <MuonGun/EnsembleSampler.h>
+
+#include <boost/bind.hpp>
 
 namespace I3MuonGun {
 
@@ -19,6 +22,37 @@ EnergyDistribution::operator()(double d, double ct,
     unsigned m, double r, double e) const
 {
 	return std::exp(GetLog(d, ct, m, r, e));
+}
+
+double
+EnergyDistribution::GetdP_dEdr2(double d, double ct, 
+    unsigned m, double r2, double e) const
+{
+	double r = std::sqrt(r2);
+	return std::exp(GetLog(d, ct, m, r, e) - (m > 1 ? std::log(2*r) : 0));
+}
+
+double
+EnergyDistribution::Integrate(double d, double ct, 
+    unsigned m, double r_min, double r_max, double e_min, double e_max) const
+{
+	e_min = std::max(GetMin(), e_min);
+	e_max = std::min(GetMax(), e_max);
+	r_min = std::max(0., r_min);
+	r_max = std::min(GetMaxRadius(), r_max);
+	if (m > 1) {
+		boost::function<double (double, double)> dP_dEdr2 =
+		    boost::bind(&EnergyDistribution::GetdP_dEdr2, this,
+		    d, ct, m, _1, _2);
+		boost::array<double, 2> lo = {{r_min*r_min, e_min}};
+		boost::array<double, 2> hi = {{r_max*r_max, e_max}};
+		return I3MuonGun::Integrate(dP_dEdr2, lo, hi, 1e-12, 1e-6, 10000);
+	} else {
+		boost::function<double (double)> dP_dE =
+		    boost::bind(&EnergyDistribution::operator(), this,
+		    d, ct, m, 0, _1);
+		return I3MuonGun::Integrate(dP_dE, e_min, e_max);
+	}
 }
 
 bool
@@ -43,6 +77,12 @@ SplineEnergyDistribution::SplineEnergyDistribution(const std::string &singles, c
 }
 
 double
+SplineEnergyDistribution::GetMaxRadius() const
+{
+	return bundles_.GetExtents(3).second;
+}
+
+double
 SplineEnergyDistribution::GetLog(double depth, double cos_theta, 
     unsigned multiplicity, double radius, double energy) const
 {
@@ -51,7 +91,10 @@ SplineEnergyDistribution::GetLog(double depth, double cos_theta,
 	    std::max(minLogEnergy_, std::log(energy))};
 	double logprob;
 	
-	if (multiplicity < 2) {
+	if (radius < 0 || radius > GetMaxRadius() ||
+	    energy < GetMin() || energy > GetMax()) {
+		return -std::numeric_limits<double>::infinity();
+	} else if (multiplicity < 2) {
 		coords[2] = coords[4];
 		if (singles_.Eval(coords, &logprob) != 0)
 			return -std::numeric_limits<double>::infinity();
@@ -65,79 +108,58 @@ SplineEnergyDistribution::GetLog(double depth, double cos_theta,
 	return logprob;
 }
 
-double
-SplineEnergyDistribution::Generate(I3RandomService &rng __attribute__((unused)), double depth __attribute__((unused)), double cos_theta __attribute__((unused)), 
-    unsigned multiplicity __attribute__((unused)), double radius __attribute__((unused))) const
-{
-	// sample via metropolis-hastings
-	
-	// proposal distribution
-	OffsetPowerLaw proposal(5, 1e3, GetMin(), GetMax());
-	// 80% of samples are accepted; 5x thinning should be enough to remove
-	// correlations between samples
-	int burnin = 50;
-	
-	double lastval = proposal.Generate(rng);
-	double lastproppdf = proposal(lastval);
-	double lastlogpdf = GetLog(depth, cos_theta, multiplicity, radius, lastval);
-	for (int i = 0; i < burnin; i++) {
-		double val = proposal.Generate(rng);
-
-		double logpdf = GetLog(depth, cos_theta, multiplicity, radius, val);
-		double proppdf = proposal(val);
-		double odds = exp(logpdf - lastlogpdf);
-		odds *= lastproppdf/proppdf;
-
-		if (odds > 1. || rng.Uniform() < odds) {
-			/* Accept this value */
-			lastval = val;
-			lastlogpdf = logpdf;
-			lastproppdf = proppdf;
-		}
-	}
-	
-	return lastval;
-}
-
-std::pair<double,double>
+std::vector<std::pair<double,double> >
 SplineEnergyDistribution::Generate(I3RandomService &rng, double depth,
-    double cos_theta, unsigned multiplicity) const
+    double cos_theta, unsigned multiplicity, unsigned nsamples) const
 {
-	BMSSEnergyDistribution edist;
-	edist.SetMin(GetMin());
-	edist.SetMax(GetMax());
-	// sample via metropolis-hastings
-	// 80% of samples are accepted; 5x thinning should be enough to remove
-	// correlations between samples
-	int burnin = 5;
+	typedef double (Signature)(double, double);
+	typedef EnsembleSampler<Signature> Sampler;
 	
-	BMSSRadialDistribution fake_rdist;
-	std::pair<double, double> lastval = edist.Generate(rng, depth, cos_theta, multiplicity);
-	double lastproppdf = edist(depth, cos_theta, multiplicity, lastval.first, lastval.second);
-	double lastlogpdf = GetLog(depth, cos_theta, multiplicity, lastval.first, lastval.second);
-	int accepted = 0;
-	for (int i = 0; i < burnin; i++) {
-		std::pair<double, double> val = edist.Generate(rng, depth, cos_theta, multiplicity);
-
-		double logpdf = GetLog(depth, cos_theta, multiplicity, val.first, val.second);
-		double proppdf = edist(depth, cos_theta, multiplicity, val.first, val.second);
-		assert(proppdf > 0);
-		double odds = exp(logpdf - lastlogpdf);
-		assert(isfinite(odds));
-		odds *= lastproppdf/proppdf;
-		assert(isfinite(odds));
-
-		if (odds > 1. || rng.Uniform() < odds) {
-			/* Accept this value */
-			lastval = val;
-			lastlogpdf = logpdf;
-			lastproppdf = proppdf;
-			accepted++;
+	// the number of walkers must be even, and at least twice the
+	// dimensionality of the space
+	const unsigned walkers = std::max(4u, nsamples + (nsamples % 2));
+	std::vector<Sampler::array_type> initial_ensemble(walkers);
+	{
+		// Draw starting positions from the MUPAGE parameterization
+		BMSSEnergyDistribution proposal;
+		proposal.SetMin(GetMin());
+		proposal.SetMax(GetMax());
+		std::vector<std::pair<double, double> > samples =
+		    proposal.Generate(rng, depth, cos_theta, multiplicity, walkers);
+		for (unsigned i=0; i < walkers; i++) {
+			initial_ensemble[i][0] = samples.at(i).first;
+			initial_ensemble[i][1] = samples.at(i).second;
 		}
 	}
-	// log_warn("accepted %d/%d (%.1f%%)", accepted, burnin, 100*accepted/double(burnin));
 	
-	return lastval;
+	boost::function<Signature> log_posterior =
+	    boost::bind(&SplineEnergyDistribution::GetLog, this,
+	    depth, cos_theta, multiplicity, _1, _2);
+	Sampler sampler(log_posterior, initial_ensemble);
+	
+	// run the sampler for a few cycles to make it independent of the initial
+	// ensemble
+	for (unsigned i=0; i < 64; i++)
+		sampler.Sample(rng);
+	
+	// copy the current ensemble into the output
+	std::vector<std::pair<double,double> > samples;
+	samples.reserve(nsamples);
+	const std::vector<Sampler::sample> &ensemble = sampler.Sample(rng);
+	unsigned todo = std::min(walkers, nsamples - unsigned(samples.size()));
+	for (unsigned j=0; j < todo; j++) {
+		samples.push_back(std::make_pair(ensemble[j].point[0], ensemble[j].point[1]));
+	}
+	
+	// check the acceptance rate for sanity.
+	double acceptance_rate = sampler.GetAcceptanceRate();
+	if (acceptance_rate < 0.2) {
+		log_warn("Ensemble sampler accepted only %.0f%% of samples (too low). It may be stuck in a local maximum.", 100*acceptance_rate);
+	} else if (acceptance_rate > 0.9) {
+		log_warn("Ensemble sampler accepted %.0f%% of samples (too high). This is an expensive random walk.", 100*acceptance_rate);
+	}
+	
+	return samples;
 }
 
 BMSSEnergyDistribution::BMSSEnergyDistribution() :
@@ -187,21 +209,25 @@ BMSSEnergyDistribution::GetLog(double depth, double cos_theta,
 }
 
 double
-BMSSEnergyDistribution::Generate(I3RandomService &rng, double depth, double cos_theta, 
-    unsigned multiplicity, double radius) const
+BMSSEnergyDistribution::GetMaxRadius() const
 {
-	return GetSpectrum(depth, cos_theta, multiplicity, radius).Generate(rng);
+	return 250*I3Units::m;
 }
 
-std::pair<double,double>
+std::vector<std::pair<double,double> >
 BMSSEnergyDistribution::Generate(I3RandomService &rng, double depth,
-    double cos_theta, unsigned multiplicity) const
+    double cos_theta, unsigned multiplicity, unsigned samples) const
 {
+	std::vector<std::pair<double,double> > values;
+	values.reserve(samples);
 	std::pair<double, double> val;
-	val.first = BMSSRadialDistribution().Generate(rng, depth, cos_theta, multiplicity);
-	val.second = Generate(rng, depth, cos_theta, multiplicity, val.first);
+	for (unsigned i=0; i < samples; i++) {
+		val.first = BMSSRadialDistribution().Generate(rng, depth, cos_theta, multiplicity);
+		val.second = GetSpectrum(depth, cos_theta, multiplicity, val.first).Generate(rng);
+		values.push_back(val);
+	}
 	
-	return val;
+	return values;
 }
 
 
@@ -253,10 +279,16 @@ OffsetPowerLaw::GetLog(double energy) const
 double
 OffsetPowerLaw::Generate(I3RandomService &rng) const
 {
+	return InverseSurvivalFunction(rng.Uniform());
+}
+
+double
+OffsetPowerLaw::InverseSurvivalFunction(double p) const
+{
 	if (gamma_ == 1)
-		return std::exp(rng.Uniform()*(nmax_ - nmin_) + nmin_) - offset_;
+		return std::exp((1-p)*(nmax_ - nmin_) + nmin_) - offset_;
 	else
-		return std::pow(rng.Uniform()*(nmax_ - nmin_) + nmin_, 1./(1.-gamma_)) - offset_;
+		return std::pow((1-p)*(nmax_ - nmin_) + nmin_, 1./(1.-gamma_)) - offset_;
 }
 
 template <typename Archive>

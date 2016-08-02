@@ -38,26 +38,30 @@ public:
 	typedef double result_type;
 	double operator()(double depth, double cos_theta,
 	    unsigned multiplicity, double radius, double energy) const;
+	double Integrate(double depth, double cos_theta, unsigned multiplicity,
+	    double r_min, double r_max, double e_min, double e_max) const;
 	virtual double GetLog(double depth, double cos_theta,
 	    unsigned multiplicity, double radius, double energy) const = 0;
-	/// Sample an energy at the given radius
-	virtual double Generate(I3RandomService &rng, double depth, double cos_theta,
-	    unsigned multiplicity, double radius) const = 0;
-	/// Sample a radius and energy, using the provided radial distribution
-	/// as a proposal distribution
-	virtual std::pair<double,double> Generate(I3RandomService &rng, double depth,
-	    double cos_theta, unsigned multiplicity) const = 0;
+
+	/// Sample *samples* (radius, energy) pairs
+	virtual std::vector<std::pair<double,double> > Generate(I3RandomService &rng,
+	    double depth, double cos_theta, unsigned multiplicity, unsigned samples) const = 0;
 	
 	double GetMax() const { return max_; }
 	double GetMin() const { return min_; }
 	void SetMax(double v) { max_ = v; }
 	void SetMin(double v) { min_ = v; }
 	
+	virtual double GetMaxRadius() const = 0;
+	
 	virtual bool operator==(const EnergyDistribution&) const = 0;
 private:
 	friend class icecube::serialization::access;
 	template <typename Archive>
 	void serialize(Archive &, unsigned);
+	
+	double GetdP_dEdr2(double depth, double cos_theta,
+	    unsigned multiplicity, double radius, double energy) const;
 	
 	double min_, max_;
 };
@@ -75,10 +79,9 @@ public:
 	SplineEnergyDistribution(const std::string &singles, const std::string &bundles);
 	double GetLog(double depth, double cos_theta, 
 	    unsigned multiplicity, double radius, double energy) const;
-	double Generate(I3RandomService &rng, double depth, double cos_theta,
-	    unsigned multiplicity, double radius) const;
-	std::pair<double,double> Generate(I3RandomService &rng, double depth,
-	    double cos_theta, unsigned multiplicity) const;
+	std::vector<std::pair<double,double> > Generate(I3RandomService &rng,
+	    double depth, double cos_theta, unsigned multiplicity, unsigned samples) const;
+	virtual double GetMaxRadius() const;
 	virtual bool operator==(const EnergyDistribution&) const;
 private:
 	SplineEnergyDistribution() {}
@@ -97,10 +100,10 @@ public:
 	BMSSEnergyDistribution();
 	double GetLog(double depth, double cos_theta, 
 	    unsigned multiplicity, double radius, double energy) const;
-	double Generate(I3RandomService &rng, double depth, double cos_theta,
-	    unsigned multiplicity, double radius) const;
-	std::pair<double,double> Generate(I3RandomService &rng, double depth,
-	    double cos_theta, unsigned multiplicity) const;
+	std::vector<std::pair<double,double> > Generate(I3RandomService &rng,
+	    double depth, double cos_theta, unsigned multiplicity, unsigned samples) const;
+	
+	virtual double GetMaxRadius() const;
 	
 	virtual bool operator==(const EnergyDistribution&) const;
 	
@@ -142,6 +145,7 @@ public:
 	double GetLog(double energy) const;
 	/** Draw an energy from the distribution */
 	double Generate(I3RandomService &rng) const;
+	double InverseSurvivalFunction(double p) const;
 	
 	const double GetMin() const { return emin_; }
 	const double GetMax() const { return emax_; }
