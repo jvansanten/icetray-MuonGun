@@ -36,11 +36,14 @@ double
 EnergyDistribution::Integrate(double d, double ct, 
     unsigned m, double r_min, double r_max, double e_min, double e_max) const
 {
+	// restrict integration to range where density can be nonzero
 	e_min = std::max(GetMin(), e_min);
 	e_max = std::min(GetMax(), e_max);
 	r_min = std::max(0., r_min);
 	r_max = std::min(GetMaxRadius(), r_max);
 	if (m > 1) {
+		// Integrate dP/(dE dr^2) over r^2 rather than dP/(dE dr) over r
+		// for numerical stability
 		boost::function<double (double, double)> dP_dEdr2 =
 		    boost::bind(&EnergyDistribution::GetdP_dEdr2, this,
 		    d, ct, m, _1, _2);
@@ -48,6 +51,7 @@ EnergyDistribution::Integrate(double d, double ct,
 		boost::array<double, 2> hi = {{r_max*r_max, e_max}};
 		return I3MuonGun::Integrate(dP_dEdr2, lo, hi, 1e-12, 1e-6, 10000);
 	} else {
+		// For single muons, dP/dr is a delta function at 0
 		boost::function<double (double)> dP_dE =
 		    boost::bind(&EnergyDistribution::operator(), this,
 		    d, ct, m, 0, _1);
@@ -137,8 +141,10 @@ SplineEnergyDistribution::Generate(I3RandomService &rng, double depth,
 	    depth, cos_theta, multiplicity, _1, _2);
 	Sampler sampler(log_posterior, initial_ensemble);
 	
-	// run the sampler for a few cycles to make it independent of the initial
-	// ensemble
+	// Run the sampler for a few cycles to make it independent of the initial
+	// ensemble. Fewer than 50 or so burn-in steps is too small to reach the
+	// stationary distribution, while more than 100 is a waste of time, as
+	// measured with resources/test/test_sampling.py
 	for (unsigned i=0; i < 64; i++)
 		sampler.Sample(rng);
 	

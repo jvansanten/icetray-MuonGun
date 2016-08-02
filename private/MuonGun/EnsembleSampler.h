@@ -87,7 +87,6 @@ public:
 private:
 	boost::function<Signature> log_posterior_;
 	std::vector<sample> ensemble_;
-	std::vector<std::vector<sample> > chain_;
 	double stretch_scale_;
 	unsigned half_size_;
 	unsigned total_samples_;
@@ -98,6 +97,8 @@ private:
 		return value;
 	}
 	
+	// Step one point in the ensemble toward or away from a random point in the
+	// other half of the ensemble
 	void ProposeStretch(I3RandomService &rng, unsigned pos, unsigned offset) {
 		const sample &p0 = ensemble_.at(pos);
 		const sample &p1 = ensemble_.at(offset + rng.Integer(half_size_));
