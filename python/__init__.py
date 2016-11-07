@@ -24,7 +24,7 @@ def from_I3Geometry(cls, i3geo, padding=0):
     zmax = max(max(p[2] for p in positions) for positions in strings.values())
     zmin = min(min(p[2] for p in positions) for positions in strings.values())
     
-    positions = [icecube.dataclasses.I3Position(x,y,z) for x,y in mean_xy for z in zmin,zmax]
+    positions = [icecube.dataclasses.I3Position(x,y,z) for x,y in mean_xy for z in (zmin,zmax)]
     
     return cls(positions, padding)
     
