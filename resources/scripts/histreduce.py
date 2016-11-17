@@ -42,7 +42,7 @@ def histadd(sourceGroup, destGroup, blocksize=1):
 		dest = destGroup._v_children[arr]
 		chunksize = blocksize*reduce(operator.mul, dest.chunkshape)
 		size = reduce(operator.mul, dest.shape)
-		for i in xrange(0, size, chunksize):
+		for i in range(0, size, chunksize):
 			dest[i:i+chunksize] += source[i:i+chunksize]
 	for prop in 'nentries', 'nans', 'nans_wgt', 'nans_sqwgt':
 		destGroup._v_attrs[prop] += sourceGroup._v_attrs[prop]
