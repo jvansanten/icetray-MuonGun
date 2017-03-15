@@ -25,10 +25,11 @@ namespace I3MuonGun {
  * @brief A natural-rate Generator
  *
  * NaturalRateInjector samples bundle impact points, angles, multiplicities,
- * and radial distributions at their natural frequencies on a fixed surface
- * using a brain-dead acceptance/rejection technique. Energies, on the other hand,
- * are sampled from an OffsetPowerLaw, which both boosts efficiency and allows
- * a measure of control over the generated energy distribution.
+ * and radius/energy distributions at their natural frequencies on a fixed
+ * surface using a brain-dead acceptance/rejection technique. This is
+ * to MUPAGE, except that the flux parameterizations can be swapped out and the
+ * events can be combined with biased generation and reweighted to a different
+ * parameterization after the fact. 
  */
 class NaturalRateInjector : public Generator {
 public:

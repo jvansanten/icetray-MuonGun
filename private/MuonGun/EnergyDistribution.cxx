@@ -316,6 +316,16 @@ SplineEnergyDistribution::serialize(Archive &ar, unsigned version)
 
 template <typename Archive>
 void
+BMSSEnergyDistribution::serialize(Archive &ar, unsigned version)
+{
+	if (version > 0)
+		log_fatal_stream("Version "<<version<<" is from the future");
+	
+	ar & make_nvp("EnergyDistribution", base_object<EnergyDistribution>(*this));
+}
+
+template <typename Archive>
+void
 OffsetPowerLaw::serialize(Archive &ar, unsigned version)
 {
 	if (version > 0)
@@ -333,4 +343,5 @@ OffsetPowerLaw::serialize(Archive &ar, unsigned version)
 
 I3_SERIALIZABLE(I3MuonGun::EnergyDistribution);
 I3_SERIALIZABLE(I3MuonGun::SplineEnergyDistribution);
+I3_SERIALIZABLE(I3MuonGun::BMSSEnergyDistribution);
 I3_SERIALIZABLE(I3MuonGun::OffsetPowerLaw);

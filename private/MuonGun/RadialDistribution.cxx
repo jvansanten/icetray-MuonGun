@@ -163,8 +163,19 @@ SplineRadialDistribution::serialize(Archive &ar, unsigned version)
 	ar & make_nvp("SplineTable", spline_);
 }
 
+template <typename Archive>
+void
+BMSSRadialDistribution::serialize(Archive &ar, unsigned version)
+{
+	if (version > 0)
+		log_fatal_stream("Version "<<version<<" is from the future");
+	
+	ar & make_nvp("RadialDistribution", base_object<RadialDistribution>(*this));
+}
+
 }
 
 I3_SERIALIZABLE(I3MuonGun::RadialDistribution);
 I3_SERIALIZABLE(I3MuonGun::SplineRadialDistribution);
+I3_SERIALIZABLE(I3MuonGun::BMSSRadialDistribution);
 

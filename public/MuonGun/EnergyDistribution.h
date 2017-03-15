@@ -109,6 +109,10 @@ public:
 	
 	OffsetPowerLaw GetSpectrum(double depth, double cos_theta, unsigned m, double r) const;
 private:
+	friend class icecube::serialization::access;
+	template <typename Archive>
+	void serialize(Archive &, unsigned);
+	
 	// Single-muon energy distribution
 	double beta_, g0_, g1_, e0a_, e0b_, e1a_, e1b_;
 	// Bundle energy distribution
@@ -165,6 +169,7 @@ private:
 
 I3_CLASS_VERSION(I3MuonGun::EnergyDistribution, 0);
 I3_CLASS_VERSION(I3MuonGun::SplineEnergyDistribution, 0);
+I3_CLASS_VERSION(I3MuonGun::BMSSEnergyDistribution, 0);
 I3_CLASS_VERSION(I3MuonGun::OffsetPowerLaw, 0);
 
 #endif

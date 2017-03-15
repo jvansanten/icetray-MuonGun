@@ -79,6 +79,10 @@ public:
 	
 	virtual bool operator==(const RadialDistribution&) const;
 private:
+	friend class icecube::serialization::access;
+	template <typename Archive>
+	void serialize(Archive &, unsigned);
+	
 	double GetMeanRadius(double, double, unsigned) const;
 	double GetShapeParameter(double, double, unsigned) const;
 	double GetGenerationProbability(double, double, double) const;
