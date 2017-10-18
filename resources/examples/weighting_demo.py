@@ -56,7 +56,7 @@ def book_weights(infiles, outfile, model='Hoerandel5_atmod12_SIBYLL'):
 	
 	tray.AddModule('TrashCan', 'YesWeCan')
 	tray.Execute()
-	tray.Finish()
+	
 
 book_weights(infiles, outfile)
 

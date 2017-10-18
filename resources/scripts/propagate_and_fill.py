@@ -104,7 +104,7 @@ tray.AddModule(MultiFiller, 'filler',
 tray.AddModule('TrashCan', 'YesWeCan')	
 
 tray.Execute()
-tray.Finish()
+
 
 from subprocess import call
 call(['h5repack', '-f', 'GZIP=9', outfile, outfile+'.z'])

@@ -88,4 +88,4 @@ tray.AddModule(Harvest)
 
 
 tray.Execute()
-tray.Finish()
+

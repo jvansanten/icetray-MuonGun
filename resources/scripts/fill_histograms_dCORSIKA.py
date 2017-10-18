@@ -247,4 +247,4 @@ tray.AddModule(Filla, 'filla')
 
 tray.AddModule('TrashCan', 'YesWeCan')
 tray.Execute()
-tray.Finish()
+

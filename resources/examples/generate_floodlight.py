@@ -56,7 +56,7 @@ def main(output_file="./floodlight.i3.gz", num_events=100,
     tray.AddModule("TrashCan", "trash")
 
     tray.Execute()
-    tray.Finish()
+    
 
     return
 

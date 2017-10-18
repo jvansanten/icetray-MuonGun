@@ -58,4 +58,4 @@ tray.AddModule('I3Writer', 'writer',
 
 tray.AddModule('TrashCan', 'YesWeCan')
 tray.Execute()
-tray.Finish()
+
