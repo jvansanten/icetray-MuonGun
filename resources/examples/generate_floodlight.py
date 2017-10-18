@@ -53,7 +53,7 @@ def main(output_file="./floodlight.i3.gz", num_events=100,
                    filename=output_file,
                    Streams=[icecube.icetray.I3Frame.DAQ])
 
-    tray.AddModule("TrashCan", "trash")
+    
 
     tray.Execute()
     

@@ -101,7 +101,7 @@ tray.AddModule('Muonitron', 'propagator',
 tray.AddModule(MultiFiller, 'filler',
     Outfile=outfile, Fluxes=target_fluxes, GenerationSpectra=spectrum,
     MinDepth=opts.mindepth, MaxDepth=opts.maxdepth, DepthSteps=opts.steps)
-tray.AddModule('TrashCan', 'YesWeCan')	
+	
 
 tray.Execute()
 

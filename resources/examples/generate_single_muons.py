@@ -56,6 +56,6 @@ tray.AddModule('I3Writer', 'writer',
     Streams=list(map(icetray.I3Frame.Stream, "SQP")),
     filename=outfile)
 
-tray.AddModule('TrashCan', 'YesWeCan')
+
 tray.Execute()
 

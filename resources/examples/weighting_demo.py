@@ -54,7 +54,7 @@ def book_weights(infiles, outfile, model='Hoerandel5_atmod12_SIBYLL'):
 	    SubEventStreams=['nullsplit'],
 	)
 	
-	tray.AddModule('TrashCan', 'YesWeCan')
+	
 	tray.Execute()
 	
 

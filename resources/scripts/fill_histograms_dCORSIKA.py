@@ -245,6 +245,6 @@ class Filla(icetray.I3Module):
 		
 tray.AddModule(Filla, 'filla')
 
-tray.AddModule('TrashCan', 'YesWeCan')
+
 tray.Execute()
 

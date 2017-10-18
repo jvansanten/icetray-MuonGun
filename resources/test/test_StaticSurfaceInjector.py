@@ -27,6 +27,6 @@ def check_weight(frame):
     assert weight > 0
 tray.Add(check_weight, Streams=[icetray.I3Frame.DAQ])
 
-tray.AddModule('TrashCan', 'YesWeCan')
+
 tray.Execute()
 

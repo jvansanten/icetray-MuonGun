@@ -157,7 +157,7 @@ tray.AddModule('I3Writer', 'writer',
     # DropOrphanStreams=[icetray.I3Frame.DAQ],
     filename=outfile)
 
-tray.AddModule('TrashCan', 'YesWeCan')
+
 tray.Execute()
 
  
