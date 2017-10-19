@@ -202,6 +202,7 @@ typedef struct {
 static region make_region(const hypercube *h, unsigned fdim)
 {
      region R;
+     R.errmax = 0;
      R.h = make_hypercube(h->dim, h->data, h->data + h->dim);
      R.splitDim = 0;
      R.fdim = fdim;
