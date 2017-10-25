@@ -30,7 +30,7 @@ SET (LIB_${PROJECT_NAME}_PROJECTS
     serialization icetray dataclasses phys-services simclasses photospline tableio
 )
 SET (LIB_${PROJECT_NAME}_TOOLS
-    boost python numpy gsl
+    boost python gsl
 )
 
 SET (LIB_${PROJECT_NAME}_PYSOURCES 
@@ -47,7 +47,19 @@ SET (LIB_${PROJECT_NAME}_PYSOURCES
     private/pybindings/module.cxx
 )
 
-IF (IS_DIRECTORY ${CMAKE_SOURCE_DIR}/PROPOSAL)
+SET(BUILD_MUONITRON YES)
+IF (NOT IS_DIRECTORY ${CMAKE_SOURCE_DIR}/PROPOSAL)
+    COLORMSG (CYAN "+-- PROPOSAL not found, disabling Muonitron table-maker")
+    SET(BUILD_MUONITRON NO)
+ENDIF()
+IF (${NUMPY_FOUND})
+    LIST(APPEND LIB_${PROJECT_NAME}_TOOLS numpy)
+ELSE (${NUMPY_FOUND})
+    COLORMSG (CYAN "+-- Numpy not found, disabling Muonitron table-maker")
+    SET(BUILD_MUONITRON NO)
+ENDIF (${NUMPY_FOUND})
+
+IF (${BUILD_MUONITRON})
     COLORMSG (GREEN "+-- Muonitron table-maker")
     LIST (APPEND LIB_${PROJECT_NAME}_SOURCEFILES
         # Support bits for making muon-flux parametrizations
@@ -67,9 +79,7 @@ IF (IS_DIRECTORY ${CMAKE_SOURCE_DIR}/PROPOSAL)
         PROPOSAL
     )
     ADD_DEFINITIONS(-DUSE_PROPOSAL)
-ELSE (IS_DIRECTORY ${CMAKE_SOURCE_DIR}/PROPOSAL)
-    COLORMSG (CYAN "+-- PROPOSAL not found, disabling Muonitron table-maker")
-ENDIF (IS_DIRECTORY ${CMAKE_SOURCE_DIR}/PROPOSAL)
+ENDIF (${BUILD_MUONITRON})
 
 i3_add_library(MuonGun
     ${LIB_${PROJECT_NAME}_SOURCEFILES}
