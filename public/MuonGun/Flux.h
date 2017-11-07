@@ -56,6 +56,10 @@ public:
 	
 	virtual bool operator==(const Flux&) const;
 private:
+	friend class icecube::serialization::access;
+	template <typename Archive>
+	void serialize(Archive &, unsigned);
+	
 	double k0a_, k0b_, k1a_, k1b_;
 	double v0a_, v0b_, v0c_, v1a_, v1b_;
 };

@@ -31,13 +31,15 @@ BMSSRadialDistribution::BMSSRadialDistribution() : rho0a_(-1.786), rho0b_(28.26)
 double
 BMSSRadialDistribution::GetMeanRadius(double h, double theta, unsigned N) const
 {
-	return ((rho0a_*N + rho0b_)*pow(h,rho1_))/(exp((theta-theta0_)*f_)+1.);
+	unsigned n = std::min(N, 4u);
+	return ((rho0a_*n + rho0b_)*pow(h,rho1_))/(exp((theta-theta0_)*f_)+1.);
 }
 
 double
 BMSSRadialDistribution::GetShapeParameter(double h, double theta __attribute__ ((unused)), unsigned N) const
 {
-	return (alpha0a_*N + alpha0b_)*exp(h*(alpha1a_*N + alpha1b_));
+	unsigned n = std::min(N, 4u);
+	return (alpha0a_*n + alpha0b_)*exp(h*(alpha1a_*n + alpha1b_));
 }
 
 double
@@ -52,6 +54,9 @@ double
 BMSSRadialDistribution::GetLog(double depth, double cos_theta,
     unsigned N, double radius) const
 {
+	if (!(N > 1))
+		return 0.;
+	
 	// Convert to water-equivalent depth
 	double h = (200*I3Units::m/I3Units::km)*0.832 + (depth-(200*I3Units::m/I3Units::km))*0.917;
 	double theta = acos(cos_theta);
@@ -63,13 +68,16 @@ double
 BMSSRadialDistribution::Generate(I3RandomService &rng, double depth, double cos_theta,
     unsigned N) const
 {
+	if (!(N > 1))
+		return 0.;
+	
 	// Convert to water-equivalent depth
 	double h = (200*I3Units::m/I3Units::km)*0.832 + (depth-(200*I3Units::m/I3Units::km))*0.917;
 	double theta = acos(cos_theta);
 	double R = GetMeanRadius(h, theta, N);
 	double a = GetShapeParameter(h, theta, N);
 	
-	double peak_radius = R*(a-3)/(2.*(a-1));
+	double peak_radius = std::max(0., R*(a-3)/(2.*(a-1)));
 	if (!std::isfinite(peak_radius))
 		log_fatal("Peak radius is not finite!");
 	double max_prob = GetGenerationProbability(R, a, peak_radius);
@@ -78,7 +86,7 @@ BMSSRadialDistribution::Generate(I3RandomService &rng, double depth, double cos_
 	double r;
 	do {
 		r = rng.Uniform(rmax_);
-	} while (rng.Uniform(max_prob) <= GetGenerationProbability(R, a, r));
+	} while (rng.Uniform(max_prob) > GetGenerationProbability(R, a, r));
 
 	return r;
 }
@@ -155,8 +163,19 @@ SplineRadialDistribution::serialize(Archive &ar, unsigned version)
 	ar & make_nvp("SplineTable", spline_);
 }
 
+template <typename Archive>
+void
+BMSSRadialDistribution::serialize(Archive &ar, unsigned version)
+{
+	if (version > 0)
+		log_fatal_stream("Version "<<version<<" is from the future");
+	
+	ar & make_nvp("RadialDistribution", base_object<RadialDistribution>(*this));
+}
+
 }
 
 I3_SERIALIZABLE(I3MuonGun::RadialDistribution);
 I3_SERIALIZABLE(I3MuonGun::SplineRadialDistribution);
+I3_SERIALIZABLE(I3MuonGun::BMSSRadialDistribution);
 

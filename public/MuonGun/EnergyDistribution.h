@@ -18,6 +18,9 @@ class I3RandomService;
 
 namespace I3MuonGun {
 
+class RadialDistribution;
+class OffsetPowerLaw;
+
 /**
  * @brief Normalized distribution of energies within a bundle
  *
@@ -35,21 +38,30 @@ public:
 	typedef double result_type;
 	double operator()(double depth, double cos_theta,
 	    unsigned multiplicity, double radius, double energy) const;
+	double Integrate(double depth, double cos_theta, unsigned multiplicity,
+	    double r_min, double r_max, double e_min, double e_max) const;
 	virtual double GetLog(double depth, double cos_theta,
 	    unsigned multiplicity, double radius, double energy) const = 0;
-	virtual double Generate(I3RandomService &rng, double depth, double cos_theta,
-	    unsigned multiplicity, double radius) const = 0;
+
+	/// Sample *samples* (radius, energy) pairs
+	virtual std::vector<std::pair<double,double> > Generate(I3RandomService &rng,
+	    double depth, double cos_theta, unsigned multiplicity, unsigned samples) const = 0;
 	
 	double GetMax() const { return max_; }
 	double GetMin() const { return min_; }
 	void SetMax(double v) { max_ = v; }
 	void SetMin(double v) { min_ = v; }
 	
+	virtual double GetMaxRadius() const = 0;
+	
 	virtual bool operator==(const EnergyDistribution&) const = 0;
 private:
 	friend class icecube::serialization::access;
 	template <typename Archive>
 	void serialize(Archive &, unsigned);
+	
+	double GetdP_dEdr2(double depth, double cos_theta,
+	    unsigned multiplicity, double radius, double energy) const;
 	
 	double min_, max_;
 };
@@ -67,9 +79,9 @@ public:
 	SplineEnergyDistribution(const std::string &singles, const std::string &bundles);
 	double GetLog(double depth, double cos_theta, 
 	    unsigned multiplicity, double radius, double energy) const;
-	double Generate(I3RandomService &rng, double depth, double cos_theta,
-	    unsigned multiplicity, double radius) const;
-	    
+	std::vector<std::pair<double,double> > Generate(I3RandomService &rng,
+	    double depth, double cos_theta, unsigned multiplicity, unsigned samples) const;
+	virtual double GetMaxRadius() const;
 	virtual bool operator==(const EnergyDistribution&) const;
 private:
 	SplineEnergyDistribution() {}
@@ -88,11 +100,19 @@ public:
 	BMSSEnergyDistribution();
 	double GetLog(double depth, double cos_theta, 
 	    unsigned multiplicity, double radius, double energy) const;
-	double Generate(I3RandomService &rng, double depth, double cos_theta,
-	    unsigned multiplicity, double radius) const;
+	std::vector<std::pair<double,double> > Generate(I3RandomService &rng,
+	    double depth, double cos_theta, unsigned multiplicity, unsigned samples) const;
+	
+	virtual double GetMaxRadius() const;
 	
 	virtual bool operator==(const EnergyDistribution&) const;
+	
+	OffsetPowerLaw GetSpectrum(double depth, double cos_theta, unsigned m, double r) const;
 private:
+	friend class icecube::serialization::access;
+	template <typename Archive>
+	void serialize(Archive &, unsigned);
+	
 	// Single-muon energy distribution
 	double beta_, g0_, g1_, e0a_, e0b_, e1a_, e1b_;
 	// Bundle energy distribution
@@ -129,6 +149,7 @@ public:
 	double GetLog(double energy) const;
 	/** Draw an energy from the distribution */
 	double Generate(I3RandomService &rng) const;
+	double InverseSurvivalFunction(double p) const;
 	
 	const double GetMin() const { return emin_; }
 	const double GetMax() const { return emax_; }
@@ -148,6 +169,7 @@ private:
 
 I3_CLASS_VERSION(I3MuonGun::EnergyDistribution, 0);
 I3_CLASS_VERSION(I3MuonGun::SplineEnergyDistribution, 0);
+I3_CLASS_VERSION(I3MuonGun::BMSSEnergyDistribution, 0);
 I3_CLASS_VERSION(I3MuonGun::OffsetPowerLaw, 0);
 
 #endif

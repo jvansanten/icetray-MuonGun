@@ -30,7 +30,7 @@ void register_Flux()
 	using namespace I3MuonGun;
 	using namespace boost::python;
 	
-	class_<Flux, boost::noncopyable>("Flux", no_init)
+	class_<Flux, boost::shared_ptr<Flux>, boost::noncopyable>("Flux", no_init)
 	    DEF("__call__", &Flux::operator(), (args("depth"), "cos_theta", "multiplicity"))
 	    #define PROPS (MinMultiplicity)(MaxMultiplicity)
 	    BOOST_PP_SEQ_FOR_EACH(WRAP_PROP, Flux, PROPS)

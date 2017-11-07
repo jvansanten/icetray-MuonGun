@@ -7,7 +7,11 @@
  */
 
 #include <MuonGun/EnergyDistribution.h>
+#include <MuonGun/RadialDistribution.h>
 #include <phys-services/I3RandomService.h>
+#include <MuonGun/EnsembleSampler.h>
+
+#include <boost/bind.hpp>
 
 namespace I3MuonGun {
 
@@ -18,6 +22,41 @@ EnergyDistribution::operator()(double d, double ct,
     unsigned m, double r, double e) const
 {
 	return std::exp(GetLog(d, ct, m, r, e));
+}
+
+double
+EnergyDistribution::GetdP_dEdr2(double d, double ct, 
+    unsigned m, double r2, double e) const
+{
+	double r = std::sqrt(r2);
+	return std::exp(GetLog(d, ct, m, r, e) - (m > 1 ? std::log(2*r) : 0));
+}
+
+double
+EnergyDistribution::Integrate(double d, double ct, 
+    unsigned m, double r_min, double r_max, double e_min, double e_max) const
+{
+	// restrict integration to range where density can be nonzero
+	e_min = std::max(GetMin(), e_min);
+	e_max = std::min(GetMax(), e_max);
+	r_min = std::max(0., r_min);
+	r_max = std::min(GetMaxRadius(), r_max);
+	if (m > 1) {
+		// Integrate dP/(dE dr^2) over r^2 rather than dP/(dE dr) over r
+		// for numerical stability
+		boost::function<double (double, double)> dP_dEdr2 =
+		    boost::bind(&EnergyDistribution::GetdP_dEdr2, this,
+		    d, ct, m, _1, _2);
+		boost::array<double, 2> lo = {{r_min*r_min, e_min}};
+		boost::array<double, 2> hi = {{r_max*r_max, e_max}};
+		return I3MuonGun::Integrate(dP_dEdr2, lo, hi, 1e-12, 1e-6, 10000);
+	} else {
+		// For single muons, dP/dr is a delta function at 0
+		boost::function<double (double)> dP_dE =
+		    boost::bind(&EnergyDistribution::operator(), this,
+		    d, ct, m, 0, _1);
+		return I3MuonGun::Integrate(dP_dE, e_min, e_max);
+	}
 }
 
 bool
@@ -42,6 +81,12 @@ SplineEnergyDistribution::SplineEnergyDistribution(const std::string &singles, c
 }
 
 double
+SplineEnergyDistribution::GetMaxRadius() const
+{
+	return bundles_.GetExtents(3).second;
+}
+
+double
 SplineEnergyDistribution::GetLog(double depth, double cos_theta, 
     unsigned multiplicity, double radius, double energy) const
 {
@@ -50,7 +95,10 @@ SplineEnergyDistribution::GetLog(double depth, double cos_theta,
 	    std::max(minLogEnergy_, std::log(energy))};
 	double logprob;
 	
-	if (multiplicity < 2) {
+	if (radius < 0 || radius > GetMaxRadius() ||
+	    energy < GetMin() || energy > GetMax()) {
+		return -std::numeric_limits<double>::infinity();
+	} else if (multiplicity < 2) {
 		coords[2] = coords[4];
 		if (singles_.Eval(coords, &logprob) != 0)
 			return -std::numeric_limits<double>::infinity();
@@ -64,14 +112,63 @@ SplineEnergyDistribution::GetLog(double depth, double cos_theta,
 	return logprob;
 }
 
-double
-SplineEnergyDistribution::Generate(I3RandomService &rng __attribute__((unused)), double depth __attribute__((unused)), double cos_theta __attribute__((unused)), 
-    unsigned multiplicity __attribute__((unused)), double radius __attribute__((unused))) const
+std::vector<std::pair<double,double> >
+SplineEnergyDistribution::Generate(I3RandomService &rng, double depth,
+    double cos_theta, unsigned multiplicity, unsigned nsamples) const
 {
-	log_fatal("Sampling is not yet implemented");
+	typedef double (Signature)(double, double);
+	typedef EnsembleSampler<Signature> Sampler;
+	
+	// the number of walkers must be even, and at least twice the
+	// dimensionality of the space
+	const unsigned walkers = std::max(4u, nsamples + (nsamples % 2));
+	std::vector<Sampler::array_type> initial_ensemble(walkers);
+	{
+		// Draw starting positions from the MUPAGE parameterization
+		BMSSEnergyDistribution proposal;
+		proposal.SetMin(GetMin());
+		proposal.SetMax(GetMax());
+		std::vector<std::pair<double, double> > samples =
+		    proposal.Generate(rng, depth, cos_theta, multiplicity, walkers);
+		for (unsigned i=0; i < walkers; i++) {
+			initial_ensemble[i][0] = samples.at(i).first;
+			initial_ensemble[i][1] = samples.at(i).second;
+		}
+	}
+	
+	boost::function<Signature> log_posterior =
+	    boost::bind(&SplineEnergyDistribution::GetLog, this,
+	    depth, cos_theta, multiplicity, _1, _2);
+	Sampler sampler(log_posterior, initial_ensemble);
+	
+	// Run the sampler for a few cycles to make it independent of the initial
+	// ensemble. Fewer than 50 or so burn-in steps is too small to reach the
+	// stationary distribution, while more than 100 is a waste of time, as
+	// measured with resources/test/test_sampling.py
+	for (unsigned i=0; i < 64; i++)
+		sampler.Sample(rng);
+	
+	// copy the current ensemble into the output
+	std::vector<std::pair<double,double> > samples;
+	samples.reserve(nsamples);
+	const std::vector<Sampler::sample> &ensemble = sampler.Sample(rng);
+	unsigned todo = std::min(walkers, nsamples - unsigned(samples.size()));
+	for (unsigned j=0; j < todo; j++) {
+		samples.push_back(std::make_pair(ensemble[j].point[0], ensemble[j].point[1]));
+	}
+	
+	// check the acceptance rate for sanity.
+	double acceptance_rate = sampler.GetAcceptanceRate();
+	if (acceptance_rate < 0.2) {
+		log_warn("Ensemble sampler accepted only %.0f%% of samples (too low). It may be stuck in a local maximum.", 100*acceptance_rate);
+	} else if (acceptance_rate > 0.9) {
+		log_warn("Ensemble sampler accepted %.0f%% of samples (too high). This is an expensive random walk.", 100*acceptance_rate);
+	}
+	
+	return samples;
 }
 
-BMSSEnergyDistribution::BMSSEnergyDistribution() : 
+BMSSEnergyDistribution::BMSSEnergyDistribution() :
     beta_(0.42), g0_(-0.232), g1_(3.961), e0a_(0.0304), e0b_(0.359), e1a_(-0.0077), e1b_(0.659),
     a0_(0.0033), a1_(0.0079), b0a_(0.0407), b0b_(0.0283), b1a_(-0.312), b1b_(6.124),
     q0_(0.0543), q1_(-0.365), c0a_(-0.069), c0b_(0.488), c1_(-0.117),
@@ -84,9 +181,8 @@ BMSSEnergyDistribution::operator==(const EnergyDistribution &o) const
 	return dynamic_cast<const BMSSEnergyDistribution*>(&o);
 }
 
-double
-BMSSEnergyDistribution::GetLog(double depth, double cos_theta, 
-    unsigned m, double r, double energy) const
+OffsetPowerLaw
+BMSSEnergyDistribution::GetSpectrum(double depth, double cos_theta, unsigned m, double r) const
 {
 	// Convert to water-equivalent depth
 	double h = (200*I3Units::m/I3Units::km)*0.832 + (depth-(200*I3Units::m/I3Units::km))*0.917;
@@ -94,7 +190,7 @@ BMSSEnergyDistribution::GetLog(double depth, double cos_theta,
 	double g, eps;
 	if (m == 1) {
 		g = g0_*log(h) + g1_;
-		eps = e0a_*exp(e0b_*h)/cos_theta + e1a_*h + e1b_;
+		eps = (e0a_*exp(e0b_*h)/cos_theta + e1a_*h + e1b_)*I3Units::TeV;
 	} else {
 		m = std::min(m, 4u);
 		double a = a0_*h + a1_;
@@ -103,18 +199,43 @@ BMSSEnergyDistribution::GetLog(double depth, double cos_theta,
 		g = a*r + b*(1 - 0.5*exp(q*r));
 		double c = (c0a_*h + c0b_)*exp(c1_*r);
 		double d = (d0a_*h + d0b_)*pow(r, d1a_*h + d1b_);
-		eps = c*acos(cos_theta) + d;
+		eps = (c*acos(cos_theta) + d)*I3Units::TeV;
 	}
-	double norm = (g-1)*pow(eps, g-1)*exp((g-1)*bX)*pow(1-exp(-bX), g-1);
-	return std::log(norm*exp((1-g)*bX)*pow(energy + eps*(1-exp(-bX)), -g));
+	
+	return OffsetPowerLaw(g, eps*(1-exp(-bX)), GetMin(), GetMax());
 }
 
 double
-BMSSEnergyDistribution::Generate(I3RandomService &rng __attribute__((unused)), double depth __attribute__((unused)), double cos_theta __attribute__((unused)), 
-    unsigned multiplicity __attribute__((unused)), double radius __attribute__((unused))) const
+BMSSEnergyDistribution::GetLog(double depth, double cos_theta, 
+    unsigned multiplicity, double radius, double energy) const
 {
-	log_fatal("Sampling is not yet implemented");
+	
+	return BMSSRadialDistribution().GetLog(depth, cos_theta, multiplicity, radius) +
+	    GetSpectrum(depth, cos_theta, multiplicity, radius).GetLog(energy);
 }
+
+double
+BMSSEnergyDistribution::GetMaxRadius() const
+{
+	return 250*I3Units::m;
+}
+
+std::vector<std::pair<double,double> >
+BMSSEnergyDistribution::Generate(I3RandomService &rng, double depth,
+    double cos_theta, unsigned multiplicity, unsigned samples) const
+{
+	std::vector<std::pair<double,double> > values;
+	values.reserve(samples);
+	std::pair<double, double> val;
+	for (unsigned i=0; i < samples; i++) {
+		val.first = BMSSRadialDistribution().Generate(rng, depth, cos_theta, multiplicity);
+		val.second = GetSpectrum(depth, cos_theta, multiplicity, val.first).Generate(rng);
+		values.push_back(val);
+	}
+	
+	return values;
+}
+
 
 OffsetPowerLaw::OffsetPowerLaw() : gamma_(NAN), offset_(NAN), emin_(NAN), emax_(NAN)
 {}
@@ -164,10 +285,16 @@ OffsetPowerLaw::GetLog(double energy) const
 double
 OffsetPowerLaw::Generate(I3RandomService &rng) const
 {
+	return InverseSurvivalFunction(rng.Uniform());
+}
+
+double
+OffsetPowerLaw::InverseSurvivalFunction(double p) const
+{
 	if (gamma_ == 1)
-		return std::exp(rng.Uniform()*(nmax_ - nmin_) + nmin_) - offset_;
+		return std::exp((1-p)*(nmax_ - nmin_) + nmin_) - offset_;
 	else
-		return std::pow(rng.Uniform()*(nmax_ - nmin_) + nmin_, 1./(1.-gamma_)) - offset_;
+		return std::pow((1-p)*(nmax_ - nmin_) + nmin_, 1./(1.-gamma_)) - offset_;
 }
 
 template <typename Archive>
@@ -189,6 +316,16 @@ SplineEnergyDistribution::serialize(Archive &ar, unsigned version)
 
 template <typename Archive>
 void
+BMSSEnergyDistribution::serialize(Archive &ar, unsigned version)
+{
+	if (version > 0)
+		log_fatal_stream("Version "<<version<<" is from the future");
+	
+	ar & make_nvp("EnergyDistribution", base_object<EnergyDistribution>(*this));
+}
+
+template <typename Archive>
+void
 OffsetPowerLaw::serialize(Archive &ar, unsigned version)
 {
 	if (version > 0)
@@ -206,4 +343,5 @@ OffsetPowerLaw::serialize(Archive &ar, unsigned version)
 
 I3_SERIALIZABLE(I3MuonGun::EnergyDistribution);
 I3_SERIALIZABLE(I3MuonGun::SplineEnergyDistribution);
+I3_SERIALIZABLE(I3MuonGun::BMSSEnergyDistribution);
 I3_SERIALIZABLE(I3MuonGun::OffsetPowerLaw);

@@ -25,6 +25,7 @@ SET (LIB_${PROJECT_NAME}_SOURCEFILES
     private/MuonGun/StaticSurfaceInjector.cxx
     private/MuonGun/EnergyDependentSurfaceInjector.cxx
     private/MuonGun/CORSIKAGenerationProbability.cxx
+    private/MuonGun/NaturalRateInjector.cxx
 )
 SET (LIB_${PROJECT_NAME}_PROJECTS
     serialization icetray dataclasses phys-services simclasses photospline tableio
@@ -101,6 +102,7 @@ i3_add_pybindings(MuonGun
 
 i3_test_scripts(
   resources/test/test_StaticSurfaceInjector.py
+  resources/test/test_NaturalRateInjector.py
   resources/test/extruded_polygon.py
 )
 
@@ -111,6 +113,7 @@ i3_test_executable(test
   private/test/EnergyDistribution.cxx
   private/test/Generator.cxx
   private/test/Integration.cxx
+  private/test/EnsembleSampler.cxx
   USE_PROJECTS MuonGun icetray dataclasses phys-services
 )
 

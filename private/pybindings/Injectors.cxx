@@ -9,6 +9,7 @@
 #include <MuonGun/StaticSurfaceInjector.h>
 #include <MuonGun/EnergyDependentSurfaceInjector.h>
 #include <MuonGun/Floodlight.h>
+#include <MuonGun/NaturalRateInjector.h>
 #include <icetray/python/function.hpp>
 
 void
@@ -24,6 +25,15 @@ register_CanCan()
 		BOOST_PP_SEQ_FOR_EACH(WRAP_PROP, StaticSurfaceInjector, PROPS)
 		#undef PROPS
 		.add_property("total_rate", &StaticSurfaceInjector::GetTotalRate)
+	;
+	
+	class_<NaturalRateInjector, bases<Generator> >("NaturalRateInjector")
+		.def(init<SamplingSurfacePtr, FluxPtr,
+		    EnergyDistributionPtr>())
+		#define PROPS (Flux)(EnergyDistribution)
+		BOOST_PP_SEQ_FOR_EACH(WRAP_PROP, NaturalRateInjector, PROPS)
+		#undef PROPS
+		.add_property("total_rate", &NaturalRateInjector::GetTotalRate)
 	;
 
 	class_<SurfaceScalingFunction, SurfaceScalingFunctionPtr, boost::noncopyable>("SurfaceScalingFunction", no_init)

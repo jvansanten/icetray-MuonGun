@@ -8,6 +8,7 @@
 
 #include <MuonGun/Flux.h>
 #include <icetray/I3Units.h>
+#include <icetray/I3Logging.h>
 #include <limits>
 
 namespace I3MuonGun {
@@ -83,22 +84,39 @@ bool SplineFlux::operator==(const Flux &o) const
 
 template <typename Archive>
 void
-Flux::serialize(Archive &ar, unsigned)
+Flux::serialize(Archive &ar, unsigned version)
 {
+	if (version > 0)
+		log_fatal_stream("Version "<<version<<" is from the future");
+	
 	ar & make_nvp("MinMultiplicity", minMultiplicity_);
 	ar & make_nvp("MaxMultiplicity", maxMultiplicity_);
 }
 	
 template <typename Archive>
 void
-SplineFlux::serialize(Archive &ar, unsigned)
+SplineFlux::serialize(Archive &ar, unsigned version)
 {
+	if (version > 0)
+		log_fatal_stream("Version "<<version<<" is from the future");
+	
 	ar & make_nvp("Flux", base_object<Flux>(*this));
 	ar & make_nvp("SingleFlux", singles_);
 	ar & make_nvp("BundleFlux", bundles_);
+}
+
+template <typename Archive>
+void
+BMSSFlux::serialize(Archive &ar, unsigned version)
+{
+	if (version > 0)
+		log_fatal_stream("Version "<<version<<" is from the future");
+	
+	ar & make_nvp("Flux", base_object<Flux>(*this));
 }
 
 }
 
 I3_SERIALIZABLE(I3MuonGun::Flux);
 I3_SERIALIZABLE(I3MuonGun::SplineFlux);
+I3_SERIALIZABLE(I3MuonGun::BMSSFlux);

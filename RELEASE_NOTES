@@ -8,7 +8,18 @@ Release Notes
 trunk
 -----
 
+
+Release V00-03-00
+-----------------
+* Merged from branches/unbiased-generation
+* Unbiased generation with natural rates
+
+Release V00-02-01ug
+-----------------
+* Unbiased generation with natural rates
+
 V00-02-00: March 24, 2017
+Mostly docs. Changes since 00-00-04:
 
 * Document:
 
