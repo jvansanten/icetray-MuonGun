@@ -50,8 +50,24 @@ public:
 	
 	EnsembleSampler(boost::function<Signature> log_posterior,
 	    const std::vector<array_type>& initial_ensemble) : log_posterior_(log_posterior), stretch_scale_(2.) {
-		unsigned arity = detail::traits<Signature>::arity;
-		if (initial_ensemble.size() % 2 != 0 || initial_ensemble.size() < 2*arity) {
+		// Check each dimension for >1 unique value. Dimensions with only one
+		// unique value reduce the effective dimensionality of the ensemble.
+		unsigned effective_dimensions = 0;
+		for (unsigned dim = 0; dim < detail::traits<Signature>::arity; dim++) {
+			for (unsigned i = 1; i<initial_ensemble.size(); i++) {
+				if (initial_ensemble[i][dim] != initial_ensemble[0][dim]) {
+					effective_dimensions++;
+					break;
+				}
+			}
+		}
+		if (effective_dimensions == 0) {
+			log_fatal("Initial ensemble has only one unique point. Can't use this to propose a stretch move.");
+		} 
+		assert(effective_dimensions <= detail::traits<Signature>::arity);
+		// See Goodman & Weare, Eq 9, 3rd line
+		dimension_scale_ = effective_dimensions - 1.;
+		if (initial_ensemble.size() % 2 != 0 || initial_ensemble.size() < 2*effective_dimensions) {
 			log_fatal("Ensemble must be at least twice the dimensionality of the sampled space (and even)");
 		}
 		BOOST_FOREACH(const array_type &point, initial_ensemble) {
@@ -88,6 +104,7 @@ private:
 	boost::function<Signature> log_posterior_;
 	std::vector<sample> ensemble_;
 	double stretch_scale_;
+	double dimension_scale_;
 	unsigned half_size_;
 	unsigned total_samples_;
 	unsigned accepted_samples_;
@@ -109,7 +126,7 @@ private:
 			q[i] = p1.point[i] - z*(p1.point[i] - p0.point[i]);
 		}
 		double log_probability = this->LogProbability(q);
-		double log_ratio = (detail::traits<Signature>::arity - 1.)*std::log(z)
+		double log_ratio = dimension_scale_*std::log(z)
 		    + log_probability - p0.log_probability;
 		if (log_ratio > std::log(rng.Uniform())) {
 			// accept new point
