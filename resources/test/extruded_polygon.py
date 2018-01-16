@@ -339,7 +339,7 @@ if __name__ == "__main__":
         
         return py_surface, cpp_surface
     
-    def random_points(radius, npoints=1000):
+    def random_points(radius, npoints=10000):
         r = numpy.random.uniform(0, radius**3, size=npoints)**(1./3)
         azi = numpy.random.uniform(0, 2*numpy.pi, size=2*npoints)
         zen = numpy.arccos(numpy.random.uniform(-1, 1, size=2*npoints))
