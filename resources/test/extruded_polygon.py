@@ -354,7 +354,7 @@ if __name__ == "__main__":
     numpy.testing.assert_almost_equal(py_surface._z_range, cpp_surface.z)
     
     # test intersection and projection code
-    for i, (pos, dir) in enumerate(random_points(7e2)):
+    for i, (pos, dir) in enumerate(random_points(7e3)):
         i1 = py_surface.GetIntersection(pos, dir)
         i2 = cpp_surface.intersection(pos, dir)
         numpy.testing.assert_almost_equal(i1.first, i2.first)
