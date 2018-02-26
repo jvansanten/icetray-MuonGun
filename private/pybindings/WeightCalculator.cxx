@@ -19,20 +19,26 @@ using namespace I3MuonGun;
 using namespace boost::python;
  
 #ifdef USE_NUMPY
+#if BOOST_VERSION < 106300
 #include <boost/numpy.hpp>
+#define BOOST_NUMPY boost::numpy
+#else
+#include <boost/python/numpy.hpp>
+#define BOOST_NUMPY boost::python::numpy
+#endif // BOOST_VERSION < 106300
 
 namespace {
 
 template <typename T>
 inline T
-get(const boost::numpy::ndarray &a, int i0)
+get(const BOOST_NUMPY::ndarray &a, int i0)
 {
 	return *reinterpret_cast<T*>(a.get_data() + i0*a.strides(0));
 }
 
 template <typename T>
 inline T
-get(const boost::numpy::ndarray &a, int i0, int i1)
+get(const BOOST_NUMPY::ndarray &a, int i0, int i1)
 {
 	return *reinterpret_cast<T*>(a.get_data() + i0*a.strides(0) + i1*a.strides(1));
 }
@@ -45,7 +51,7 @@ object
 GetWeight(const WeightCalculator& weighter, object &xo, object &yo, object &zo,
     object &zeno, object &azio, object &mo, object &eno, object &rado)
 {
-	using namespace boost::numpy;
+	using namespace BOOST_NUMPY;
 	
 	// For efficiency's sake, match the types emitted by the default tableio converters
 	ndarray x   = from_object(xo,   dtype::get_builtin<double>(), 0, 1);

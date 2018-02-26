@@ -10,8 +10,14 @@
 #include <icetray/load_project.h>
 
 #ifdef USE_NUMPY
+#if BOOST_VERSION < 106300
 #include <boost/numpy.hpp>
-#endif
+#define BOOST_NUMPY boost::numpy
+#else
+#include <boost/python/numpy.hpp>
+#define BOOST_NUMPY boost::python::numpy
+#endif // BOOST_VERSION < 106300
+#endif // USE_NUMPY
 
 namespace bp = boost::python;
 
@@ -32,7 +38,7 @@ BOOST_PP_SEQ_FOR_EACH(I3_REGISTRATION_FN_DECL, ~, REGISTER_EXTRA);
 I3_PYTHON_MODULE(MuonGun)
 {
 #ifdef USE_NUMPY
-	boost::numpy::initialize();
+	BOOST_NUMPY::initialize();
 #endif
 	load_project("libMuonGun", false);
 	BOOST_PP_SEQ_FOR_EACH(I3_REGISTER, ~, REGISTER_THESE_THINGS);

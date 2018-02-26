@@ -5,7 +5,7 @@
 // Bind members as universal functions if boost::numpy is available,
 // otherwise fall back to a scalar function
 // FIXME: broken with I3_PORTS boost on SL6
-#if defined(USE_NUMPY) && BOOST_VERSION > 103800
+#if defined(USE_NUMPY) && BOOST_VERSION > 103800 && BOOST_VERSION < 106300
 #include <boost/numpy/dstream.hpp>
 #define DEF(...) .def(boost::numpy::dstream::method(__VA_ARGS__))
 #else
