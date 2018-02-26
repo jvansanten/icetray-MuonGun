@@ -7,7 +7,9 @@ Release Notes
 
 trunk
 -----
-
+* Added support for boost >= 1.63.
+  For these newer versions of boost, boostnumpy has been integrated into boost
+  and is not an external dependency anymore.
 
 Release V00-03-00
 -----------------
