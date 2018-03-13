@@ -306,8 +306,7 @@ class ExtrudedPolygon(Surface):
                 return make_pair(*self._distance_to_hull(point, vec))
         # general case: both rho and z components nonzero
         else:
-            sin_zenith = numpy.sqrt(1.-dir.z**2)
-            sides = numpy.array(self._distance_to_hull(point, vec))/sin_zenith
+            sides = numpy.array(self._distance_to_hull(point, vec))
             caps = self._distance_to_caps(point, vec)
             intersections = numpy.concatenate((sides, caps))
             
@@ -320,7 +319,7 @@ if __name__ == "__main__":
     
     from icecube.MuonGun import ExtrudedPolygon as CExtrudedPolygon
     from icecube.dataclasses import I3Position, I3Direction
-    from icecube.phys_services import I3GSLRandomService
+    from icecube.phys_services import I3GSLRandomService, AxialCylinder
     
     numpy.random.seed(0)
     
@@ -373,3 +372,18 @@ if __name__ == "__main__":
     # test area sampling
     pos, dir = cpp_surface.sample_impact_ray(rng)
     
+    sampler = AxialCylinder(1000, 1000)
+    volume = py_surface.length * py_surface.area(I3Direction(0,0))
+    # compare volume and projected area to sampled versions
+    for i, (pos, dir) in enumerate(random_points(0, 10)):
+        nsamples = 50000
+        hits = 0
+        depth = 0.
+        for _ in range(nsamples):
+            pos = sampler.sample_impact_position(dir, rng)
+            intersections = cpp_surface.intersection(pos, dir)
+            if numpy.isfinite(intersections.first):
+                hits += 1
+                depth += (intersections.second - intersections.first)
+        numpy.testing.assert_allclose(float(hits)/nsamples, py_surface.area(dir)/sampler.area(dir), rtol=2e-2, err_msg="Sampled area should match projected area")
+        numpy.testing.assert_allclose(sampler.area(dir)*depth/nsamples, volume, rtol=2e-2, err_msg="Sampled volume should match exact volume")
