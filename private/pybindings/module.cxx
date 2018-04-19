@@ -40,7 +40,7 @@ I3_PYTHON_MODULE(MuonGun)
 #ifdef USE_NUMPY
 	BOOST_NUMPY::initialize();
 #endif
-	load_project("libMuonGun", false);
+	load_project("MuonGun", false);
 	BOOST_PP_SEQ_FOR_EACH(I3_REGISTER, ~, REGISTER_THESE_THINGS);
 	#ifdef USE_PROPOSAL
 	BOOST_PP_SEQ_FOR_EACH(I3_REGISTER, ~, REGISTER_EXTRA);
