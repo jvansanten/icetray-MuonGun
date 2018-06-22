@@ -7,9 +7,13 @@ Release Notes
 
 trunk
 -----
+
+Release V00-03-01
+-----
 * Added support for boost >= 1.63.
   For these newer versions of boost, boostnumpy has been integrated into boost
   and is not an external dependency anymore.
+* Fixes issue driven by merge with unbiased branch (r160287) to extruded_polygon.py
 
 Release V00-03-00
 -----------------
