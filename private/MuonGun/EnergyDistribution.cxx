@@ -76,8 +76,8 @@ SplineEnergyDistribution::SplineEnergyDistribution(const std::string &singles, c
 		log_fatal("'%s' does not appear to be a single-muon energy distribution", singles.c_str());
 	if (bundles_.GetNDim() != 5u)
 		log_fatal("'%s' does not appear to be a muon bundle energy distribution", bundles.c_str());
-	// Extrapolate with a constant below the minimum supported energy
-	minLogEnergy_ = std::min(singles_.GetExtents(2).first, bundles_.GetExtents(2).first);
+	SetMin(std::exp(std::max(singles_.GetExtents(2).first, bundles_.GetExtents(2).first)));
+	SetMax(std::exp(std::min(singles_.GetExtents(2).second, bundles_.GetExtents(2).second)));
 }
 
 double
@@ -91,8 +91,7 @@ SplineEnergyDistribution::GetLog(double depth, double cos_theta,
     unsigned multiplicity, double radius, double energy) const
 {
 	double coords[5] = {cos_theta, depth, static_cast<double>(multiplicity),
-	    std::min(radius, bundles_.GetExtents(3).second),
-	    std::max(minLogEnergy_, std::log(energy))};
+	    radius, std::log(energy)};
 	double logprob;
 	
 	if (radius < 0 || radius > GetMaxRadius() ||

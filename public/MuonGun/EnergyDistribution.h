@@ -92,7 +92,6 @@ private:
 
 	SplineTable singles_;
 	SplineTable bundles_;
-	double minLogEnergy_;
 };
 
 class BMSSEnergyDistribution : public EnergyDistribution {
