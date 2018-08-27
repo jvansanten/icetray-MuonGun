@@ -21,15 +21,7 @@ double
 EnergyDistribution::operator()(double d, double ct, 
     unsigned m, double r, double e) const
 {
-	return std::exp(GetLog(d, ct, m, r, e));
-}
-
-double
-EnergyDistribution::GetdP_dEdr2(double d, double ct, 
-    unsigned m, double r2, double e) const
-{
-	double r = std::sqrt(r2);
-	return std::exp(GetLog(d, ct, m, r, e) - (m > 1 ? std::log(2*r) : 0));
+	return std::exp(GetLog(d, ct, m, r, log_value(std::log(e))));
 }
 
 double
@@ -37,25 +29,29 @@ EnergyDistribution::Integrate(double d, double ct,
     unsigned m, double r_min, double r_max, double e_min, double e_max) const
 {
 	// restrict integration to range where density can be nonzero
-	e_min = std::max(GetMin(), e_min);
-	e_max = std::min(GetMax(), e_max);
+	double loge_min = std::max(minLog_, std::log(e_min));
+	double loge_max = std::min(maxLog_, std::log(e_max));
 	r_min = std::max(0., r_min);
 	r_max = std::min(GetMaxRadius(), r_max);
 	if (m > 1) {
-		// Integrate dP/(dE dr^2) over r^2 rather than dP/(dE dr) over r
-		// for numerical stability
-		boost::function<double (double, double)> dP_dEdr2 =
-		    boost::bind(&EnergyDistribution::GetdP_dEdr2, this,
-		    d, ct, m, _1, _2);
-		boost::array<double, 2> lo = {{r_min*r_min, e_min}};
-		boost::array<double, 2> hi = {{r_max*r_max, e_max}};
-		return I3MuonGun::Integrate(dP_dEdr2, lo, hi, 1e-12, 1e-6, 10000);
+		// Integrate dP/(dlogE dr^2) for numerical stability
+		auto integrand = [this,d,ct,m](double r2, double loge)
+		{
+			double r = std::sqrt(r2);
+			return std::exp(GetLog(d, ct, m, r, log_value(loge))
+			    - std::log(2*r) + loge);
+		};
+		boost::array<double, 2> lo = {{r_min*r_min, loge_min}};
+		boost::array<double, 2> hi = {{r_max*r_max, loge_max}};
+		return I3MuonGun::Integrate(boost::function<double(double,double)>(integrand),
+		    lo, hi, 1e-12, 1e-6, 10000);
 	} else {
 		// For single muons, dP/dr is a delta function at 0
-		boost::function<double (double)> dP_dE =
-		    boost::bind(&EnergyDistribution::operator(), this,
-		    d, ct, m, 0, _1);
-		return I3MuonGun::Integrate(dP_dE, e_min, e_max);
+		auto integrand = [this,d,ct,m](double loge)
+		{
+			return std::exp(GetLog(d, ct, m, 0, log_value(loge)) + loge);
+		};
+		return I3MuonGun::Integrate(boost::function<double(double)>(integrand), loge_min, loge_max);
 	}
 }
 
@@ -88,14 +84,14 @@ SplineEnergyDistribution::GetMaxRadius() const
 
 double
 SplineEnergyDistribution::GetLog(double depth, double cos_theta, 
-    unsigned multiplicity, double radius, double energy) const
+    unsigned multiplicity, double radius, log_value log_energy) const
 {
 	double coords[5] = {cos_theta, depth, static_cast<double>(multiplicity),
-	    radius, std::log(energy)};
+	    radius, log_energy};
 	double logprob;
 	
 	if (radius < 0 || radius > GetMaxRadius() ||
-	    energy < GetMin() || energy > GetMax()) {
+	    log_energy < minLog_ || log_energy > maxLog_) {
 		return -std::numeric_limits<double>::infinity();
 	} else if (multiplicity < 2) {
 		coords[2] = coords[4];
@@ -135,9 +131,11 @@ SplineEnergyDistribution::Generate(I3RandomService &rng, double depth,
 		}
 	}
 	
-	boost::function<Signature> log_posterior =
-	    boost::bind(&SplineEnergyDistribution::GetLog, this,
-	    depth, cos_theta, multiplicity, _1, _2);
+	auto log_posterior = [this,depth,cos_theta,multiplicity](double r, double e)
+	{
+		return this->GetLog(depth, cos_theta, multiplicity, r,
+		    EnergyDistribution::log_value(std::log(e)));
+	};
 	Sampler sampler(log_posterior, initial_ensemble);
 	
 	// Run the sampler for a few cycles to make it independent of the initial
@@ -206,11 +204,11 @@ BMSSEnergyDistribution::GetSpectrum(double depth, double cos_theta, unsigned m, 
 
 double
 BMSSEnergyDistribution::GetLog(double depth, double cos_theta, 
-    unsigned multiplicity, double radius, double energy) const
+    unsigned multiplicity, double radius, log_value log_energy) const
 {
 	
 	return BMSSRadialDistribution().GetLog(depth, cos_theta, multiplicity, radius) +
-	    GetSpectrum(depth, cos_theta, multiplicity, radius).GetLog(energy);
+	    GetSpectrum(depth, cos_theta, multiplicity, radius).GetLog(log_energy);
 }
 
 double
@@ -279,6 +277,12 @@ OffsetPowerLaw::GetLog(double energy) const
 		return lognorm_ - gamma_*std::log(energy + offset_);
 	else
 		return -std::numeric_limits<double>::infinity();
+}
+
+double
+OffsetPowerLaw::GetLog(EnergyDistribution::log_value log_energy) const
+{
+	return GetLog(std::exp(log_energy));
 }
 
 double

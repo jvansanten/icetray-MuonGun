@@ -33,24 +33,31 @@ class OffsetPowerLaw;
  */
 class EnergyDistribution {
 public:
-	EnergyDistribution() : min_(I3Units::GeV), max_(I3Units::PeV) {}
+	EnergyDistribution() : minLog_(std::log(I3Units::GeV)), maxLog_(std::log(I3Units::PeV)) {}
 	virtual ~EnergyDistribution();
 	typedef double result_type;
 	double operator()(double depth, double cos_theta,
 	    unsigned multiplicity, double radius, double energy) const;
 	double Integrate(double depth, double cos_theta, unsigned multiplicity,
 	    double r_min, double r_max, double e_min, double e_max) const;
+
+	/// A tag type to enforce units
+	struct log_value {
+		explicit log_value(double v) : value_(v) {}
+		operator double() const { return value_; }
+		double value_;
+	};
 	virtual double GetLog(double depth, double cos_theta,
-	    unsigned multiplicity, double radius, double energy) const = 0;
+	    unsigned multiplicity, double radius, log_value log_energy) const = 0;
 
 	/// Sample *samples* (radius, energy) pairs
 	virtual std::vector<std::pair<double,double> > Generate(I3RandomService &rng,
 	    double depth, double cos_theta, unsigned multiplicity, unsigned samples) const = 0;
 	
-	double GetMax() const { return max_; }
-	double GetMin() const { return min_; }
-	void SetMax(double v) { max_ = v; }
-	void SetMin(double v) { min_ = v; }
+	double GetMax() const { return std::exp(maxLog_); }
+	double GetMin() const { return std::exp(minLog_); }
+	void SetMax(double v) { maxLog_ = std::log(v); }
+	void SetMin(double v) { minLog_ = std::log(v); }
 	
 	virtual double GetMaxRadius() const = 0;
 	
@@ -60,10 +67,8 @@ private:
 	template <typename Archive>
 	void serialize(Archive &, unsigned);
 	
-	double GetdP_dEdr2(double depth, double cos_theta,
-	    unsigned multiplicity, double radius, double energy) const;
-	
-	double min_, max_;
+protected:
+	double minLog_, maxLog_;
 };
 
 I3_POINTER_TYPEDEFS(EnergyDistribution);
@@ -78,7 +83,7 @@ class SplineEnergyDistribution : public EnergyDistribution {
 public:
 	SplineEnergyDistribution(const std::string &singles, const std::string &bundles);
 	double GetLog(double depth, double cos_theta, 
-	    unsigned multiplicity, double radius, double energy) const;
+	    unsigned multiplicity, double radius, log_value log_energy) const;
 	std::vector<std::pair<double,double> > Generate(I3RandomService &rng,
 	    double depth, double cos_theta, unsigned multiplicity, unsigned samples) const;
 	virtual double GetMaxRadius() const;
@@ -98,7 +103,7 @@ class BMSSEnergyDistribution : public EnergyDistribution {
 public:
 	BMSSEnergyDistribution();
 	double GetLog(double depth, double cos_theta, 
-	    unsigned multiplicity, double radius, double energy) const;
+	    unsigned multiplicity, double radius, log_value log_energy) const;
 	std::vector<std::pair<double,double> > Generate(I3RandomService &rng,
 	    double depth, double cos_theta, unsigned multiplicity, unsigned samples) const;
 	
@@ -146,6 +151,7 @@ public:
 	/** Calculate the probability that the given energy was generated */
 	double operator()(double energy) const;
 	double GetLog(double energy) const;
+	double GetLog(EnergyDistribution::log_value log_energy) const;
 	/** Draw an energy from the distribution */
 	double Generate(I3RandomService &rng) const;
 	double InverseSurvivalFunction(double p) const;

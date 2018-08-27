@@ -41,12 +41,13 @@ WeightCalculator::GetWeight(const I3Particle &axis, const BundleConfiguration &b
 	
 	double rate = flux_->GetLog(h, coszen, m) - generator_->GetLogGeneratedEvents(axis, bundlespec);
 	
-	double term;
 	BOOST_FOREACH(const BundleEntry &track, bundlespec){
-		if (!std::isfinite(energy_->GetLog(h, coszen, m, track.radius, track.energy))){
+		double logprob = energy_->GetLog(h, coszen, m, track.radius,
+		    EnergyDistribution::log_value(std::log(track.energy)));
+		if (!std::isfinite(logprob)){
                     log_warn("Log Energy weight of a least one muon is -inf, weight will be 0!");
                 }
-		rate += energy_->GetLog(h, coszen, m, track.radius, track.energy);
+		rate += logprob;
         }
 	// assert(std::isfinite(std::exp(rate)));
 	return std::exp(rate);

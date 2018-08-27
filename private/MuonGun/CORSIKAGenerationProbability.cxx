@@ -62,7 +62,8 @@ CORSIKAGenerationProbability::GetLogGenerationProbability(const I3Particle &axis
 	unsigned m = static_cast<unsigned>(bundlespec.size());
 	double logprob = flux_->GetLog(h, coszen, m);
 	BOOST_FOREACH(const BundleConfiguration::value_type &track, bundlespec)
-		logprob += energyDistribution_->GetLog(h, coszen, m, track.radius, track.energy);
+		logprob += energyDistribution_->GetLog(h, coszen, m, track.radius,
+		    EnergyDistribution::log_value(std::log(track.energy)));
 	
 	return logprob;
 }

@@ -205,7 +205,8 @@ NaturalRateInjector::GetLogGenerationProbability(const I3Particle &axis,
 	// multiplicity. Evaluate the properly-normalized PDF here.
 	double logprob = flux_->GetLog(h, coszen, m) - std::log(GetTotalRate());
 	BOOST_FOREACH(const BundleEntry &track, bundlespec) {
-		logprob += energyDistribution_->GetLog(h, coszen, m, track.radius, track.energy);
+		logprob += energyDistribution_->GetLog(h, coszen, m, track.radius,
+		    EnergyDistribution::log_value(std::log(track.energy)));
 	}
 	
 	return logprob;
