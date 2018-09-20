@@ -34,19 +34,22 @@ from icecube import MuonGun
 icetray.load('corsika-reader')
 from I3Tray import I3Tray
 
-def MMCFactory(length=10*I3Units.m, seed=12345, impl='mmc', mediadef=expandvars('$I3_BUILD/MuonGun/resources/iceworld-mediadef')):
-	# Now create the MMC propagators, but first *all* of the options must be set here. 
-	# There's no special options added behind the scenes.  This is much more flexible. 
-	#  Below are the standard options.  To interpret them see the MMC docs.
-	mmcOpts = "-romb=5 -raw -user -sdec -time -lpm -bs=1 -ph=3 -bb=2 -sh=2 -frho -cont "
-	mmcOpts += expandvars("-tdir=$I3_BUILD/mmc-icetray/resources ")
-	mmcOpts += expandvars("-mediadef=%s " % mediadef)
-	mmcOpts += "-radius=100000 "
-	mmcOpts += "-length=%d " % length
-	mmcOpts += "-seed=%d " % seed
-	
+def MMCFactory(length=10*I3Units.m, seed=12345, impl='mmc', mediadef=None):
+
 	if impl == 'mmc':
 		from icecube import c2j_icetray, mmc_icetray
+		if mediadef is None:
+			mediadef=expandvars('$I3_BUILD/MuonGun/resources/iceworld-mediadef')
+		# Now create the MMC propagators, but first *all* of the options must be set here. 
+		# There's no special options added behind the scenes.  This is much more flexible. 
+		#  Below are the standard options.  To interpret them see the MMC docs.
+		mmcOpts = "-romb=5 -raw -user -sdec -time -lpm -bs=1 -ph=3 -bb=2 -sh=2 -frho -cont "
+		mmcOpts += expandvars("-tdir=$I3_BUILD/mmc-icetray/resources ")
+		mmcOpts += expandvars("-mediadef=%s " % mediadef)
+		mmcOpts += "-radius=100000 "
+		mmcOpts += "-length=%d " % length
+		mmcOpts += "-seed=%d " % seed
+	
 		jvmOpts = icetray.vector_string()    # fill this with parameters passed directly to the JavaVM
 		jvmOpts.append(expandvars("-Djava.class.path=$I3_BUILD/lib/mmc.jar"))
 		jvmOpts.append("-Xms256m")
@@ -58,7 +61,10 @@ def MMCFactory(length=10*I3Units.m, seed=12345, impl='mmc', mediadef=expandvars(
 		return mmc_icetray.I3PropagatorServiceMMC(jvm,mmcOpts)
 	else:
 		from icecube import PROPOSAL_icetray
-		return PROPOSAL_icetray.I3PropagatorServicePROPOSAL(mmcOpts)
+		# in PROPOSAL everything can be defined in the configuration file
+		if mediadef is None:
+			mediadef=expandvars('$I3_BUILD/PROPOSAL/resources/config_iceworld.json')
+		return PROPOSAL_icetray.I3PropagatorServicePROPOSAL(config_file=mediadef)
 
 CORSIKA_CONFIG =\
 """

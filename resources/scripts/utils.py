@@ -82,19 +82,23 @@ class VolumeCorrWeight(object):
 
 
 from os.path import expandvars
-def MMCFactory(radius=100000*I3Units.m, length=10*I3Units.m, seed=random.randint(0, (1<<32) - 1), impl='mmc', mediadef=expandvars('$I3_BUILD/MuonGun/resources/iceworld-mediadef')):
-	# Now create the MMC propagators, but first *all* of the options must be set here. 
-	# There's no special options added behind the scenes.  This is much more flexible. 
-	#  Below are the standard options.  To interpret them see the MMC docs.
-	mmcOpts = "-romb=5 -raw -user -sdec -time -lpm -bs=1 -ph=3 -bb=2 -sh=2 -frho -cont "
-	mmcOpts += expandvars("-tdir=$I3_BUILD/mmc-icetray/resources ")
-	mmcOpts += expandvars("-mediadef=%s " % mediadef)
-	mmcOpts += "-radius=%d " % radius
-	mmcOpts += "-length=%d " % length
-	mmcOpts += "-seed=%d " % seed
-	
+def MMCFactory(radius=100000*I3Units.m, length=10*I3Units.m, seed=random.randint(0, (1<<32) - 1), impl='mmc', mediadef=None):
+
 	if impl.lower() == 'mmc':
 		from icecube import c2j_icetray, mmc_icetray
+
+		if mediadef is None:
+			mediadef=expandvars('$I3_BUILD/MuonGun/resources/iceworld-mediadef')
+		# Now create the MMC propagators, but first *all* of the options must be set here. 
+		# There's no special options added behind the scenes.  This is much more flexible. 
+		# Below are the standard options.  To interpret them see the MMC docs.
+		mmcOpts = "-romb=5 -raw -user -sdec -time -lpm -bs=1 -ph=3 -bb=2 -sh=2 -frho -cont "
+		mmcOpts += expandvars("-tdir=$I3_BUILD/mmc-icetray/resources ")
+		mmcOpts += expandvars("-mediadef=%s " % mediadef)
+		mmcOpts += "-radius=%d " % radius
+		mmcOpts += "-length=%d " % length
+		mmcOpts += "-seed=%d " % seed
+
 		jvmOpts = icetray.vector_string()    # fill this with parameters passed directly to the JavaVM
 		jvmOpts.append(expandvars("-Djava.class.path=$I3_BUILD/lib/mmc.jar"))
 		jvmOpts.append("-Xms256m")
@@ -105,7 +109,10 @@ def MMCFactory(radius=100000*I3Units.m, length=10*I3Units.m, seed=random.randint
 		return mmc_icetray.I3PropagatorServiceMMC(jvm,mmcOpts)
 	else:
 		from icecube import PROPOSAL_icetray
-		return PROPOSAL_icetray.I3PropagatorServicePROPOSAL(mmcOpts)
+		# in PROPOSAL everything can be defined in the configuration file
+		if mediadef is None:
+			mediadef=expandvars('$I3_BUILD/PROPOSAL/resources/config_iceworld.json')
+		return PROPOSAL_icetray.I3PropagatorServicePROPOSAL(config_file=mediadef)
 
 def PropagatorMMC(tray, name, seed=random.randint(0, (1<<32) - 1)):
 	from icecube import c2j_icetray, mmc_icetray
