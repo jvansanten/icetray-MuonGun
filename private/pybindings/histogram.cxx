@@ -23,7 +23,9 @@ PyBuffer_FromMemory(void *memory, size_t size)
 	buf.readonly = true;
 	buf.ndim = 1;
 	buf.itemsize = sizeof(double);
-	Py_ssize_t shape[] = { size/sizeof(double) };
+        size_t s= size/sizeof(double);
+        assert(s<= INT_MAX);
+	Py_ssize_t shape[] = { static_cast<Py_ssize_t>(s) };
 	buf.shape = shape;
 	return PyMemoryView_FromBuffer(&buf);
 }
