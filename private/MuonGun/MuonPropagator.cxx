@@ -23,7 +23,7 @@ MuonPropagator::MuonPropagator(const std::string& medium, double ecut, double vc
 
     sec_def.SetMedium(*PROPOSAL::MediumFactory::Get().CreateMedium(medium, 1.0));
 
-    PROPOSAL::Sphere detector(PROPOSAL::Vector3D(0.0, 0.0, 0.0), 0.0, 1e18);
+    PROPOSAL::Sphere detector(PROPOSAL::Vector3D(0.0, 0.0, 0.0), 1e18, 0.0);
     sec_def.SetGeometry(detector);
 
     std::vector<PROPOSAL::Sector::Definition> sector_definitions;
