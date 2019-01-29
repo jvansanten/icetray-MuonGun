@@ -267,6 +267,7 @@ I3Particle::ParticleType MuonPropagator::GenerateI3Type(const PROPOSAL::DynamicD
             break;
         default:
             log_fatal("PROPOSAL Particle can not be converted to a I3Particle");
+            return I3Particle::unknown;
     }
 }
 
