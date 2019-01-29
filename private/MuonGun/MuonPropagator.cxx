@@ -139,7 +139,7 @@ I3Particle MuonPropagator::propagate(const I3Particle& p,
 
     double x, y, z, theta, phi;
 
-    PROPOSAL::Particle pp = propagator_->GetParticle();
+    PROPOSAL::Particle& pp = propagator_->GetParticle();
     pp.SetParentParticleId(0);
     pp.SetParticleId(0);
 
@@ -267,8 +267,8 @@ I3Particle::ParticleType MuonPropagator::GenerateI3Type(const PROPOSAL::DynamicD
             break;
         default:
             log_fatal("PROPOSAL Particle can not be converted to a I3Particle");
-            return I3Particle::unknown;
     }
+    return I3Particle::unknown;
 }
 
 // ------------------------------------------------------------------------- //
